@@ -150,7 +150,7 @@ class CheckoutController extends Controller
                 
                 try {
                     Mail::raw("MMQR Auth Token Failed for Order: {$orderNumber}. Response: " . json_encode($tokenResponse->json()), function ($message) {
-                        $message->to('swezonticketing@gmail.com')
+                        $message->to('eventplusticketing@gmail.com')
                                 ->subject('❌ Payment Token Error - Order ' . $orderNumber);
                     });
                 } catch (\Exception $mailEx) {
@@ -185,7 +185,7 @@ class CheckoutController extends Controller
             
             try {
                 Mail::raw("MMQR QR Generation Failed for Order: {$orderNumber}. Response: " . json_encode($qrResponse->json()), function ($message) {
-                    $message->to('swezonticketing@gmail.com')
+                    $message->to('eventplusticketing@gmail.com')
                             ->subject('❌ QR Generation Error - Order ' . $orderNumber);
                 });
             } catch (\Exception $mailEx) {
@@ -198,7 +198,7 @@ class CheckoutController extends Controller
             
             try {
                 Mail::raw("MMQR Exception Encountered for Order: {$orderNumber}. Error: " . $e->getMessage(), function ($message) {
-                    $message->to('swezonticketing@gmail.com')
+                    $message->to('eventplusticketing@gmail.com')
                             ->subject('❌ Payment Gateway Exception - Order ' . $orderNumber);
                 });
             } catch (\Exception $mailEx) {
@@ -219,7 +219,7 @@ class CheckoutController extends Controller
             try {
                 $orderInfoText = "Order Number: {$order->order_number}\nTotal Amount: {$order->total_amount}\nStatus: Expired (Pending > 3 mins)";
                 Mail::raw("Payment session expired for order:\n\n{$orderInfoText}", function ($message) use ($order) {
-                    $message->to('swezonticketing@gmail.com')
+                    $message->to('eventplusticketing@gmail.com')
                             ->subject('⚠️ Payment Session Expired - Order ' . $order->order_number);
                 });
             } catch (\Exception $mailEx) {
@@ -371,7 +371,7 @@ class CheckoutController extends Controller
             $attendeeSummary[] = "Name: {$attendee->full_name} | Email: {$attendee->email} | Ticket Code: {$attendee->ticket_code}";
         }
 
-        // Send a dedicated success summary notification email directly to swezonticketing@gmail.com
+        // Send a dedicated success summary notification email directly to eventplusticketing@gmail.com
         try {
             $successBody = "SUCCESSFUL PAYMENT CONFIRMATION\n\n" .
                            "Order Number: {$order->order_number}\n" .
@@ -379,7 +379,7 @@ class CheckoutController extends Controller
                            "Attendees:\n" . implode("\n", $attendeeSummary);
 
             Mail::raw($successBody, function ($message) use ($order) {
-                $message->to('swezonticketing@gmail.com')
+                $message->to('eventplusticketing@gmail.com')
                         ->subject('✅ SUCCESS: Payment Completed - Order ' . $order->order_number);
             });
         } catch (\Exception $e) {
