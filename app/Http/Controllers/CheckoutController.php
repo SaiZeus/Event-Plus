@@ -98,7 +98,7 @@ class CheckoutController extends Controller
                 ]
             );
 
-            $userCode = 'SWE-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
+            $userCode = 'EP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
 
             // Create attendee record with NULL codes while pending
             Attendee::create([

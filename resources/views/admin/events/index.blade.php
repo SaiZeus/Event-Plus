@@ -1,1104 +1,1404 @@
 @extends('layouts.admin')
 
 @section('title', 'Manage Events')
+
 @section('page-title', 'Events Directory')
 
 @section('content')
 
 <style>
     /* =========================================================
-       EVENTS DIRECTORY - MODERN ADMIN UI
+       EVENT PLUS — EVENTS DIRECTORY
        ========================================================= */
 
-    .events-directory {
-        --events-primary: #4f46e5;
-        --events-primary-light: #eef2ff;
-        --events-text: #172033;
-        --events-muted: #7b8798;
-        --events-border: #e6e9ef;
-        --events-bg: #f7f8fc;
+    .ep-events {
+        --ep-navy: #0f172a;
+        --ep-navy-2: #1e1b4b;
+        --ep-purple: #7c3aed;
+        --ep-violet: #8b5cf6;
+        --ep-pink: #ec4899;
+        --ep-rose: #f43f5e;
+        --ep-indigo: #4f46e5;
+        --ep-text: #172033;
+        --ep-muted: #718096;
+        --ep-border: #e8eaf0;
+        --ep-bg: #f7f7fb;
+        --ep-white: #ffffff;
     }
 
-    /* =========================================
-       PAGE HEADER
-       ========================================= */
+    /* =========================================================
+       PAGE BACKGROUND
+       ========================================================= */
 
-    .events-page-header {
+    .ep-events {
+        position: relative;
+        min-height: 100%;
+        padding-bottom: 30px;
+        color: var(--ep-text);
+    }
+
+    /* =========================================================
+       HERO / HEADER
+       ========================================================= */
+
+    .ep-events-hero {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 24px;
+        padding: 28px 30px;
+        border-radius: 24px;
+        background:
+            radial-gradient(circle at 88% 15%, rgba(236, 72, 153, .25), transparent 25%),
+            radial-gradient(circle at 70% 100%, rgba(139, 92, 246, .30), transparent 30%),
+            linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%);
+        box-shadow: 0 18px 45px rgba(30, 27, 75, .18);
+    }
+
+    .ep-events-hero::before {
+        content: "";
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        right: -75px;
+        top: -105px;
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 50%;
+    }
+
+    .ep-events-hero::after {
+        content: "";
+        position: absolute;
+        width: 130px;
+        height: 130px;
+        right: 90px;
+        bottom: -80px;
+        border: 1px solid rgba(255,255,255,.10);
+        border-radius: 50%;
+    }
+
+    .ep-events-hero-inner {
+        position: relative;
+        z-index: 2;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 20px;
-        margin-bottom: 24px;
+        gap: 25px;
     }
 
-    .events-page-heading {
-        display: flex;
+    .ep-events-hero-left {
+        min-width: 0;
+    }
+
+    .ep-events-eyebrow {
+        display: inline-flex;
         align-items: center;
-        gap: 13px;
-    }
-
-    .events-page-icon {
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 1.15rem;
-    }
-
-    .events-page-heading h2 {
-        margin: 0;
-        color: var(--events-text);
-        font-size: 1.25rem;
+        gap: 7px;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        border: 1px solid rgba(255,255,255,.13);
+        border-radius: 999px;
+        background: rgba(255,255,255,.08);
+        color: #f5d0fe;
+        font-size: .61rem;
         font-weight: 850;
-        letter-spacing: -0.025em;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        backdrop-filter: blur(10px);
     }
 
-    .events-page-heading p {
-        margin: 3px 0 0;
-        color: var(--events-muted);
-        font-size: 0.76rem;
+    .ep-events-eyebrow i {
+        color: #f9a8d4;
     }
 
-    /* =========================================
-       CREATE BUTTON
-       ========================================= */
+    .ep-events-hero h2 {
+        margin: 0;
+        color: #ffffff;
+        font-size: clamp(1.35rem, 2vw, 1.75rem);
+        font-weight: 900;
+        letter-spacing: -.035em;
+        line-height: 1.15;
+    }
 
-    .create-event-button {
+    .ep-events-hero p {
+        max-width: 650px;
+        margin: 9px 0 0;
+        color: rgba(255,255,255,.68);
+        font-size: .78rem;
+        line-height: 1.65;
+    }
+
+    .ep-events-hero-right {
+        flex-shrink: 0;
+    }
+
+    .ep-create-event {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 10px 16px !important;
-        border-radius: 11px !important;
-        background: linear-gradient(
-            135deg,
-            #4f46e5 0%,
-            #6366f1 100%
-        ) !important;
+        gap: 9px;
+        min-height: 43px;
+        padding: 11px 17px;
+        border: 1px solid rgba(255,255,255,.15);
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ec4899, #8b5cf6);
         color: #ffffff !important;
-        font-size: 0.76rem !important;
-        font-weight: 800 !important;
-        box-shadow: 0 7px 18px rgba(79, 70, 229, 0.18);
-        transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            filter 0.18s ease;
+        font-size: .72rem;
+        font-weight: 850;
+        text-decoration: none;
+        box-shadow: 0 10px 25px rgba(236,72,153,.25);
+        transition: all .2s ease;
     }
 
-    .create-event-button:hover {
+    .ep-create-event:hover {
         transform: translateY(-2px);
-        filter: brightness(1.03);
-        box-shadow: 0 11px 25px rgba(79, 70, 229, 0.25);
+        color: #ffffff !important;
+        box-shadow: 0 14px 32px rgba(236,72,153,.35);
     }
 
-    /* =========================================
-       SUCCESS MESSAGE
-       ========================================= */
+    .ep-create-event i {
+        font-size: .72rem;
+    }
 
-    .event-success-alert {
+    /* =========================================================
+       QUICK STRIP
+       ========================================================= */
+
+    .ep-event-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .ep-event-strip-card {
         display: flex;
         align-items: center;
         gap: 12px;
+        min-width: 0;
+        padding: 15px 17px;
+        border: 1px solid var(--ep-border);
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 8px 25px rgba(15,23,42,.045);
+    }
+
+    .ep-strip-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        font-size: .85rem;
+    }
+
+    .ep-strip-icon.pink {
+        background: #fce7f3;
+        color: #db2777;
+    }
+
+    .ep-strip-icon.blue {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+
+    .ep-strip-content {
+        min-width: 0;
+    }
+
+    .ep-strip-label {
+        margin: 0 0 2px;
+        color: #94a3b8;
+        font-size: .6rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .ep-strip-value {
+        margin: 0;
+        color: #1e293b;
+        font-size: .82rem;
+        font-weight: 850;
+    }
+
+    /* =========================================================
+       SUCCESS MESSAGE
+       ========================================================= */
+
+    .ep-success {
+        display: flex;
+        align-items: center;
+        gap: 11px;
         margin-bottom: 20px;
         padding: 13px 16px;
         border: 1px solid #bbf7d0;
-        border-radius: 13px;
-        background: #f0fdf4;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #f0fdf4, #f7fee7);
         color: #166534;
-        font-size: 0.78rem;
-        font-weight: 650;
-        box-shadow: 0 4px 15px rgba(22, 101, 52, 0.04);
+        font-size: .75rem;
+        font-weight: 700;
+        box-shadow: 0 7px 20px rgba(22,101,52,.045);
     }
 
-    .event-success-icon {
+    .ep-success-icon {
         width: 32px;
         height: 32px;
         min-width: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 9px;
+        border-radius: 10px;
         background: #dcfce7;
         color: #16a34a;
     }
 
-    /* =========================================
-       TABLE CARD
-       ========================================= */
+    /* =========================================================
+       DIRECTORY CARD
+       ========================================================= */
 
-    .events-table-card {
+    .ep-directory {
         overflow: hidden;
-        border: 1px solid var(--events-border);
-        border-radius: 20px;
+        border: 1px solid var(--ep-border);
+        border-radius: 22px;
         background: #ffffff;
-        box-shadow: 0 12px 40px rgba(25, 35, 55, 0.055);
+        box-shadow: 0 14px 45px rgba(15,23,42,.055);
     }
 
-    .events-table-top {
+    .ep-directory-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 19px 22px;
-        border-bottom: 1px solid var(--events-border);
-        background: linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #fafbff 100%
-        );
+        gap: 15px;
+        padding: 20px 22px;
+        border-bottom: 1px solid var(--ep-border);
+        background:
+            linear-gradient(135deg, #ffffff 0%, #faf8ff 100%);
     }
 
-    .events-table-title {
+    .ep-directory-heading {
         display: flex;
         align-items: center;
-        gap: 9px;
-        color: #263143;
-        font-size: 0.86rem;
-        font-weight: 850;
+        gap: 12px;
     }
 
-    .events-table-title i {
-        color: #6366f1;
+    .ep-directory-heading-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ede9fe, #fce7f3);
+        color: #7c3aed;
+        font-size: .88rem;
     }
 
-    .events-count-label {
-        padding: 5px 9px;
+    .ep-directory-heading h3 {
+        margin: 0;
+        color: #1e293b;
+        font-size: .88rem;
+        font-weight: 900;
+        letter-spacing: -.015em;
+    }
+
+    .ep-directory-heading p {
+        margin: 3px 0 0;
+        color: #94a3b8;
+        font-size: .65rem;
+    }
+
+    .ep-event-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 11px;
+        border: 1px solid #ddd6fe;
         border-radius: 999px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 0.65rem;
-        font-weight: 800;
+        background: #f5f3ff;
+        color: #6d28d9;
+        font-size: .62rem;
+        font-weight: 850;
+        white-space: nowrap;
     }
 
-    /* =========================================
-       TABLE
-       ========================================= */
+    .ep-event-count i {
+        font-size: .58rem;
+    }
 
-    .events-table {
+    /* =========================================================
+       TABLE
+       ========================================================= */
+
+    .ep-table-scroll {
         width: 100%;
-        min-width: 1200px;
+        overflow-x: auto;
+    }
+
+    .ep-table {
+        width: 100%;
+        min-width: 1250px;
         border-collapse: collapse;
     }
 
-    .events-table thead {
-        background: #f8f9fc;
+    .ep-table thead {
+        background: #fafafa;
     }
 
-    .events-table thead tr {
-        border-bottom: 1px solid var(--events-border);
+    .ep-table thead tr {
+        border-bottom: 1px solid var(--ep-border);
     }
 
-    .events-table th {
-        padding: 14px 18px;
-        color: #7b8494;
-        font-size: 0.66rem;
-        font-weight: 850;
-        letter-spacing: 0.075em;
+    .ep-table th {
+        padding: 13px 18px;
+        color: #94a3b8;
+        font-size: .59rem;
+        font-weight: 900;
+        letter-spacing: .095em;
+        text-align: left;
         text-transform: uppercase;
         white-space: nowrap;
     }
 
-    .events-table td {
+    .ep-table td {
         padding: 17px 18px;
-        border-bottom: 1px solid #edf0f4;
-        color: #5f6b7c;
-        font-size: 0.79rem;
+        border-bottom: 1px solid #f0f1f5;
+        color: #64748b;
+        font-size: .74rem;
         vertical-align: middle;
     }
 
-    .events-table tbody tr {
-        transition: background 0.18s ease;
+    .ep-table tbody tr {
+        transition: all .18s ease;
     }
 
-    .events-table tbody tr:hover {
-        background: #fafbff;
+    .ep-table tbody tr:hover {
+        background: linear-gradient(
+            90deg,
+            #faf8ff 0%,
+            #ffffff 70%
+        );
     }
 
-    .events-table tbody tr:last-child td {
+    .ep-table tbody tr:last-child td {
         border-bottom: 0;
     }
 
-    /* =========================================
-       EVENT INFORMATION
-       ========================================= */
+    /* =========================================================
+       EVENT INFO
+       ========================================================= */
 
-    .event-info {
+    .ep-event-info {
         display: flex;
         align-items: center;
         gap: 12px;
-        min-width: 250px;
+        min-width: 265px;
     }
 
-    .event-image-wrapper {
+    .ep-event-image-wrap {
         position: relative;
-        width: 54px;
-        height: 54px;
-        min-width: 54px;
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
     }
 
-    .event-image {
-        width: 54px;
-        height: 54px;
+    .ep-event-image {
+        width: 56px;
+        height: 56px;
         object-fit: cover;
-        border-radius: 13px;
-        border: 1px solid #e3e7ed;
-        box-shadow: 0 4px 12px rgba(20, 30, 50, 0.08);
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 6px 15px rgba(15,23,42,.09);
     }
 
-    .event-image-wrapper::after {
-        content: "";
+    .ep-event-image-status {
         position: absolute;
         right: -2px;
         bottom: -2px;
-        width: 11px;
-        height: 11px;
+        width: 12px;
+        height: 12px;
         border: 2px solid #ffffff;
         border-radius: 50%;
-        background: #22c55e;
+        background: #10b981;
     }
 
-    .event-info-text {
+    .ep-event-copy {
         min-width: 0;
     }
 
-    .event-title {
+    .ep-event-title {
+        overflow: hidden;
         margin: 0 0 4px;
-        color: #1d2939;
-        font-size: 0.82rem;
-        font-weight: 800;
-        line-height: 1.3;
+        color: #1e293b;
+        font-size: .78rem;
+        font-weight: 850;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    .event-description {
-        max-width: 230px;
+    .ep-event-description {
+        max-width: 235px;
         margin: 0;
-        color: #929baa;
-        font-size: 0.68rem;
+        overflow: hidden;
+        color: #94a3b8;
+        font-size: .64rem;
         line-height: 1.45;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    /* =========================================
-       LOCATION & DATE
-       ========================================= */
+    /* =========================================================
+       LOCATION / DATE
+       ========================================================= */
 
-    .event-location {
+    .ep-location {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        color: #344054;
-        font-weight: 700;
-        line-height: 1.35;
+        max-width: 220px;
+        color: #334155;
+        font-size: .7rem;
+        font-weight: 750;
+        line-height: 1.4;
     }
 
-    .event-location i {
+    .ep-location i {
         margin-top: 2px;
-        color: #6366f1;
-        font-size: 0.72rem;
+        color: #ec4899;
+        font-size: .68rem;
     }
 
-    .event-date {
+    .ep-date {
         display: flex;
         align-items: center;
-        gap: 7px;
-        margin-top: 6px;
-        color: #929baa;
-        font-size: 0.68rem;
+        gap: 6px;
+        margin-top: 7px;
+        color: #94a3b8;
+        font-size: .62rem;
         white-space: nowrap;
     }
 
-    .event-date i {
-        color: #9aa3b1;
+    .ep-date i {
+        color: #8b5cf6;
     }
 
-    /* =========================================
-       CATEGORY BADGES
-       ========================================= */
+    /* =========================================================
+       CATEGORIES
+       ========================================================= */
 
-    .categories-wrapper {
+    .ep-categories {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        min-width: 180px;
-        max-width: 270px;
+        gap: 5px;
+        min-width: 190px;
+        max-width: 275px;
     }
 
-    .category-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 6px 9px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: #f8fafc;
-        color: #4b5563;
-        font-size: 0.64rem;
-        font-weight: 750;
-        white-space: nowrap;
-    }
-
-    .category-badge i {
-        color: #6366f1;
-        font-size: 0.58rem;
-    }
-
-    .no-categories {
+    .ep-category {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        color: #a0a7b3;
-        font-size: 0.68rem;
+        padding: 6px 8px;
+        border: 1px solid #e9d5ff;
+        border-radius: 8px;
+        background: #faf5ff;
+        color: #6b21a8;
+        font-size: .6rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .ep-category i {
+        color: #8b5cf6;
+        font-size: .52rem;
+    }
+
+    .ep-no-data {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #a1a1aa;
+        font-size: .65rem;
         font-style: italic;
     }
 
-    /* =========================================
-       EVENT ITEMS
-       ========================================= */
+    .ep-no-data i {
+        color: #c4b5fd;
+    }
 
-    .event-items-wrapper {
+    /* =========================================================
+       EVENT ITEMS
+       ========================================================= */
+
+    .ep-items {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 7px;
+        gap: 6px;
         min-width: 250px;
-        max-width: 360px;
+        max-width: 370px;
     }
 
-    .event-item {
+    .ep-item {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
+        gap: 6px;
         padding: 5px 8px 5px 5px;
         border: 1px solid #e5e7eb;
         border-radius: 10px;
         background: #ffffff;
-        box-shadow: 0 2px 8px rgba(20, 30, 50, 0.04);
+        box-shadow: 0 3px 9px rgba(15,23,42,.035);
         white-space: nowrap;
     }
 
-    .event-item-image {
+    .ep-item-image {
         width: 30px;
         height: 30px;
         object-fit: cover;
-        border-radius: 7px;
         border: 1px solid #e5e7eb;
+        border-radius: 7px;
     }
 
-    .event-item-no-image {
+    .ep-item-placeholder {
         width: 30px;
         height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 7px;
-        background: #eef2ff;
-        color: #6366f1;
-        font-size: 0.65rem;
+        background: #f3e8ff;
+        color: #8b5cf6;
+        font-size: .62rem;
     }
 
-    .event-item-title {
-        color: #344054;
-        font-size: 0.65rem;
-        font-weight: 750;
-    }
-
-    .event-items-count {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 9px;
-        border-radius: 8px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 0.64rem;
+    .ep-item-title {
+        color: #475569;
+        font-size: .61rem;
         font-weight: 800;
     }
 
-    .no-items {
+    .ep-items-more {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        color: #a0a7b3;
-        font-size: 0.68rem;
-        font-style: italic;
+        gap: 4px;
+        padding: 7px 9px;
+        border-radius: 8px;
+        background: #fce7f3;
+        color: #be185d;
+        font-size: .59rem;
+        font-weight: 850;
     }
 
-    /* =========================================
+    /* =========================================================
        STATUS
-       ========================================= */
+       ========================================================= */
 
-    .event-status {
+    .ep-status {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 7px 11px;
+        gap: 7px;
+        padding: 7px 10px;
         border-radius: 999px;
-        font-size: 0.64rem;
-        font-weight: 850;
-        letter-spacing: 0.035em;
+        font-size: .59rem;
+        font-weight: 900;
+        letter-spacing: .035em;
         text-transform: uppercase;
         white-space: nowrap;
     }
 
-    .event-status-dot {
+    .ep-status-dot {
         width: 6px;
         height: 6px;
         border-radius: 50%;
     }
 
-    .status-live {
-        background: #fef2f2;
-        color: #dc2626;
+    .ep-status-live {
+        background: #fff1f2;
+        color: #e11d48;
     }
 
-    .status-live .event-status-dot {
-        background: #ef4444;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+    .ep-status-live .ep-status-dot {
+        background: #f43f5e;
+        box-shadow: 0 0 0 3px rgba(244,63,94,.13);
     }
 
-    .status-upcoming {
+    .ep-status-upcoming {
         background: #ecfdf5;
         color: #059669;
     }
 
-    .status-upcoming .event-status-dot {
+    .ep-status-upcoming .ep-status-dot {
         background: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        box-shadow: 0 0 0 3px rgba(16,185,129,.12);
     }
 
-    .status-past {
+    .ep-status-past {
         background: #f1f5f9;
         color: #64748b;
     }
 
-    .status-past .event-status-dot {
+    .ep-status-past .ep-status-dot {
         background: #94a3b8;
     }
 
-    /* =========================================
-       ACTION BUTTONS
-       ========================================= */
+    /* =========================================================
+       ACTIONS
+       ========================================================= */
 
-    .event-actions {
+    .ep-actions {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 6px;
-        min-width: 320px;
+        gap: 5px;
+        min-width: 325px;
     }
 
-    .event-action-button {
+    .ep-action {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        min-height: 33px;
+        min-height: 34px;
         padding: 7px 10px;
+        border: 1px solid transparent;
         border-radius: 9px;
-        font-size: 0.64rem;
-        font-weight: 800;
-        transition:
-            background 0.18s ease,
-            color 0.18s ease,
-            transform 0.18s ease;
+        font-size: .59rem;
+        font-weight: 850;
+        text-decoration: none;
+        transition: all .18s ease;
     }
 
-    .event-action-button:hover {
+    .ep-action:hover {
         transform: translateY(-1px);
     }
 
-    .promo-button {
-        background: #f3e8ff;
+    .ep-action-promo {
+        border-color: #e9d5ff;
+        background: #faf5ff;
         color: #7e22ce;
     }
 
-    .promo-button:hover {
-        background: #e9d5ff;
+    .ep-action-promo:hover {
+        background: #f3e8ff;
         color: #6b21a8;
     }
 
-    .attendees-button {
+    .ep-action-attendees {
+        border-color: #dbeafe;
         background: #eff6ff;
         color: #2563eb;
     }
 
-    .attendees-button:hover {
+    .ep-action-attendees:hover {
         background: #dbeafe;
         color: #1d4ed8;
     }
 
-    .edit-button {
+    .ep-action-edit {
+        border-color: #fde68a;
         background: #fffbeb;
-        color: #d97706;
-    }
-
-    .edit-button:hover {
-        background: #fef3c7;
         color: #b45309;
     }
 
-    .delete-button {
-        background: #fef2f2;
-        color: #dc2626;
+    .ep-action-edit:hover {
+        background: #fef3c7;
+        color: #92400e;
     }
 
-    .delete-button:hover {
-        background: #fee2e2;
-        color: #b91c1c;
+    .ep-action-delete {
+        border-color: #fecdd3;
+        background: #fff1f2;
+        color: #e11d48;
+        cursor: pointer;
     }
 
-    /* =========================================
+    .ep-action-delete:hover {
+        background: #ffe4e6;
+        color: #be123c;
+    }
+
+    /* =========================================================
        EMPTY STATE
-       ========================================= */
+       ========================================================= */
 
-    .events-empty-state {
-        padding: 65px 20px !important;
+    .ep-empty {
+        padding: 70px 20px !important;
         text-align: center;
     }
 
-    .events-empty-icon {
-        width: 62px;
-        height: 62px;
-        margin: 0 auto 14px;
+    .ep-empty-icon {
+        width: 68px;
+        height: 68px;
+        margin: 0 auto 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 18px;
-        background: #eef2ff;
-        color: #6366f1;
-        font-size: 1.3rem;
+        border-radius: 20px;
+        background:
+            linear-gradient(135deg, #ede9fe, #fce7f3);
+        color: #7c3aed;
+        font-size: 1.35rem;
+        box-shadow: 0 10px 25px rgba(124,58,237,.10);
     }
 
-    .events-empty-state h3 {
-        margin: 0 0 5px;
-        color: #344054;
-        font-size: 0.92rem;
-        font-weight: 800;
+    .ep-empty h3 {
+        margin: 0 0 6px;
+        color: #1e293b;
+        font-size: .92rem;
+        font-weight: 900;
     }
 
-    .events-empty-state p {
+    .ep-empty p {
         margin: 0;
-        color: #929baa;
-        font-size: 0.74rem;
+        color: #94a3b8;
+        font-size: .7rem;
     }
 
-    .events-empty-state a {
-        color: #4f46e5;
-        font-weight: 750;
+    .ep-empty a {
+        color: #7c3aed;
+        font-weight: 850;
         text-decoration: none;
     }
 
-    .events-empty-state a:hover {
+    .ep-empty a:hover {
+        color: #db2777;
         text-decoration: underline;
     }
 
-    /* =========================================
-       MOBILE
-       ========================================= */
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
 
-    @media (max-width: 767px) {
-
-        .events-page-header {
-            align-items: stretch;
+    @media (max-width: 900px) {
+        .ep-events-hero-inner {
+            align-items: flex-start;
             flex-direction: column;
         }
 
-        .create-event-button {
+        .ep-events-hero-right {
             width: 100%;
         }
 
-        .events-table-top {
-            padding: 16px;
+        .ep-create-event {
+            width: 100%;
         }
 
-        .events-table th,
-        .events-table td {
+        .ep-event-strip {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .ep-events-hero {
+            padding: 23px 20px;
+            border-radius: 20px;
+        }
+
+        .ep-directory-header {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 17px;
+        }
+
+        .ep-event-count {
+            align-self: flex-start;
+        }
+
+        .ep-table th,
+        .ep-table td {
             padding: 13px 14px;
         }
 
-        .event-info {
-            min-width: 230px;
-        }
-
-        .event-actions {
-            min-width: 220px;
+        .ep-actions {
+            min-width: 250px;
         }
     }
 </style>
 
+<div class="ep-events">
 
-<div class="events-directory">
 
-    {{-- =========================================
-         PAGE HEADER
-         ========================================= --}}
-    <div class="events-page-header">
+{{-- =========================================================
+     EVENT PLUS HERO
+     ========================================================= --}}
 
-        <div class="events-page-heading">
+<div class="ep-events-hero">
 
-            <div class="events-page-icon">
-                <i class="fa-solid fa-person-running"></i>
+    <div class="ep-events-hero-inner">
+
+        <div class="ep-events-hero-left">
+
+            <div class="ep-events-eyebrow">
+                <i class="fa-solid fa-bolt"></i>
+                Event Plus Operations
             </div>
 
-            <div>
-                <h2>All Marathon Events</h2>
+            <h2>Manage Your Events</h2>
 
-                <p>
-                    Manage your marathon events, ticket categories,
-                    event items and attendees.
-                </p>
-            </div>
+            <p>
+                Keep your events, ticket categories, merchandise,
+                attendees and event details organized in one place.
+            </p>
 
         </div>
 
+        <div class="ep-events-hero-right">
 
-        <a
-            href="{{ route('admin.events.create') }}"
-            class="create-event-button"
-        >
-            <i class="fa-solid fa-plus"></i>
-            Create New Event
-        </a>
+            <a
+                href="{{ route('admin.events.create') }}"
+                class="ep-create-event"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Create New Event
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     QUICK INFORMATION
+     ========================================================= --}}
+
+<div class="ep-event-strip">
+
+    <div class="ep-event-strip-card">
+
+        <div class="ep-strip-icon">
+            <i class="fa-solid fa-calendar-days"></i>
+        </div>
+
+        <div class="ep-strip-content">
+
+            <p class="ep-strip-label">
+                Event Directory
+            </p>
+
+            <p class="ep-strip-value">
+                {{ $events->count() }} Events
+            </p>
+
+        </div>
 
     </div>
 
 
-    {{-- =========================================
-         SUCCESS MESSAGE
-         ========================================= --}}
-    @if(session('success'))
+    <div class="ep-event-strip-card">
 
-        <div class="event-success-alert">
+        <div class="ep-strip-icon pink">
+            <i class="fa-solid fa-ticket"></i>
+        </div>
 
-            <div class="event-success-icon">
-                <i class="fa-solid fa-check"></i>
-            </div>
+        <div class="ep-strip-content">
 
-            <span>
-                {{ session('success') }}
-            </span>
+            <p class="ep-strip-label">
+                Ticket Management
+            </p>
+
+            <p class="ep-strip-value">
+                Categories & Capacity
+            </p>
 
         </div>
 
-    @endif
+    </div>
 
 
-    {{-- =========================================
-         EVENTS TABLE
-         ========================================= --}}
-    <div class="events-table-card">
+    <div class="ep-event-strip-card">
 
-        <div class="events-table-top">
+        <div class="ep-strip-icon blue">
+            <i class="fa-solid fa-users"></i>
+        </div>
 
-            <div class="events-table-title">
+        <div class="ep-strip-content">
 
-                <i class="fa-solid fa-calendar-days"></i>
+            <p class="ep-strip-label">
+                Event Operations
+            </p>
 
-                Event Directory
+            <p class="ep-strip-value">
+                Attendees & Promo Codes
+            </p>
 
+        </div>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     SUCCESS MESSAGE
+     ========================================================= --}}
+
+@if(session('success'))
+
+    <div class="ep-success">
+
+        <div class="ep-success-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+
+        <span>
+            {{ session('success') }}
+        </span>
+
+    </div>
+
+@endif
+
+
+{{-- =========================================================
+     EVENT DIRECTORY
+     ========================================================= --}}
+
+<div class="ep-directory">
+
+    <div class="ep-directory-header">
+
+        <div class="ep-directory-heading">
+
+            <div class="ep-directory-heading-icon">
+                <i class="fa-solid fa-layer-group"></i>
             </div>
 
-            <span class="events-count-label">
+            <div>
 
-                {{ $events->count() }} Marathon Events
+                <h3>
+                    Event Directory
+                </h3>
 
-            </span>
+                <p>
+                    View and manage all registered events
+                </p>
+
+            </div>
 
         </div>
 
 
-        <div class="overflow-x-auto">
+        <span class="ep-event-count">
 
-            <table class="events-table">
+            <i class="fa-solid fa-calendar-check"></i>
 
-                <thead>
+            {{ $events->count() }} Marathon Events
+
+        </span>
+
+    </div>
+
+
+    <div class="ep-table-scroll">
+
+        <table class="ep-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Event
+                    </th>
+
+                    <th>
+                        Location & Date
+                    </th>
+
+                    <th>
+                        Categories
+                    </th>
+
+                    <th>
+                        Event Items
+                    </th>
+
+                    <th>
+                        Status
+                    </th>
+
+                    <th class="text-right">
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                @forelse($events as $event)
 
                     <tr>
 
-                        <th>
-                            Event
-                        </th>
+                        {{-- =================================================
+                             EVENT
+                             ================================================= --}}
 
-                        <th>
-                            Location & Date
-                        </th>
+                        <td>
 
-                        <th>
-                            Categories
-                        </th>
+                            <div class="ep-event-info">
 
-                        <th>
-                            Event Items
-                        </th>
+                                <div class="ep-event-image-wrap">
 
-                        <th>
-                            Status
-                        </th>
+                                    <img
+                                        src="{{ $event->image
+                                            ? asset('storage/' . $event->image)
+                                            : asset('assets/img/about/img06.jpg') }}"
+                                        alt="{{ $event->title }}"
+                                        class="ep-event-image"
+                                    >
 
-                        <th class="text-right">
-                            Actions
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    @forelse($events as $event)
-
-                        <tr>
-
-                            {{-- =========================================
-                                 EVENT
-                                 ========================================= --}}
-                            <td>
-
-                                <div class="event-info">
-
-                                    <div class="event-image-wrapper">
-
-                                        <img
-                                            src="{{ $event->image
-                                                ? asset('storage/' . $event->image)
-                                                : asset('assets/img/about/img06.jpg') }}"
-                                            alt="{{ $event->title }}"
-                                            class="event-image"
-                                        >
-
-                                    </div>
-
-
-                                    <div class="event-info-text">
-
-                                        <p class="event-title">
-                                            {{ $event->title }}
-                                        </p>
-
-                                        <p class="event-description">
-                                            {{ Str::limit($event->description, 40) }}
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            </td>
-
-
-                            {{-- =========================================
-                                 LOCATION & DATE
-                                 ========================================= --}}
-                            <td>
-
-                                <div class="event-location">
-
-                                    <i class="fa-solid fa-location-dot"></i>
-
-                                    <span>
-                                        {{ $event->location }}
-                                    </span>
+                                    <span class="ep-event-image-status"></span>
 
                                 </div>
 
 
-                                <div class="event-date">
+                                <div class="ep-event-copy">
 
-                                    <i class="fa-regular fa-calendar"></i>
+                                    <p class="ep-event-title">
+                                        {{ $event->title }}
+                                    </p>
 
-                                    <span>
-                                        {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y - h:i A') }}
-                                    </span>
+                                    <p class="ep-event-description">
+                                        {{ Str::limit($event->description, 40) }}
+                                    </p>
 
                                 </div>
 
-                            </td>
+                            </div>
+
+                        </td>
 
 
-                            {{-- =========================================
-                                 TICKET CATEGORIES
-                                 ========================================= --}}
-                            <td>
+                        {{-- =================================================
+                             LOCATION & DATE
+                             ================================================= --}}
 
-                                <div class="categories-wrapper">
+                        <td>
 
-                                    @if($event->ticketCategories->count() > 0)
+                            <div class="ep-location">
 
-                                        @foreach($event->ticketCategories as $category)
+                                <i class="fa-solid fa-location-dot"></i>
 
-                                            <span class="category-badge">
+                                <span>
+                                    {{ $event->location }}
+                                </span>
 
-                                                <i class="fa-solid fa-ticket"></i>
+                            </div>
 
-                                                {{ $category->name }}
 
-                                                ({{ $category->tickets_sold }}/{{ $category->capacity ?? '∞' }})
+                            <div class="ep-date">
 
-                                            </span>
+                                <i class="fa-regular fa-calendar"></i>
 
-                                        @endforeach
+                                <span>
+                                    {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y - h\:i A') }}
+                                </span>
 
-                                    @else
+                            </div>
 
-                                        <span class="no-categories">
+                        </td>
 
-                                            <i class="fa-solid fa-circle-info"></i>
 
-                                            No categories
+                        {{-- =================================================
+                             TICKET CATEGORIES
+                             ================================================= --}}
+
+                        <td>
+
+                            <div class="ep-categories">
+
+                                @if($event->ticketCategories->count() > 0)
+
+                                    @foreach($event->ticketCategories as $category)
+
+                                        <span class="ep-category">
+
+                                            <i class="fa-solid fa-ticket"></i>
+
+                                            {{ $category->name }}
+
+                                            ({{ $category->tickets_sold }}/{{ $category->capacity ?? '∞' }})
 
                                         </span>
 
-                                    @endif
-
-                                </div>
-
-                            </td>
-
-
-                            {{-- =========================================
-                                 EVENT ITEMS
-                                 ========================================= --}}
-                            <td>
-
-                                <div class="event-items-wrapper">
-
-                                    @if($event->items->count() > 0)
-
-                                        @foreach($event->items->take(4) as $item)
-
-                                            <div
-                                                class="event-item"
-                                                title="{{ $item->title }}"
-                                            >
-
-                                                @if($item->image)
-
-                                                    <img
-                                                        src="{{ asset('storage/' . $item->image) }}"
-                                                        alt="{{ $item->title }}"
-                                                        class="event-item-image"
-                                                    >
-
-                                                @else
-
-                                                    <div class="event-item-no-image">
-
-                                                        <i class="fa-solid fa-gift"></i>
-
-                                                    </div>
-
-                                                @endif
-
-
-                                                <span class="event-item-title">
-
-                                                    {{ Str::limit($item->title, 18) }}
-
-                                                </span>
-
-                                            </div>
-
-                                        @endforeach
-
-
-                                        @if($event->items->count() > 4)
-
-                                            <span class="event-items-count">
-
-                                                <i class="fa-solid fa-plus"></i>
-
-                                                {{ $event->items->count() - 4 }} more
-
-                                            </span>
-
-                                        @endif
-
-                                    @else
-
-                                        <span class="no-items">
-
-                                            <i class="fa-solid fa-circle-info"></i>
-
-                                            No items
-
-                                        </span>
-
-                                    @endif
-
-                                </div>
-
-                            </td>
-
-
-                            {{-- =========================================
-                                 STATUS
-                                 ========================================= --}}
-                            <td>
-
-                                @if($event->status === 'live')
-
-                                    <span class="event-status status-live">
-
-                                        <span class="event-status-dot"></span>
-
-                                        Live Now
-
-                                    </span>
-
-                                @elseif($event->status === 'upcoming')
-
-                                    <span class="event-status status-upcoming">
-
-                                        <span class="event-status-dot"></span>
-
-                                        Upcoming
-
-                                    </span>
+                                    @endforeach
 
                                 @else
 
-                                    <span class="event-status status-past">
+                                    <span class="ep-no-data">
 
-                                        <span class="event-status-dot"></span>
+                                        <i class="fa-solid fa-circle-info"></i>
 
-                                        Past
+                                        No categories
 
                                     </span>
 
                                 @endif
 
-                            </td>
+                            </div>
+
+                        </td>
 
 
-                            {{-- =========================================
-                                 ACTIONS
-                                 ========================================= --}}
-                            <td>
+                        {{-- =================================================
+                             EVENT ITEMS
+                             ================================================= --}}
 
-                                <div class="event-actions">
+                        <td>
 
-                                    {{-- Promo Codes --}}
-                                    <a
-                                        href="{{ route('admin.events.promo_codes', $event) }}"
-                                        class="event-action-button promo-button"
-                                    >
+                            <div class="ep-items">
 
-                                        <i class="fa-solid fa-tags"></i>
+                                @if($event->items->count() > 0)
 
-                                        Promo Codes
+                                    @foreach($event->items->take(4) as $item)
 
-                                    </a>
-
-
-                                    {{-- Attendees --}}
-                                    <a
-                                        href="{{ route('admin.events.attendees', $event) }}"
-                                        class="event-action-button attendees-button"
-                                    >
-
-                                        <i class="fa-solid fa-users"></i>
-
-                                        Attendees
-
-                                    </a>
-
-
-                                    {{-- Edit --}}
-                                    <a
-                                        href="{{ route('admin.events.edit', $event) }}"
-                                        class="event-action-button edit-button"
-                                    >
-
-                                        <i class="fa-solid fa-pen-to-square"></i>
-
-                                        Edit
-
-                                    </a>
-
-
-                                    {{-- Delete --}}
-                                    <form
-                                        action="{{ route('admin.events.destroy', $event) }}"
-                                        method="POST"
-                                        class="inline-block"
-                                        onsubmit="return confirm('Are you sure you want to delete this event?');"
-                                    >
-
-                                        @csrf
-
-                                        @method('DELETE')
-
-
-                                        <button
-                                            type="submit"
-                                            class="event-action-button delete-button"
+                                        <div
+                                            class="ep-item"
+                                            title="{{ $item->title }}"
                                         >
 
-                                            <i class="fa-solid fa-trash"></i>
+                                            @if($item->image)
 
-                                            Delete
+                                                <img
+                                                    src="{{ asset('storage/' . $item->image) }}"
+                                                    alt="{{ $item->title }}"
+                                                    class="ep-item-image"
+                                                >
 
-                                        </button>
+                                            @else
 
-                                    </form>
+                                                <div class="ep-item-placeholder">
 
-                                </div>
+                                                    <i class="fa-solid fa-gift"></i>
 
-                            </td>
+                                                </div>
 
-                        </tr>
-
-
-                    @empty
-
-                        {{-- =========================================
-                             EMPTY STATE
-                             ========================================= --}}
-                        <tr>
-
-                            <td
-                                colspan="6"
-                                class="events-empty-state"
-                            >
-
-                                <div class="events-empty-icon">
-
-                                    <i class="fa-solid fa-calendar-xmark"></i>
-
-                                </div>
+                                            @endif
 
 
-                                <h3>
-                                    No Events Created Yet
-                                </h3>
+                                            <span class="ep-item-title">
+
+                                                {{ Str::limit($item->title, 18) }}
+
+                                            </span>
+
+                                        </div>
+
+                                    @endforeach
 
 
-                                <p>
+                                    @if($event->items->count() > 4)
 
-                                    Get started by
+                                        <span class="ep-items-more">
 
-                                    <a href="{{ route('admin.events.create') }}">
-                                        creating your first event
-                                    </a>.
+                                            <i class="fa-solid fa-plus"></i>
 
-                                </p>
+                                            {{ $event->items->count() - 4 }} more
 
-                            </td>
+                                        </span>
 
-                        </tr>
+                                    @endif
 
-                    @endforelse
+                                @else
 
-                </tbody>
+                                    <span class="ep-no-data">
 
-            </table>
+                                        <i class="fa-solid fa-circle-info"></i>
 
-        </div>
+                                        No items
+
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+                        </td>
+
+
+                        {{-- =================================================
+                             STATUS
+                             ================================================= --}}
+
+                        <td>
+
+                            @if($event->status === 'live')
+
+                                <span class="ep-status ep-status-live">
+
+                                    <span class="ep-status-dot"></span>
+
+                                    Live Now
+
+                                </span>
+
+                            @elseif($event->status === 'upcoming')
+
+                                <span class="ep-status ep-status-upcoming">
+
+                                    <span class="ep-status-dot"></span>
+
+                                    Upcoming
+
+                                </span>
+
+                            @else
+
+                                <span class="ep-status ep-status-past">
+
+                                    <span class="ep-status-dot"></span>
+
+                                    Past
+
+                                </span>
+
+                            @endif
+
+                        </td>
+
+
+                        {{-- =================================================
+                             ACTIONS
+                             ================================================= --}}
+
+                        <td>
+
+                            <div class="ep-actions">
+
+                                {{-- Promo Codes --}}
+
+                                <a
+                                    href="{{ route('admin.events.promo_codes', $event) }}"
+                                    class="ep-action ep-action-promo"
+                                >
+
+                                    <i class="fa-solid fa-tags"></i>
+
+                                    Promo Codes
+
+                                </a>
+
+
+                                {{-- Attendees --}}
+
+                                <a
+                                    href="{{ route('admin.events.attendees', $event) }}"
+                                    class="ep-action ep-action-attendees"
+                                >
+
+                                    <i class="fa-solid fa-users"></i>
+
+                                    Attendees
+
+                                </a>
+
+
+                                {{-- Edit --}}
+
+                                <a
+                                    href="{{ route('admin.events.edit', $event) }}"
+                                    class="ep-action ep-action-edit"
+                                >
+
+                                    <i class="fa-solid fa-pen-to-square"></i>
+
+                                    Edit
+
+                                </a>
+
+
+                                {{-- Delete --}}
+
+                                <form
+                                    action="{{ route('admin.events.destroy', $event) }}"
+                                    method="POST"
+                                    class="inline-block"
+                                    onsubmit="return confirm('Are you sure you want to delete this event?');"
+                                >
+
+                                    @csrf
+
+                                    @method('DELETE')
+
+
+                                    <button
+                                        type="submit"
+                                        class="ep-action ep-action-delete"
+                                    >
+
+                                        <i class="fa-solid fa-trash"></i>
+
+                                        Delete
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+
+                @empty
+
+                    {{-- =================================================
+                         EMPTY STATE
+                         ================================================= --}}
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="ep-empty"
+                        >
+
+                            <div class="ep-empty-icon">
+
+                                <i class="fa-solid fa-calendar-xmark"></i>
+
+                            </div>
+
+
+                            <h3>
+                                No Events Created Yet
+                            </h3>
+
+
+                            <p>
+
+                                Get started by
+
+                                <a href="{{ route('admin.events.create') }}">
+                                    creating your first event
+                                </a>.
+
+                            </p>
+
+                        </td>
+
+                    </tr>
+
+                @endforelse
+
+            </tbody>
+
+        </table>
 
     </div>
+
+</div>
+
 
 </div>
 

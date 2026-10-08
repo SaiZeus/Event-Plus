@@ -1,103 +1,79 @@
-<!doctype html>
-<html lang="zxx">
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>@yield('title', 'Meetco - Conference Event & Concert Template')</title>
+    <meta charset="UTF-8">
 
-    <link rel="shortcut icon" href="{{ asset('assets/img/logo/Swezon_Logo1.1V.svg') }}" type="images/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- css include -->
-    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/fontawesome.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/animate.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/swiper.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/odometer.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/mousecursor.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/nice-select.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/custom-fonts.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/magnific-popup.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/jquery-ui.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
-    <style>
-        @media (max-width: 991.98px) {
-    #xb-header-area {
-        display: none;
-    }
+    <title>@yield('title', 'Event Ticketing')</title>
 
-    #xb-header-area.header-visible {
-        display: block;
-    }
-}
-    </style>
+    <link rel="shortcut icon"
+          type="image/x-icon"
+          href="{{ asset('assets/img/logo/Eventplus.png') }}">
+
+    {{-- Bootstrap --}}
+    <link rel="stylesheet"
+          href="{{ asset('assets/eventen/css/bootstrap.min.css') }}">
+
+    {{-- Plugins --}}
+    <link rel="stylesheet"
+          href="{{ asset('assets/eventen/css/plugin.css') }}">
+
+    {{-- Default CSS --}}
+    <link rel="stylesheet"
+          href="{{ asset('assets/eventen/css/default.css') }}">
+
+    {{-- Eventen CSS --}}
+    <link rel="stylesheet"
+          href="{{ asset('assets/eventen/css/styles.css') }}">
+
+    {{-- Font Awesome --}}
+    <link rel="stylesheet"
+          href="{{ asset('assets/eventen/icons/font-awesome.min.css') }}">
+
+    @stack('styles')
+
 </head>
 
-<body class="@yield('body-class', 'design-conference')">
+<body>
 
-<!-- backtotop-start -->
-<div class="xb-backtotop style-two">
-    <a href="#" class="scroll">
-        <i class="far fa-arrow-up"></i>
-    </a>
-</div>
-<!-- backtotop-end -->
+    {{-- HEADER --}}
+    @include('includes.header')
 
-<!-- Preloader-Start -->
-<div id="preloader" class="preloader preloader--two">
-    <div class="preloader-inner-wrap">
-        <div class="preloader-inner">
-            <div class="main-loader">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Preloader-end -->
 
-<div class="body_wrap o-clip">
-
-    @include('layouts.header')
-
-    <!-- main area start -->
+    {{-- PAGE CONTENT --}}
     <main>
         @yield('content')
     </main>
-    <!-- main area end -->
 
-    @include('layouts.footer')
 
-</div>
+    {{-- FOOTER --}}
+    @include('includes.footer')
 
-<!-- jquery include -->
-<script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
-<script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ asset('assets/js/swiper.min.js') }}"></script>
-<script src="{{ asset('assets/js/wow.min.js') }}"></script>
-<script src="{{ asset('assets/js/appear.js') }}"></script>
-<script src="{{ asset('assets/js/imagesloaded.pkgd.min.js') }}"></script>
-<script src="{{ asset('assets/js/parallaxie.js') }}"></script>
-<script src="{{ asset('assets/js/parallax.min.js') }}"></script>
-<script src="{{ asset('assets/js/parallax-scroll.js') }}"></script>
-<script src="{{ asset('assets/js/odometer.min.js') }}"></script>
-<script src="{{ asset('assets/js/touchspin.js') }}"></script>
-<script src="{{ asset('assets/js/isotope.pkgd.min.js') }}"></script>
-<script src="{{ asset('assets/js/jquery.nice-select.min.js') }}"></script>
-<script src="{{ asset('assets/js/jquery.marquee.min.js') }}"></script>
-<script src="{{ asset('assets/js/jquery.magnific-popup.min.js') }}"></script>
-<script src="{{ asset('assets/js/jqueryui.js') }}"></script>
-<script src="{{ asset('assets/js/easing.min.js') }}"></script>
-<script src="{{ asset('assets/js/scrollspy.js') }}"></script>
-<script src="{{ asset('assets/js/gsap.js') }}"></script>
-<script src="{{ asset('assets/js/magiccursor.js') }}"></script>
-<script src="{{ asset('assets/js/ScrollTrigger.min.js') }}"></script>
-<script src="{{ asset('assets/js/jquery.countdown.min.js') }}"></script>
-<script src="{{ asset('assets/js/main.js') }}"></script>
-@stack('scripts')
+
+    {{-- Back To Top --}}
+    <div id="back-to-top">
+        <a href="#"
+           class="bg-pink position-relative align-items-center rounded-circle d-block">
+        </a>
+    </div>
+
+
+    {{-- JS --}}
+    <script src="{{ asset('assets/eventen/js/jquery-3.7.1.min.js') }}"></script>
+
+    <script src="{{ asset('assets/eventen/js/bootstrap.bundle.min.js') }}"></script>
+
+    <script src="{{ asset('assets/eventen/js/custom-nav.js') }}"></script>
+
+    <script src="{{ asset('assets/eventen/js/plugin.js') }}"></script>
+
+    <script src="{{ asset('assets/eventen/js/main.js') }}"></script>
+
+    @stack('scripts')
+
 </body>
+
 </html>

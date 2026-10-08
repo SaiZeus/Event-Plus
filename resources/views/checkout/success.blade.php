@@ -2,127 +2,148 @@
 
 @section('title', 'Payment Confirmed - Order ' . $order->order_number)
 
+@push('styles')
+    {{-- Font Awesome CDN --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+@endpush
+
 @section('content')
 
 <style>
     /* =========================================================
-       SWEZON E-RECEIPT
-       Purple Celebration Theme
-       ========================================================= */
+       EVENT PLUS
+       PAYMENT SUCCESS / E-RECEIPT
+       Premium Event Website Style
+    ========================================================= */
 
-    .swezon-receipt-section {
+    .eventplus-success-section {
         position: relative;
         min-height: 100vh;
+        padding: 65px 15px 90px;
         overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 55px 15px;
+
         background:
-            radial-gradient(circle at 10% 10%, rgba(168, 85, 247, 0.35), transparent 25%),
-            radial-gradient(circle at 90% 15%, rgba(192, 132, 252, 0.30), transparent 25%),
-            radial-gradient(circle at 50% 100%, rgba(124, 58, 237, 0.25), transparent 35%),
-            linear-gradient(145deg, #f5f3ff 0%, #ede9fe 45%, #e9d5ff 100%);
+            radial-gradient(
+                circle at 8% 8%,
+                rgba(236, 72, 153, .20),
+                transparent 27%
+            ),
+            radial-gradient(
+                circle at 92% 12%,
+                rgba(124, 58, 237, .22),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 50% 100%,
+                rgba(99, 102, 241, .16),
+                transparent 38%
+            ),
+            linear-gradient(
+                145deg,
+                #090b23 0%,
+                #17133b 48%,
+                #27103f 100%
+            );
     }
 
-    /* Background glow */
-    .swezon-receipt-section::before {
-        content: "";
+    /* =========================================================
+       BACKGROUND DECORATION
+    ========================================================= */
+
+    .eventplus-glow {
         position: absolute;
-        width: 500px;
-        height: 500px;
-        top: -250px;
-        left: -200px;
         border-radius: 50%;
-        background: rgba(139, 92, 246, 0.18);
-        filter: blur(60px);
         pointer-events: none;
+        filter: blur(70px);
     }
 
-    .swezon-receipt-section::after {
-        content: "";
-        position: absolute;
-        width: 450px;
-        height: 450px;
-        right: -200px;
-        bottom: -200px;
-        border-radius: 50%;
-        background: rgba(192, 132, 252, 0.20);
-        filter: blur(60px);
-        pointer-events: none;
+    .eventplus-glow-one {
+        width: 420px;
+        height: 420px;
+        top: -180px;
+        left: -170px;
+        background: rgba(236, 72, 153, .15);
+    }
+
+    .eventplus-glow-two {
+        width: 360px;
+        height: 360px;
+        right: -150px;
+        bottom: -130px;
+        background: rgba(124, 58, 237, .16);
     }
 
     /* =========================================================
        CONFETTI
-       ========================================================= */
+    ========================================================= */
 
-    .receipt-confetti {
+    .eventplus-confetti {
         position: absolute;
         inset: 0;
         overflow: hidden;
         pointer-events: none;
     }
 
-    .receipt-confetti span {
+    .eventplus-confetti span {
         position: absolute;
         top: -30px;
-        width: 9px;
-        height: 18px;
+        width: 7px;
+        height: 17px;
         border-radius: 3px;
-        opacity: .75;
-        animation: receiptConfettiFall 8s linear infinite;
+        opacity: .65;
+        animation: eventPlusConfettiFall 8s linear infinite;
     }
 
-    .receipt-confetti span:nth-child(1) {
+    .eventplus-confetti span:nth-child(1) {
         left: 8%;
-        background: #7c3aed;
+        background: #ec4899;
         transform: rotate(20deg);
         animation-delay: .2s;
     }
 
-    .receipt-confetti span:nth-child(2) {
+    .eventplus-confetti span:nth-child(2) {
         left: 19%;
-        background: #c084fc;
+        background: #8b5cf6;
         transform: rotate(-25deg);
         animation-delay: 2s;
     }
 
-    .receipt-confetti span:nth-child(3) {
+    .eventplus-confetti span:nth-child(3) {
         left: 32%;
-        background: #f59e0b;
+        background: #f9a8d4;
         transform: rotate(15deg);
         animation-delay: 4s;
     }
 
-    .receipt-confetti span:nth-child(4) {
+    .eventplus-confetti span:nth-child(4) {
         left: 48%;
-        background: #a855f7;
+        background: #6366f1;
         transform: rotate(-15deg);
         animation-delay: 1s;
     }
 
-    .receipt-confetti span:nth-child(5) {
+    .eventplus-confetti span:nth-child(5) {
         left: 64%;
-        background: #8b5cf6;
+        background: #c084fc;
         transform: rotate(30deg);
         animation-delay: 3s;
     }
 
-    .receipt-confetti span:nth-child(6) {
+    .eventplus-confetti span:nth-child(6) {
         left: 77%;
-        background: #fbbf24;
+        background: #f472b6;
         transform: rotate(-20deg);
         animation-delay: 5s;
     }
 
-    .receipt-confetti span:nth-child(7) {
+    .eventplus-confetti span:nth-child(7) {
         left: 90%;
-        background: #c084fc;
+        background: #a78bfa;
         transform: rotate(25deg);
         animation-delay: 2.5s;
     }
 
-    @keyframes receiptConfettiFall {
+    @keyframes eventPlusConfettiFall {
         0% {
             transform: translateY(-50px) rotate(0deg);
         }
@@ -133,98 +154,228 @@
     }
 
     /* =========================================================
-       RECEIPT CARD
-       ========================================================= */
+       MAIN WRAPPER
+    ========================================================= */
 
-    .swezon-receipt {
+    .eventplus-success-wrapper {
         position: relative;
-        width: 100%;
-        max-width: 780px;
-        background: rgba(255, 255, 255, .96);
-        border: 1px solid rgba(196, 181, 253, .65);
-        border-radius: 18px;
-        box-shadow:
-            0 30px 80px rgba(76, 29, 149, .18),
-            0 10px 30px rgba(124, 58, 237, .10);
-        overflow: hidden;
         z-index: 5;
+        width: 100%;
+        max-width: 850px;
+        margin: 0 auto;
     }
 
     /* =========================================================
-       HEADER
-       ========================================================= */
+       TOP BRANDING
+    ========================================================= */
 
-    .receipt-header {
-        min-height: 120px;
-        padding: 25px 30px;
+    .eventplus-brand {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #fff;
+    }
+
+    .eventplus-brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        margin-bottom: 15px;
+
+        border: 1px solid rgba(255, 255, 255, .13);
+        border-radius: 50px;
+
+        background: rgba(255, 255, 255, .06);
+        backdrop-filter: blur(12px);
+
+        color: #f9a8d4;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+
+    .eventplus-brand-badge i {
+        color: #f472b6;
+    }
+
+    .eventplus-brand h1 {
+        margin: 0;
+        font-size: clamp(30px, 5vw, 48px);
+        line-height: 1.08;
+        font-weight: 900;
+        letter-spacing: -1.5px;
+    }
+
+    .eventplus-brand h1 span {
+        color: #f472b6;
+    }
+
+    .eventplus-brand p {
+        margin: 12px auto 0;
+        max-width: 570px;
+        color: rgba(255, 255, 255, .62);
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    /* =========================================================
+       RECEIPT CARD
+    ========================================================= */
+
+    .eventplus-receipt {
+        position: relative;
+        overflow: hidden;
+
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 30px;
+
+        background: rgba(255, 255, 255, .98);
+
+        box-shadow:
+            0 35px 100px rgba(0, 0, 0, .38),
+            0 15px 40px rgba(236, 72, 153, .08);
+
+        animation: eventPlusCardIn .65s ease both;
+    }
+
+    @keyframes eventPlusCardIn {
+        from {
+            opacity: 0;
+            transform: translateY(25px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* =========================================================
+       RECEIPT HEADER
+    ========================================================= */
+
+    .eventplus-receipt-header {
+        position: relative;
+        min-height: 105px;
+        padding: 22px 32px;
+
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 20px;
-        background: linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #faf5ff 100%
-        );
-        border-bottom: 1px solid #ede9fe;
+
+        background:
+            linear-gradient(
+                135deg,
+                #ffffff 0%,
+                #faf5ff 100%
+            );
+
+        border-bottom: 1px solid #eee7f8;
     }
 
-    .receipt-logo {
-        display: block;
+    .eventplus-receipt-header::before {
+        content: "";
+
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+
+        height: 4px;
+
+        background:
+            linear-gradient(
+                90deg,
+                #ec4899,
+                #d946ef,
+                #8b5cf6,
+                #6366f1
+            );
+    }
+
+    .eventplus-logo {
         width: auto;
-        height: 75px;
-        max-width: 260px;
+        height: 60px;
+        max-width: 240px;
         object-fit: contain;
         object-position: left center;
     }
 
-    .receipt-title {
+    .eventplus-receipt-label {
         display: inline-flex;
         align-items: center;
-        gap: 9px;
-        padding: 10px 17px;
-        border-radius: 999px;
-        background: #f3e8ff;
-        border: 1px solid #e9d5ff;
-        color: #6d28d9;
-        font-size: 15px;
+        gap: 8px;
+
+        padding: 9px 15px;
+
+        border-radius: 50px;
+
+        background: #fdf2f8;
+        border: 1px solid #fbcfe8;
+
+        color: #be185d;
+
+        font-size: 12px;
         font-weight: 800;
         white-space: nowrap;
     }
 
-    .receipt-title i {
-        font-size: 15px;
+    .eventplus-receipt-label i {
+        color: #ec4899;
     }
 
     /* =========================================================
-       MAIN SUCCESS AREA
-       ========================================================= */
+       SUCCESS CONTENT
+    ========================================================= */
 
-    .receipt-main {
-        padding: 42px 55px 40px;
+    .eventplus-main {
+        padding: 48px 58px 42px;
         text-align: center;
     }
 
-    .success-icon {
+    /* =========================================================
+       SUCCESS ICON
+    ========================================================= */
+
+    .eventplus-success-icon {
         position: relative;
-        width: 72px;
-        height: 72px;
-        margin: 0 auto 20px;
+
+        width: 82px;
+        height: 82px;
+
+        margin: 0 auto 23px;
+
         display: flex;
         align-items: center;
         justify-content: center;
+
         border-radius: 50%;
-        background: linear-gradient(135deg, #a855f7, #6d28d9);
+
+        background:
+            linear-gradient(
+                135deg,
+                #ec4899,
+                #d946ef 45%,
+                #7c3aed
+            );
+
         color: #fff;
-        font-size: 30px;
+
+        font-size: 32px;
+
         box-shadow:
-            0 10px 30px rgba(124, 58, 237, .28),
-            0 0 0 8px rgba(233, 213, 255, .65);
-        animation: successPulse 2.5s ease-in-out infinite;
+            0 16px 35px rgba(236, 72, 153, .28),
+            0 0 0 8px rgba(236, 72, 153, .09),
+            0 0 0 15px rgba(124, 58, 237, .05);
+
+        animation: eventPlusSuccessPulse 2.5s ease-in-out infinite;
     }
 
-    @keyframes successPulse {
-        0%, 100% {
+    @keyframes eventPlusSuccessPulse {
+        0%,
+        100% {
             transform: scale(1);
         }
 
@@ -233,29 +384,36 @@
         }
     }
 
-    .success-icon::before {
+    .eventplus-success-icon::before {
         content: "✦";
+
         position: absolute;
-        top: -19px;
-        right: -25px;
-        color: #f59e0b;
-        font-size: 21px;
-        animation: sparkle 1.8s ease-in-out infinite;
+        top: -17px;
+        right: -24px;
+
+        color: #f9a8d4;
+        font-size: 20px;
+
+        animation: eventPlusSparkle 1.8s ease-in-out infinite;
     }
 
-    .success-icon::after {
+    .eventplus-success-icon::after {
         content: "✦";
+
         position: absolute;
         bottom: -15px;
-        left: -25px;
-        color: #c084fc;
-        font-size: 18px;
-        animation: sparkle 1.8s ease-in-out infinite .5s;
+        left: -24px;
+
+        color: #c4b5fd;
+        font-size: 17px;
+
+        animation: eventPlusSparkle 1.8s ease-in-out infinite .5s;
     }
 
-    @keyframes sparkle {
-        0%, 100% {
-            opacity: .35;
+    @keyframes eventPlusSparkle {
+        0%,
+        100% {
+            opacity: .3;
             transform: scale(.7) rotate(0deg);
         }
 
@@ -265,488 +423,734 @@
         }
     }
 
-    .congratulations-title {
-        margin: 0 0 10px;
-        color: #581c87;
-        font-size: clamp(2rem, 5vw, 3rem);
+    .eventplus-congratulations {
+        margin: 0 0 9px;
+
+        color: #17113d;
+
+        font-size: clamp(30px, 5vw, 44px);
         line-height: 1.1;
-        font-weight: 850;
-        letter-spacing: -.04em;
+
+        font-weight: 900;
+        letter-spacing: -1.5px;
     }
 
-    .success-message {
-        margin: 0 auto 30px;
-        color: #7e22ce;
-        font-size: 1rem;
-        font-weight: 600;
-        line-height: 1.6;
+    .eventplus-congratulations span {
+        color: #db2777;
+    }
+
+    .eventplus-success-message {
+        max-width: 520px;
+
+        margin: 0 auto 32px;
+
+        color: #6b7280;
+
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.7;
+    }
+
+    /* =========================================================
+       PAYMENT STATUS BADGE
+    ========================================================= */
+
+    .eventplus-paid-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+
+        margin-bottom: 28px;
+
+        padding: 8px 15px;
+
+        border-radius: 50px;
+
+        background: #ecfdf5;
+        border: 1px solid #bbf7d0;
+
+        color: #15803d;
+
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .5px;
+    }
+
+    .eventplus-paid-badge i {
+        font-size: 12px;
     }
 
     /* =========================================================
        AMOUNT
-       ========================================================= */
+    ========================================================= */
 
-    .amount-box {
+    .eventplus-amount {
+        position: relative;
+
         margin: 0 auto 30px;
-        padding: 24px 20px 22px;
-        border-radius: 16px;
+        padding: 25px 20px 23px;
+
+        border: 1px solid #f3d5e8;
+        border-radius: 19px;
+
         background:
             linear-gradient(
                 135deg,
-                #faf5ff 0%,
-                #f3e8ff 100%
+                #fff7fb 0%,
+                #f8f3ff 100%
             );
-        border: 1px solid #e9d5ff;
+
+        overflow: hidden;
     }
 
-    .amount-label {
+    .eventplus-amount::before {
+        content: "";
+
+        position: absolute;
+        width: 150px;
+        height: 150px;
+
+        top: -100px;
+        right: -50px;
+
+        border-radius: 50%;
+
+        background: rgba(236, 72, 153, .10);
+    }
+
+    .eventplus-amount-label {
+        position: relative;
+
         margin-bottom: 5px;
-        color: #8b5cf6;
-        font-size: .82rem;
-        font-weight: 700;
+
+        color: #9d174d;
+
+        font-size: 11px;
+        font-weight: 800;
+
         text-transform: uppercase;
-        letter-spacing: .12em;
+        letter-spacing: 1.4px;
     }
 
-    .amount-value {
-        color: #5b21b6;
-        font-size: clamp(2rem, 5vw, 2.8rem);
+    .eventplus-amount-value {
+        position: relative;
+
+        color: #4c1d95;
+
+        font-size: clamp(32px, 5vw, 44px);
         line-height: 1.15;
-        font-weight: 850;
-        letter-spacing: -.035em;
+
+        font-weight: 900;
+        letter-spacing: -1.5px;
     }
 
-    .amount-currency {
-        font-size: 1rem;
-        font-weight: 700;
+    .eventplus-amount-currency {
         color: #7c3aed;
+        font-size: 15px;
+        font-weight: 800;
         margin-left: 4px;
     }
 
     /* =========================================================
        DETAILS
-       ========================================================= */
+    ========================================================= */
 
-    .receipt-details {
-        margin: 0 auto;
-        border: 1px solid #e9d5ff;
-        border-radius: 14px;
+    .eventplus-details {
         overflow: hidden;
-        background: #ffffff;
+
+        margin: 0 auto;
+
+        border: 1px solid #eee7f8;
+        border-radius: 18px;
+
+        background: #fff;
+
         text-align: left;
     }
 
-    .receipt-detail-row {
+    .eventplus-detail-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
+
         gap: 25px;
-        min-height: 62px;
+
+        min-height: 64px;
         padding: 12px 20px;
-        border-bottom: 1px solid #f1e8ff;
+
+        border-bottom: 1px solid #f4effa;
     }
 
-    .receipt-detail-row:last-child {
+    .eventplus-detail-row:last-child {
         border-bottom: none;
     }
 
-    .receipt-detail-label {
-        color: #8b5cf6;
-        font-size: .9rem;
-        font-weight: 600;
+    .eventplus-detail-label {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+
+        color: #7c3aed;
+
+        font-size: 13px;
+        font-weight: 700;
     }
 
-    .receipt-detail-value {
-        color: #3b0764;
-        font-size: .95rem;
-        font-weight: 750;
+    .eventplus-detail-label i {
+        width: 27px;
+        height: 27px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 8px;
+
+        background: #faf5ff;
+
+        color: #a855f7;
+
+        font-size: 11px;
+    }
+
+    .eventplus-detail-value {
+        color: #24143f;
+
+        font-size: 13px;
+        font-weight: 800;
+
         text-align: right;
     }
 
-    .order-number {
-        color: #6d28d9;
+    .eventplus-order-number {
+        padding: 6px 10px;
+
+        border-radius: 7px;
+
         background: #f5f3ff;
-        border-radius: 6px;
-        padding: 5px 9px;
+
+        color: #6d28d9;
     }
 
-    .attendee-count {
+    .eventplus-attendee-count {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        color: #6d28d9;
+
+        color: #be185d;
     }
 
-    .attendee-count i {
-        font-size: 13px;
+    .eventplus-attendee-count i {
+        color: #ec4899;
     }
 
     /* =========================================================
-       RECEIPT CUT LINE
-       ========================================================= */
+       CUT LINE
+    ========================================================= */
 
-    .receipt-cut-line {
+    .eventplus-cut-line {
         position: relative;
-        height: 26px;
-        border-top: 2px dashed #c4b5fd;
-        margin: 0 28px;
+
+        height: 28px;
+
+        margin: 0 30px;
+
+        border-top: 2px dashed #e9d5ff;
     }
 
-    .receipt-cut-line::before,
-    .receipt-cut-line::after {
+    .eventplus-cut-line::before,
+    .eventplus-cut-line::after {
         content: "";
+
         position: absolute;
+
         top: -14px;
+
         width: 27px;
         height: 27px;
-        background: #ede9fe;
+
+        background: #17133b;
+
         border-radius: 50%;
     }
 
-    .receipt-cut-line::before {
-        left: -42px;
+    .eventplus-cut-line::before {
+        left: -44px;
     }
 
-    .receipt-cut-line::after {
-        right: -42px;
+    .eventplus-cut-line::after {
+        right: -44px;
     }
 
     /* =========================================================
        FOOTER
-       ========================================================= */
+    ========================================================= */
 
-    .receipt-footer {
-        position: relative;
-        padding: 25px 35px 32px;
+    .eventplus-footer {
+        padding: 27px 35px 35px;
+
         text-align: center;
+
         background:
             linear-gradient(
                 180deg,
                 #ffffff 0%,
-                #faf5ff 100%
+                #fbf8ff 100%
             );
     }
 
-    .thank-you {
+    .eventplus-thank-you {
         margin: 0 0 7px;
-        color: #581c87;
-        font-size: 1.25rem;
-        font-weight: 800;
+
+        color: #24143f;
+
+        font-size: 20px;
+        font-weight: 900;
     }
 
-    .thank-you-subtitle {
-        margin: 0 0 24px;
+    .eventplus-thank-you span {
+        color: #db2777;
+    }
+
+    .eventplus-footer-subtitle {
+        margin: 0 0 25px;
+
         color: #8b5cf6;
-        font-size: .88rem;
+
+        font-size: 12px;
         font-weight: 600;
     }
 
-    .receipt-actions {
+    /* =========================================================
+       ACTION BUTTONS
+    ========================================================= */
+
+    .eventplus-actions {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 14px;
+
+        gap: 12px;
         flex-wrap: wrap;
     }
 
-    /* =========================================================
-       BUTTONS
-       ========================================================= */
-
-    .btn-swezon-home {
+    .eventplus-download-btn,
+    .eventplus-home-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+
         gap: 9px;
-        min-height: 48px;
+
+        min-height: 50px;
+
         padding: 0 24px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+
+        border-radius: 13px;
+
+        font-size: 13px;
+        font-weight: 800;
+
+        text-decoration: none;
+
+        transition:
+            transform .25s ease,
+            box-shadow .25s ease,
+            background .25s ease;
+    }
+
+    .eventplus-download-btn {
+        border: 2px solid #ec4899;
+
+        background: #fff;
+
+        color: #db2777 !important;
+
+        box-shadow: 0 6px 18px rgba(236, 72, 153, .10);
+    }
+
+    .eventplus-download-btn:hover {
+        color: #be185d !important;
+
+        background: #fff7fb;
+
+        transform: translateY(-2px);
+
+        box-shadow: 0 11px 25px rgba(236, 72, 153, .18);
+    }
+
+    .eventplus-home-btn {
         border: none;
-        color: #ffffff !important;
-        font-size: .9rem;
-        font-weight: 750;
-        text-decoration: none;
-        box-shadow: 0 8px 22px rgba(109, 40, 217, .22);
-        transition: all .2s ease;
+
+        background:
+            linear-gradient(
+                135deg,
+                #ec4899,
+                #d946ef,
+                #7c3aed
+            );
+
+        color: #fff !important;
+
+        box-shadow:
+            0 10px 24px rgba(236, 72, 153, .25);
     }
 
-    .btn-swezon-home:hover {
-        color: #ffffff !important;
+    .eventplus-home-btn:hover {
+        color: #fff !important;
+
         transform: translateY(-2px);
-        background: linear-gradient(135deg, #7c3aed, #581c87);
-        box-shadow: 0 12px 28px rgba(109, 40, 217, .32);
-    }
 
-    .btn-swezon-download {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        min-height: 48px;
-        padding: 0 24px;
-        border-radius: 12px;
-        background: #ffffff;
-        border: 2px solid #8b5cf6;
-        color: #7c3aed !important;
-        font-size: .9rem;
-        font-weight: 750;
-        text-decoration: none;
-        box-shadow: 0 4px 14px rgba(139, 92, 246, .12);
-        transition: all .2s ease;
-    }
-
-    .btn-swezon-download:hover {
-        background: #f5f3ff;
-        color: #6d28d9 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(139, 92, 246, .2);
+        box-shadow:
+            0 15px 32px rgba(236, 72, 153, .34);
     }
 
     /* =========================================================
-       BOTTOM DECORATIVE WAVES
-       ========================================================= */
+       FOOTER NOTE
+    ========================================================= */
 
-    .receipt-waves {
+    .eventplus-footer-note {
+        max-width: 520px;
+
+        margin: 18px auto 0;
+
+        color: #9ca3af;
+
+        font-size: 10px;
+        line-height: 1.6;
+    }
+
+    /* =========================================================
+       DECORATIVE BOTTOM WAVE
+    ========================================================= */
+
+    .eventplus-wave {
         position: absolute;
+
         left: 0;
         right: 0;
         bottom: 0;
+
         height: 90px;
+
         overflow: hidden;
+
         pointer-events: none;
-        opacity: .6;
+
+        opacity: .45;
     }
 
-    .receipt-waves::before {
+    .eventplus-wave::before {
         content: "";
+
         position: absolute;
+
         width: 110%;
-        height: 90px;
+        height: 80px;
+
         left: -5%;
         bottom: -55px;
+
         border-radius: 50%;
-        background: rgba(139, 92, 246, .15);
+
+        background: rgba(236, 72, 153, .12);
+
         transform: rotate(-2deg);
     }
 
-    .receipt-waves::after {
+    .eventplus-wave::after {
         content: "";
+
         position: absolute;
+
         width: 110%;
         height: 70px;
+
         left: -5%;
         bottom: -50px;
+
         border-radius: 50%;
-        background: rgba(192, 132, 252, .18);
+
+        background: rgba(124, 58, 237, .13);
+
         transform: rotate(2deg);
     }
 
     /* =========================================================
-       HIDDEN TICKET RENDERING CONTAINER
-       ========================================================= */
+       HIDDEN TICKET RENDERING
+       KEEPING ORIGINAL FUNCTIONALITY
+    ========================================================= */
+
     .hidden-ticket-container {
         position: absolute;
+
         left: -9999px;
         top: -9999px;
+
         visibility: visible;
         opacity: 0;
+
         pointer-events: none;
     }
 
     .ticket-wrapper {
         position: relative;
+
         width: 1600px;
         height: 517px;
     }
 
     .ticket-bg {
         position: absolute;
+
         top: 0;
         left: 0;
+
         width: 1600px;
         height: 517px;
     }
 
     .qr-box {
         position: absolute;
+
         top: 126px;
         left: 950px;
+
         width: 310px;
         height: 310px;
     }
 
     .qr-box img {
+        display: block;
+
         width: 100%;
         height: 100%;
-        display: block;
     }
-    
-    /* Ticket Number Area */
+
+    /* Ticket Number */
+
     .ticket-number-area {
         position: absolute;
+
         top: 300px;
         left: 1390px;
+
         width: 60px;
         height: 360px;
     }
 
     .ticket-number {
-        font-size: 24px;
-        font-weight: 800;
-        color: #000000;
-        -webkit-transform: rotate(270deg);
-        transform: rotate(270deg);
-        -webkit-transform-origin: top left;
-        transform-origin: top left;
         position: absolute;
+
         top: 0;
         left: 0;
+
+        font-size: 24px;
+        font-weight: 800;
+
+        color: #000;
+
         white-space: nowrap;
+
+        -webkit-transform: rotate(270deg);
+        transform: rotate(270deg);
+
+        -webkit-transform-origin: top left;
+        transform-origin: top left;
     }
 
-    /* Name & Phone Area */
+    /* Buyer Data */
+
     .buyer-data-area {
         position: absolute;
+
         top: 390px;
         left: 1480px;
+
         width: 60px;
         height: 500px;
     }
 
     .buyer-info-group {
-        -webkit-transform: rotate(270deg);
-        transform: rotate(270deg);
-        -webkit-transform-origin: top left;
-        transform-origin: top left;
         position: absolute;
+
         top: 0;
         left: 0;
+
         white-space: nowrap;
+
+        -webkit-transform: rotate(270deg);
+        transform: rotate(270deg);
+
+        -webkit-transform-origin: top left;
+        transform-origin: top left;
     }
 
     .buyer-name {
+        display: block;
+
+        margin-bottom: 10px;
+
+        color: #fff;
+
         font-size: 30px;
         font-weight: 700;
-        color: #FFFFFF;
+
         text-transform: uppercase;
-        display: block;
-        margin-bottom: 10px;
     }
 
     .buyer-phone {
+        display: block;
+
+        color: #fff;
+
         font-size: 28px;
         font-weight: 600;
-        color: #FFFFFF;
-        display: block;
     }
 
     /* =========================================================
        MOBILE
-       ========================================================= */
+    ========================================================= */
 
     @media (max-width: 767.98px) {
 
-        .swezon-receipt-section {
-            padding: 30px 12px;
-            align-items: flex-start;
+        .eventplus-success-section {
+            padding: 35px 12px 65px;
         }
 
-        .swezon-receipt {
-            border-radius: 14px;
+        .eventplus-brand {
+            margin-bottom: 24px;
         }
 
-        .receipt-header {
-            min-height: 95px;
-            padding: 18px 18px;
+        .eventplus-brand h1 {
+            font-size: 31px;
         }
 
-        .receipt-logo {
-            height: 55px;
-            max-width: 180px;
-        }
-
-        .receipt-title {
-            padding: 7px 11px;
+        .eventplus-brand p {
             font-size: 12px;
         }
 
-        .receipt-title i {
-            font-size: 12px;
+        .eventplus-receipt {
+            border-radius: 22px;
         }
 
-        .receipt-main {
+        .eventplus-receipt-header {
+            min-height: 85px;
+
+            padding: 17px 18px;
+        }
+
+        .eventplus-logo {
+            height: 48px;
+            max-width: 175px;
+        }
+
+        .eventplus-receipt-label {
+            padding: 7px 10px;
+            font-size: 10px;
+        }
+
+        .eventplus-main {
             padding: 35px 18px 30px;
         }
 
-        .success-icon {
-            width: 62px;
-            height: 62px;
-            font-size: 25px;
-            margin-bottom: 18px;
+        .eventplus-success-icon {
+            width: 68px;
+            height: 68px;
+
+            margin-bottom: 20px;
+
+            font-size: 27px;
         }
 
-        .congratulations-title {
-            font-size: 2rem;
+        .eventplus-congratulations {
+            font-size: 31px;
         }
 
-        .success-message {
-            font-size: .9rem;
+        .eventplus-success-message {
+            font-size: 13px;
             margin-bottom: 25px;
         }
 
-        .amount-box {
+        .eventplus-paid-badge {
+            margin-bottom: 22px;
+        }
+
+        .eventplus-amount {
             padding: 20px 15px;
             margin-bottom: 22px;
         }
 
-        .amount-value {
-            font-size: 2rem;
+        .eventplus-amount-value {
+            font-size: 31px;
         }
 
-        .receipt-detail-row {
+        .eventplus-detail-row {
             min-height: 58px;
-            padding: 11px 14px;
+
+            padding: 10px 14px;
+
             gap: 12px;
         }
 
-        .receipt-detail-label {
-            font-size: .82rem;
+        .eventplus-detail-label {
+            font-size: 11px;
         }
 
-        .receipt-detail-value {
-            font-size: .86rem;
+        .eventplus-detail-label i {
+            width: 24px;
+            height: 24px;
         }
 
-        .receipt-cut-line {
+        .eventplus-detail-value {
+            font-size: 11px;
+        }
+
+        .eventplus-cut-line {
             margin: 0 20px;
         }
 
-        .receipt-footer {
-            padding: 22px 18px 28px;
+        .eventplus-footer {
+            padding: 23px 18px 28px;
         }
 
-        .thank-you {
-            font-size: 1.1rem;
+        .eventplus-thank-you {
+            font-size: 18px;
         }
 
-        .receipt-actions {
+        .eventplus-actions {
             flex-direction: column;
             gap: 10px;
         }
 
-        .btn-swezon-home,
-        .btn-swezon-download {
+        .eventplus-download-btn,
+        .eventplus-home-btn {
             width: 100%;
         }
     }
 </style>
 
 
-<section class="swezon-receipt-section" id="receipt-capture-area">
+<section
+    class="eventplus-success-section"
+    id="receipt-capture-area"
+>
 
-    {{-- Floating Confetti --}}
-    <div class="receipt-confetti">
+    {{-- =========================================================
+         BACKGROUND DECORATION
+    ========================================================== --}}
+
+    <div class="eventplus-glow eventplus-glow-one"></div>
+
+    <div class="eventplus-glow eventplus-glow-two"></div>
+
+
+    {{-- =========================================================
+         CONFETTI
+    ========================================================== --}}
+
+    <div class="eventplus-confetti">
+
         <span></span>
         <span></span>
         <span></span>
@@ -754,150 +1158,288 @@
         <span></span>
         <span></span>
         <span></span>
+
     </div>
 
 
-    {{-- E-Receipt --}}
-    <div class="swezon-receipt">
+    <div class="eventplus-success-wrapper">
+
 
         {{-- =====================================================
-             HEADER
-             ===================================================== --}}
-        <div class="receipt-header">
+             EVENT PLUS HEADER
+        ====================================================== --}}
 
-            <img
-                src="{{ asset('assets/img/logo/Swezon_Logo1.1V.png') }}"
-                alt="Swezon"
-                class="receipt-logo"
-            >
+        <div class="eventplus-brand">
 
-            <div class="receipt-title">
-                <i class="fas fa-receipt"></i>
-                <span>E-Receipt</span>
+            <div class="eventplus-brand-badge">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+                Payment Successfully Confirmed
+
             </div>
+
+            <h1>
+                You're <span>All Set!</span>
+            </h1>
+
+            <p>
+                Your event registration has been successfully completed.
+                Your ticket is ready and can be downloaded below.
+            </p>
 
         </div>
 
 
         {{-- =====================================================
-             MAIN CONTENT
-             ===================================================== --}}
-        <div class="receipt-main">
+             RECEIPT CARD
+        ====================================================== --}}
 
-            {{-- Success Icon --}}
-            <div class="success-icon">
-                <i class="fas fa-check"></i>
-            </div>
-
-            {{-- Congratulations --}}
-            <h1 class="congratulations-title">
-                Congratulations!
-            </h1>
-
-            <p class="success-message">
-                Your payment has been successfully completed.
-            </p>
+        <div class="eventplus-receipt">
 
 
-            {{-- Amount --}}
-            <div class="amount-box">
+            {{-- =================================================
+                 RECEIPT HEADER
+            ================================================== --}}
 
-                <div class="amount-label">
-                    Total Amount
-                </div>
+            <div class="eventplus-receipt-header">
 
-                <div class="amount-value">
-                    {{ number_format($order->total_amount, 2) }}
-                    <span class="amount-currency">MMK</span>
+                <img
+                    src="{{ asset('assets/img/logo/logo.jpg') }}"
+                    alt="Event Plus"
+                    class="eventplus-logo"
+                >
+
+                <div class="eventplus-receipt-label">
+
+                    <i class="fa-solid fa-ticket"></i>
+
+                    <span>Event Receipt</span>
+
                 </div>
 
             </div>
 
 
             {{-- =================================================
-                 INFORMATION DETAILS
-                 ================================================= --}}
-            <div class="receipt-details">
+                 MAIN CONTENT
+            ================================================== --}}
 
-                {{-- Order Number --}}
-                <div class="receipt-detail-row">
+            <div class="eventplus-main">
 
-                    <span class="receipt-detail-label">
-                        Order Number
-                    </span>
 
-                    <span class="receipt-detail-value order-number">
-                        #{{ $order->order_number }}
-                    </span>
+                {{-- SUCCESS ICON --}}
+
+                <div class="eventplus-success-icon">
+
+                    <i class="fa-solid fa-check"></i>
 
                 </div>
 
 
-                {{-- Amount --}}
-                <div class="receipt-detail-row">
+                {{-- TITLE --}}
 
-                    <span class="receipt-detail-label">
-                        Amount
-                    </span>
+                <h2 class="eventplus-congratulations">
 
-                    <span class="receipt-detail-value">
-                        {{ number_format($order->total_amount, 2) }} MMK
-                    </span>
+                    Payment <span>Confirmed!</span>
+
+                </h2>
+
+
+                <p class="eventplus-success-message">
+
+                    Your payment has been successfully completed.
+                    Your registration is now confirmed.
+
+                </p>
+
+
+                {{-- PAID BADGE --}}
+
+                <div class="eventplus-paid-badge">
+
+                    <i class="fa-solid fa-circle-check"></i>
+
+                    PAYMENT CONFIRMED
 
                 </div>
 
 
-                {{-- Attendees --}}
-                <div class="receipt-detail-row">
+                {{-- =================================================
+                     AMOUNT
+                ================================================== --}}
 
-                    <span class="receipt-detail-label">
-                        Number of Attendees
-                    </span>
+                <div class="eventplus-amount">
 
-                    <span class="receipt-detail-value attendee-count">
-                        <i class="fas fa-users"></i>
-                        {{ $order->attendees->count() }}
-                        {{ $order->attendees->count() == 1 ? 'Attendee' : 'Attendees' }}
-                    </span>
+                    <div class="eventplus-amount-label">
+
+                        Total Amount Paid
+
+                    </div>
+
+                    <div class="eventplus-amount-value">
+
+                        {{ number_format($order->total_amount, 2) }}
+
+                        <span class="eventplus-amount-currency">
+                            MMK
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     DETAILS
+                ================================================== --}}
+
+                <div class="eventplus-details">
+
+
+                    {{-- ORDER NUMBER --}}
+
+                    <div class="eventplus-detail-row">
+
+                        <span class="eventplus-detail-label">
+
+                            <i class="fa-solid fa-receipt"></i>
+
+                            Order Number
+
+                        </span>
+
+                        <span class="eventplus-detail-value eventplus-order-number">
+
+                            #{{ $order->order_number }}
+
+                        </span>
+
+                    </div>
+
+
+                    {{-- AMOUNT --}}
+
+                    <div class="eventplus-detail-row">
+
+                        <span class="eventplus-detail-label">
+
+                            <i class="fa-solid fa-money-bill-wave"></i>
+
+                            Amount Paid
+
+                        </span>
+
+                        <span class="eventplus-detail-value">
+
+                            {{ number_format($order->total_amount, 2) }} MMK
+
+                        </span>
+
+                    </div>
+
+
+                    {{-- ATTENDEES --}}
+
+                    <div class="eventplus-detail-row">
+
+                        <span class="eventplus-detail-label">
+
+                            <i class="fa-solid fa-users"></i>
+
+                            Number of Attendees
+
+                        </span>
+
+                        <span class="eventplus-detail-value eventplus-attendee-count">
+
+                            <i class="fa-solid fa-user-group"></i>
+
+                            {{ $order->attendees->count() }}
+
+                            {{ $order->attendees->count() == 1 ? 'Attendee' : 'Attendees' }}
+
+                        </span>
+
+                    </div>
+
 
                 </div>
 
             </div>
 
-        </div>
+
+            {{-- =================================================
+                 CUT LINE
+            ================================================== --}}
+
+            <div class="eventplus-cut-line"></div>
 
 
-        {{-- Receipt Cut Line --}}
-        <div class="receipt-cut-line"></div>
+            {{-- =================================================
+                 FOOTER
+            ================================================== --}}
+
+            <div class="eventplus-footer">
+
+                <p class="eventplus-thank-you">
+
+                    Thank you for choosing
+                    <span>Event Plus!</span>
+
+                </p>
+
+                <p class="eventplus-footer-subtitle">
+
+                    Your registration has been successfully confirmed.
+
+                </p>
 
 
-        {{-- =====================================================
-             FOOTER
-             ===================================================== --}}
-        <div class="receipt-footer">
+                {{-- ACTIONS --}}
 
-            <p class="thank-you">
-                Thank you for using Swezon!
-            </p>
+                <div class="eventplus-actions">
 
-            <p class="thank-you-subtitle">
-                Your registration has been successfully confirmed.
-            </p>
+                    <button
+                        type="button"
+                        id="download-receipt-btn"
+                        class="eventplus-download-btn"
+                    >
 
-            <div class="receipt-actions">
-                <button type="button" id="download-receipt-btn" class="btn-swezon-download">
-                    <i class="fas fa-download"></i>
-                    <span>Download Ticket</span>
-                </button>
+                        <i class="fa-solid fa-download"></i>
 
-                <a
-                    href="{{ route('home') }}"
-                    class="btn-swezon-home"
-                >
-                    <i class="fas fa-home"></i>
-                    <span>Return to Home</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
+                        <span>
+                            Download Ticket
+                        </span>
+
+                    </button>
+
+
+                    <a
+                        href="{{ route('home') }}"
+                        class="eventplus-home-btn"
+                    >
+
+                        <i class="fa-solid fa-house"></i>
+
+                        <span>
+                            Return to Home
+                        </span>
+
+                        <i class="fa-solid fa-arrow-right"></i>
+
+                    </a>
+
+                </div>
+
+
+                <p class="eventplus-footer-note">
+
+                    Your ticket contains a unique QR code for event verification.
+                    Please keep it safe and present it when required.
+
+                </p>
+
             </div>
 
         </div>
@@ -905,198 +1447,549 @@
     </div>
 
 
-    {{-- Decorative Bottom Waves --}}
-    <div class="receipt-waves"></div>
+    {{-- =========================================================
+         DECORATIVE WAVE
+    ========================================================== --}}
+
+    <div class="eventplus-wave"></div>
 
 </section>
 
-{{-- Hidden Ticket Render Nodes synced with backend fields --}}
-<div class="hidden-ticket-container" id="ticket-nodes-wrapper">
+
+{{-- =========================================================
+     HIDDEN TICKET RENDERING CONTAINER
+
+     Backend / ticket generation functionality preserved.
+========================================================= --}}
+
+<div
+    class="hidden-ticket-container"
+    id="ticket-nodes-wrapper"
+>
+
     @foreach($order->attendees as $index => $attendee)
+
         @php
+
             if (empty($attendee->verification_token)) {
-                $attendee->verification_token = \Illuminate\Support\Str::random(64);
+
+                $attendee->verification_token =
+                    \Illuminate\Support\Str::random(64);
+
                 $attendee->save();
+
             }
 
-            // Calculate sequential ticket number
-            $sequentialTicketNumber = $attendee->ticket_code;
+            // Existing ticket number
+            $sequentialTicketNumber =
+                $attendee->ticket_code;
 
-            // Encode background image safely
-            $ticketBgPath = public_path('assets/img/ticket/ticket1.jpg');
-            $ticketBgBase64 = (file_exists($ticketBgPath) && filesize($ticketBgPath) <= 2 * 1024 * 1024)
-                ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($ticketBgPath))
-                : null;
+
+            // Ticket background
+            $ticketBgPath =
+                public_path('assets/img/ticket/ticket1.jpg');
+
+            $ticketBgBase64 =
+                (
+                    file_exists($ticketBgPath)
+                    &&
+                    filesize($ticketBgPath) <= 2 * 1024 * 1024
+                )
+                ?
+                'data:image/jpeg;base64,' .
+                base64_encode(
+                    file_get_contents($ticketBgPath)
+                )
+                :
+                null;
+
 
             // Verification URL
-            $verificationUrl = route('ticket.verify', ['token' => $attendee->verification_token]);
+            $verificationUrl =
+                route(
+                    'ticket.verify',
+                    [
+                        'token' =>
+                            $attendee->verification_token
+                    ]
+                );
 
-            $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=310x310&data='
-                    . urlencode($verificationUrl);
 
-                $context = stream_context_create([
+            // QR code API
+            $qrApiUrl =
+                'https://api.qrserver.com/v1/create-qr-code/?size=310x310&data=' .
+                urlencode($verificationUrl);
+
+
+            $context =
+                stream_context_create([
                     'http' => [
                         'timeout' => 5
                     ]
                 ]);
 
-                $qrImageData = @file_get_contents(
+
+            $qrImageData =
+                @file_get_contents(
                     $qrApiUrl,
                     false,
                     $context
                 );
 
-                $qrBase64 = $qrImageData
-                    ? 'data:image/png;base64,' . base64_encode($qrImageData)
-                    : null;
+
+            $qrBase64 =
+                $qrImageData
+                ?
+                'data:image/png;base64,' .
+                base64_encode($qrImageData)
+                :
+                null;
+
         @endphp
 
-        <div class="ticket-wrapper" id="render-ticket-node-{{ $index }}">
+
+        <div
+            class="ticket-wrapper"
+            id="render-ticket-node-{{ $index }}"
+        >
+
             @if($ticketBgBase64)
-                <img src="{{ $ticketBgBase64 }}" class="ticket-bg" alt="Ticket BG">
+
+                <img
+                    src="{{ $ticketBgBase64 }}"
+                    class="ticket-bg"
+                    alt="Ticket Background"
+                >
+
             @endif
 
+
+            {{-- QR CODE --}}
+
             <div class="qr-box">
+
                 <img
                     src="{{ $qrBase64 }}"
                     class="ticket-qr"
                     alt="QR Code"
                 >
+
             </div>
 
-            <!-- Ticket Number Area -->
+
+            {{-- Ticket Number --}}
+
             <div class="ticket-number-area">
+
                 <div class="ticket-number">
+
                     {{ $sequentialTicketNumber }}
+
                 </div>
+
             </div>
 
-            <!-- Name & Phone Area -->
+
+            {{-- Name & Phone --}}
+
             <div class="buyer-data-area">
+
                 <div class="buyer-info-group">
-                    <span class="buyer-name">{{ $attendee->full_name ?? '' }}</span>
-                    <span class="buyer-phone">{{ $attendee->phone ?? '' }}</span>
+
+                    <span class="buyer-name">
+
+                        {{ $attendee->full_name ?? '' }}
+
+                    </span>
+
+                    <span class="buyer-phone">
+
+                        {{ $attendee->phone ?? '' }}
+
+                    </span>
+
                 </div>
+
             </div>
+
         </div>
+
     @endforeach
+
 </div>
 
-{{-- Include html2canvas, jspdf, and JSZip CDNs --}}
+
+{{-- =========================================================
+     EXTERNAL LIBRARIES
+========================================================= --}}
+
 @push('scripts')
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.2/jszip.min.js"></script>
+
+
 <script>
-    // 1. Log the raw SVG markup string to check paths and attributes
-    console.log("Verification URL:", @json($verificationUrl));
-</script>
-<script>
+
 document.addEventListener('DOMContentLoaded', function () {
-    const downloadBtn = document.getElementById('download-receipt-btn');
-    const attendeeCount = {{ $order->attendees->count() }};
+
+
+    /* =========================================================
+       DOWNLOAD BUTTON
+    ========================================================= */
+
+    const downloadBtn =
+        document.getElementById(
+            'download-receipt-btn'
+        );
+
+
+    const attendeeCount =
+        {{ $order->attendees->count() }};
+
 
     if (downloadBtn) {
-        const spanEl = downloadBtn.querySelector('span');
+
+
+        /* =====================================================
+           BUTTON TEXT
+        ====================================================== */
+
+        const spanEl =
+            downloadBtn.querySelector('span');
+
+
         if (spanEl) {
-            spanEl.textContent = attendeeCount > 1 ? 'Download All Tickets (ZIP)' : 'Download Ticket';
+
+            spanEl.textContent =
+                attendeeCount > 1
+                    ? 'Download All Tickets (ZIP)'
+                    : 'Download Ticket';
+
         }
 
-        downloadBtn.addEventListener('click', async function () {
-            const originalHtml = downloadBtn.innerHTML;
-            downloadBtn.style.pointerEvents = 'none';
 
-            try {
-                const attendees = @json($order->attendees);
-                const { jsPDF } = window.jspdf;
+        /* =====================================================
+           DOWNLOAD ACTION
+        ====================================================== */
 
-                if (attendeeCount === 1) {
-                    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Generating Ticket PDF...</span>';
-                    const ticketNode = document.getElementById('render-ticket-node-0');
-                    
-                    // --- DEBUG LOGGING ---
-                    console.log('--- DEBUG: Single Ticket Node ---', ticketNode);
-                    if (ticketNode) {
-                        console.log('Node innerHTML length:', ticketNode.innerHTML.length);
-                        console.log('Node children count:', ticketNode.children.length);
-                    }
-                    // ---------------------
+        downloadBtn.addEventListener(
+            'click',
+            async function () {
 
-                    const canvas = await html2canvas(ticketNode, {
-                        scale: 2,
-                        useCORS: true,
-                        allowTaint: false,
-                        backgroundColor: '#ffffff'
-                    });
 
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    const pdf = new jsPDF({
-                        orientation: 'landscape',
-                        unit: 'px',
-                        format: [canvas.width, canvas.height]
-                    });
-                    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+                const originalHtml =
+                    downloadBtn.innerHTML;
 
-                    const ticketNumText = ticketNode.querySelector('.ticket-number').textContent.trim();
-                    const sanitizedName = attendees[0].full_name ? attendees[0].full_name.replace(/[^a-zA-Z0-9]/g, '_') : 'Attendee';
-                    pdf.save(`Ticket_${ticketNumText}_${sanitizedName}.pdf`);
-                } else {
-                    const zip = new JSZip();
 
-                    for (let i = 0; i < attendees.length; i++) {
-                        downloadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>Packing PDF (${i + 1}/${attendeeCount})...</span>`;
-                        
-                        const ticketNode = document.getElementById('render-ticket-node-' + i);
-                        
-                        // --- DEBUG LOGGING ---
-                        console.log(`--- DEBUG: Ticket Node ${i} ---`, ticketNode);
-                        if (ticketNode) {
-                            console.log(`Node ${i} innerHTML length:`, ticketNode.innerHTML.length);
+                downloadBtn.style.pointerEvents =
+                    'none';
+
+
+                try {
+
+
+                    const attendees =
+                        @json($order->attendees);
+
+
+                    const { jsPDF } =
+                        window.jspdf;
+
+
+                    /* =========================================
+                       SINGLE TICKET
+                    ========================================= */
+
+                    if (attendeeCount === 1) {
+
+
+                        downloadBtn.innerHTML =
+                            '<i class="fa-solid fa-spinner fa-spin"></i>' +
+                            '<span>Generating Ticket PDF...</span>';
+
+
+                        const ticketNode =
+                            document.getElementById(
+                                'render-ticket-node-0'
+                            );
+
+
+                        console.log(
+                            '--- Event Plus Ticket ---',
+                            ticketNode
+                        );
+
+
+                        if (!ticketNode) {
+
+                            throw new Error(
+                                'Ticket node not found.'
+                            );
+
                         }
-                        // ---------------------
 
-                        const canvas = await html2canvas(ticketNode, {
-                            scale: 2,
-                            useCORS: true,
-                            allowTaint: false,
-                            backgroundColor: '#ffffff'
-                        });
 
-                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                        const pdf = new jsPDF({
-                            orientation: 'landscape',
-                            unit: 'px',
-                            format: [canvas.width, canvas.height]
-                        });
-                        pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+                        const canvas =
+                            await html2canvas(
+                                ticketNode,
+                                {
+                                    scale: 2,
+                                    useCORS: true,
+                                    allowTaint: false,
+                                    backgroundColor: '#ffffff'
+                                }
+                            );
 
-                        const pdfBlob = pdf.output('blob');
-                        const ticketNumText = ticketNode.querySelector('.ticket-number').textContent.trim();
-                        const sanitizedName = attendees[i].full_name ? attendees[i].full_name.replace(/[^a-zA-Z0-9]/g, '_') : `Attendee_${i+1}`;
-                        
-                        zip.file(`Ticket_${ticketNumText}_${sanitizedName}.pdf`, pdfBlob);
+
+                        const imgData =
+                            canvas.toDataURL(
+                                'image/jpeg',
+                                0.95
+                            );
+
+
+                        const pdf =
+                            new jsPDF({
+                                orientation: 'landscape',
+                                unit: 'px',
+                                format: [
+                                    canvas.width,
+                                    canvas.height
+                                ]
+                            });
+
+
+                        pdf.addImage(
+                            imgData,
+                            'JPEG',
+                            0,
+                            0,
+                            canvas.width,
+                            canvas.height
+                        );
+
+
+                        const ticketNumText =
+                            ticketNode
+                                .querySelector(
+                                    '.ticket-number'
+                                )
+                                .textContent
+                                .trim();
+
+
+                        const sanitizedName =
+                            attendees[0].full_name
+                            ?
+                            attendees[0]
+                                .full_name
+                                .replace(
+                                    /[^a-zA-Z0-9]/g,
+                                    '_'
+                                )
+                            :
+                            'Attendee';
+
+
+                        pdf.save(
+                            `Ticket_${ticketNumText}_${sanitizedName}.pdf`
+                        );
+
+
                     }
 
-                    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Compiling ZIP...</span>';
-                    const content = await zip.generateAsync({ type: 'blob' });
-                    
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(content);
-                    link.download = 'Swezon_Tickets_{{ $order->order_number }}.zip';
-                    link.click();
-                    URL.revokeObjectURL(link.href);
+
+                    /* =========================================
+                       MULTIPLE TICKETS
+                    ========================================= */
+
+                    else {
+
+
+                        const zip =
+                            new JSZip();
+
+
+                        for (
+                            let i = 0;
+                            i < attendees.length;
+                            i++
+                        ) {
+
+
+                            downloadBtn.innerHTML =
+                                `<i class="fa-solid fa-spinner fa-spin"></i>
+                                 <span>Packing PDF (${i + 1}/${attendeeCount})...</span>`;
+
+
+                            const ticketNode =
+                                document.getElementById(
+                                    'render-ticket-node-' + i
+                                );
+
+
+                            if (!ticketNode) {
+
+                                console.warn(
+                                    'Ticket node missing:',
+                                    i
+                                );
+
+                                continue;
+
+                            }
+
+
+                            const canvas =
+                                await html2canvas(
+                                    ticketNode,
+                                    {
+                                        scale: 2,
+                                        useCORS: true,
+                                        allowTaint: false,
+                                        backgroundColor: '#ffffff'
+                                    }
+                                );
+
+
+                            const imgData =
+                                canvas.toDataURL(
+                                    'image/jpeg',
+                                    0.95
+                                );
+
+
+                            const pdf =
+                                new jsPDF({
+                                    orientation: 'landscape',
+                                    unit: 'px',
+                                    format: [
+                                        canvas.width,
+                                        canvas.height
+                                    ]
+                                });
+
+
+                            pdf.addImage(
+                                imgData,
+                                'JPEG',
+                                0,
+                                0,
+                                canvas.width,
+                                canvas.height
+                            );
+
+
+                            const pdfBlob =
+                                pdf.output('blob');
+
+
+                            const ticketNumText =
+                                ticketNode
+                                    .querySelector(
+                                        '.ticket-number'
+                                    )
+                                    .textContent
+                                    .trim();
+
+
+                            const sanitizedName =
+                                attendees[i].full_name
+                                ?
+                                attendees[i]
+                                    .full_name
+                                    .replace(
+                                        /[^a-zA-Z0-9]/g,
+                                        '_'
+                                    )
+                                :
+                                `Attendee_${i + 1}`;
+
+
+                            zip.file(
+                                `Ticket_${ticketNumText}_${sanitizedName}.pdf`,
+                                pdfBlob
+                            );
+
+                        }
+
+
+                        /* =====================================
+                           CREATE ZIP
+                        ====================================== */
+
+                        downloadBtn.innerHTML =
+                            '<i class="fa-solid fa-spinner fa-spin"></i>' +
+                            '<span>Compiling ZIP...</span>';
+
+
+                        const content =
+                            await zip.generateAsync({
+                                type: 'blob'
+                            });
+
+
+                        const link =
+                            document.createElement('a');
+
+
+                        link.href =
+                            URL.createObjectURL(content);
+
+
+                        link.download =
+                            'EventPlus_Tickets_{{ $order->order_number }}.zip';
+
+
+                        link.click();
+
+
+                        URL.revokeObjectURL(
+                            link.href
+                        );
+
+                    }
+
+
                 }
-            } catch (err) {
-                console.error('Download processing error:', err);
-                alert('Failed to package ticket PDFs. Please try again.');
-            } finally {
-                downloadBtn.innerHTML = originalHtml;
-                downloadBtn.style.pointerEvents = 'auto';
+
+                catch (err) {
+
+                    console.error(
+                        'Download processing error:',
+                        err
+                    );
+
+
+                    alert(
+                        'Failed to package ticket PDFs. Please try again.'
+                    );
+
+                }
+
+                finally {
+
+                    downloadBtn.innerHTML =
+                        originalHtml;
+
+                    downloadBtn.style.pointerEvents =
+                        'auto';
+
+                }
+
             }
-        });
+        );
+
     }
+
 });
+
 </script>
+
 @endpush
 
 @endsection

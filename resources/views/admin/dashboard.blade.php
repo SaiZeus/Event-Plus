@@ -1,727 +1,2936 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Dashboard')
-@section('page-title', 'Overview & Analytics')
+@section('title', 'Event Plus - Admin Dashboard')
+@section('page-title', 'Event Overview')
 
 @section('content')
 
 <style>
+
     /* =========================================================
-       ADMIN DASHBOARD - MODERN UI
-       ========================================================= */
+       EVENT PLUS DASHBOARD
+    ========================================================== */
 
-    .admin-dashboard {
-        --dash-bg: #f6f8fc;
-        --dash-card: #ffffff;
-        --dash-border: #e7ebf2;
-        --dash-text: #172033;
-        --dash-muted: #778397;
-        --dash-indigo: #4f46e5;
-        --dash-emerald: #059669;
-        --dash-amber: #d97706;
-    }
+    .ep-dashboard {
 
-    .admin-dashboard {
+        --ep-navy: #0f172a;
+        --ep-navy-2: #17112f;
+
+        --ep-purple: #6d28d9;
+        --ep-violet: #7c3aed;
+
+        --ep-pink: #ec4899;
+        --ep-pink-dark: #db2777;
+
+        --ep-indigo: #6366f1;
+
+        --ep-green: #10b981;
+        --ep-amber: #f59e0b;
+
+        --ep-bg: #f7f8fc;
+        --ep-card: #ffffff;
+
+        --ep-border: #e8eaf0;
+
+        --ep-text: #172033;
+        --ep-muted: #7b8496;
+
         min-height: calc(100vh - 100px);
+
         margin: -1rem;
-        padding: 1.5rem;
+        padding: 1.7rem;
+
         background:
+
             radial-gradient(
                 circle at 0% 0%,
-                rgba(79, 70, 229, 0.07),
-                transparent 28%
-            ),
-            radial-gradient(
-                circle at 100% 5%,
-                rgba(5, 150, 105, 0.06),
+                rgba(236, 72, 153, 0.08),
                 transparent 25%
             ),
-            var(--dash-bg);
+
+            radial-gradient(
+                circle at 100% 0%,
+                rgba(124, 58, 237, 0.09),
+                transparent 27%
+            ),
+
+            linear-gradient(
+                180deg,
+                #fafaff 0%,
+                #f5f7fb 100%
+            );
     }
 
-    .dashboard-stat-card {
+
+    /* =========================================================
+       DASHBOARD INTRO
+    ========================================================== */
+
+    .ep-dashboard-intro {
+
         position: relative;
+
         overflow: hidden;
-        min-height: 145px;
-        padding: 25px !important;
-        border: 1px solid var(--dash-border) !important;
-        border-radius: 22px !important;
-        background: rgba(255, 255, 255, 0.96);
-        box-shadow: 0 10px 35px rgba(20, 30, 50, 0.055);
-        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        gap: 25px;
+
+        margin-bottom: 25px;
+
+        padding: 28px 30px;
+
+        border-radius: 24px;
+
+        background:
+
+            radial-gradient(
+                circle at 90% 15%,
+                rgba(236, 72, 153, 0.30),
+                transparent 28%
+            ),
+
+            radial-gradient(
+                circle at 70% 100%,
+                rgba(124, 58, 237, 0.35),
+                transparent 35%
+            ),
+
+            linear-gradient(
+                120deg,
+                #0f172a 0%,
+                #21133e 55%,
+                #4c1d95 100%
+            );
+
+        box-shadow:
+            0 18px 45px rgba(15, 23, 42, 0.16);
     }
 
-    .dashboard-stat-card::before {
+
+    .ep-dashboard-intro::before {
+
         content: "";
+
         position: absolute;
-        width: 150px;
-        height: 150px;
-        right: -65px;
-        top: -65px;
+
+        width: 240px;
+        height: 240px;
+
+        border:
+            1px solid rgba(255, 255, 255, 0.08);
+
         border-radius: 50%;
-        background: rgba(79, 70, 229, 0.045);
+
+        right: -90px;
+        top: -120px;
+    }
+
+
+    .ep-dashboard-intro::after {
+
+        content: "";
+
+        position: absolute;
+
+        width: 160px;
+        height: 160px;
+
+        border:
+            1px solid rgba(255, 255, 255, 0.06);
+
+        border-radius: 50%;
+
+        right: 150px;
+        bottom: -110px;
+    }
+
+
+    .ep-intro-content {
+
+        position: relative;
+
+        z-index: 2;
+    }
+
+
+    .ep-intro-eyebrow {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 7px;
+
+        margin-bottom: 8px;
+
+        color: #f9a8d4;
+
+        font-size: 0.65rem;
+
+        font-weight: 850;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.13em;
+    }
+
+
+    .ep-intro-eyebrow i {
+
+        font-size: 0.62rem;
+    }
+
+
+    .ep-intro-title {
+
+        margin: 0;
+
+        color: #ffffff;
+
+        font-size: clamp(1.45rem, 2.5vw, 2rem);
+
+        line-height: 1.15;
+
+        font-weight: 900;
+
+        letter-spacing: -0.045em;
+    }
+
+
+    .ep-intro-title span {
+
+        background:
+
+            linear-gradient(
+                90deg,
+                #f9a8d4,
+                #ec4899,
+                #c4b5fd
+            );
+
+        -webkit-background-clip: text;
+
+        background-clip: text;
+
+        color: transparent;
+    }
+
+
+    .ep-intro-description {
+
+        max-width: 590px;
+
+        margin: 9px 0 0;
+
+        color: rgba(255,255,255,0.62);
+
+        font-size: 0.78rem;
+
+        line-height: 1.65;
+    }
+
+
+    .ep-intro-icon {
+
+        position: relative;
+
+        z-index: 2;
+
+        width: 78px;
+        height: 78px;
+
+        min-width: 78px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 23px;
+
+        color: #ffffff;
+
+        font-size: 1.75rem;
+
+        background:
+
+            rgba(255,255,255,0.10);
+
+        border:
+
+            1px solid rgba(255,255,255,0.13);
+
+        box-shadow:
+
+            inset 0 1px 0 rgba(255,255,255,0.10),
+
+            0 15px 30px rgba(0,0,0,0.12);
+    }
+
+
+    /* =========================================================
+       STAT GRID
+    ========================================================== */
+
+    .ep-stat-grid {
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 18px;
+
+        margin-bottom: 25px;
+    }
+
+
+    .ep-stat-card {
+
+        position: relative;
+
+        overflow: hidden;
+
+        min-height: 148px;
+
+        padding: 23px;
+
+        border:
+            1px solid var(--ep-border);
+
+        border-radius: 21px;
+
+        background:
+            rgba(255,255,255,0.96);
+
+        box-shadow:
+            0 10px 32px rgba(15,23,42,0.055);
+
+        cursor: pointer;
+
+        transition:
+            transform 0.22s ease,
+            box-shadow 0.22s ease,
+            border-color 0.22s ease;
+    }
+
+
+    .ep-stat-card::before {
+
+        content: "";
+
+        position: absolute;
+
+        width: 170px;
+        height: 170px;
+
+        right: -80px;
+        top: -80px;
+
+        border-radius: 50%;
+
+        background:
+            rgba(124,58,237,0.045);
+
         pointer-events: none;
     }
 
-    .dashboard-stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 18px 45px rgba(20, 30, 50, 0.1);
+
+    .ep-stat-card::after {
+
+        content: "";
+
+        position: absolute;
+
+        height: 3px;
+
+        left: 0;
+        right: 0;
+
+        bottom: 0;
+
+        opacity: 0;
+
+        transition: opacity 0.2s ease;
     }
 
-    .dashboard-stat-card.revenue-card:hover { border-color: rgba(5, 150, 105, 0.4) !important; }
-    .dashboard-stat-card.ticket-card:hover { border-color: rgba(79, 70, 229, 0.4) !important; }
-    .dashboard-stat-card.event-card:hover { border-color: rgba(217, 119, 6, 0.4) !important; }
 
-    .dashboard-stat-icon {
+    .ep-stat-card:hover {
+
+        transform:
+            translateY(-5px);
+
+        box-shadow:
+            0 20px 45px rgba(15,23,42,0.105);
+    }
+
+
+    .ep-stat-card:hover::after {
+
+        opacity: 1;
+    }
+
+
+    .ep-stat-revenue::after {
+
+        background:
+            linear-gradient(
+                90deg,
+                #10b981,
+                #34d399
+            );
+    }
+
+
+    .ep-stat-ticket::after {
+
+        background:
+            linear-gradient(
+                90deg,
+                #6366f1,
+                #8b5cf6
+            );
+    }
+
+
+    .ep-stat-event::after {
+
+        background:
+            linear-gradient(
+                90deg,
+                #f59e0b,
+                #f97316
+            );
+    }
+
+
+    .ep-stat-top {
+
         position: relative;
-        z-index: 1;
-        width: 60px;
-        height: 60px;
-        min-width: 60px;
+
+        z-index: 2;
+
         display: flex;
+
         align-items: center;
+
+        justify-content: space-between;
+
+        margin-bottom: 20px;
+    }
+
+
+    .ep-stat-icon {
+
+        width: 51px;
+        height: 51px;
+
+        display: flex;
+
+        align-items: center;
+
         justify-content: center;
-        border-radius: 17px !important;
+
+        border-radius: 15px;
+
+        font-size: 1.15rem;
     }
 
-    .dashboard-stat-content { position: relative; z-index: 1; }
-    .dashboard-stat-label {
-        margin: 0 0 6px;
-        color: var(--dash-muted);
-        font-size: 0.75rem;
-        font-weight: 800;
+
+    .ep-stat-icon.revenue {
+
+        color: #059669;
+
+        background:
+            linear-gradient(
+                135deg,
+                #d1fae5,
+                #ecfdf5
+            );
+    }
+
+
+    .ep-stat-icon.ticket {
+
+        color: #4f46e5;
+
+        background:
+            linear-gradient(
+                135deg,
+                #e0e7ff,
+                #eef2ff
+            );
+    }
+
+
+    .ep-stat-icon.event {
+
+        color: #d97706;
+
+        background:
+            linear-gradient(
+                135deg,
+                #fef3c7,
+                #fffbeb
+            );
+    }
+
+
+    .ep-stat-click {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 5px;
+
+        padding: 5px 8px;
+
+        border-radius: 7px;
+
+        color: #94a3b8;
+
+        background: #f8fafc;
+
+        font-size: 0.57rem;
+
+        font-weight: 750;
+    }
+
+
+    .ep-stat-card:hover .ep-stat-click {
+
+        color: #7c3aed;
+
+        background: #f5f3ff;
+    }
+
+
+    .ep-stat-label {
+
+        position: relative;
+
+        z-index: 2;
+
+        margin: 0 0 4px;
+
+        color: var(--ep-muted);
+
+        font-size: 0.65rem;
+
+        font-weight: 850;
+
         text-transform: uppercase;
-        letter-spacing: 0.055em;
+
+        letter-spacing: 0.08em;
     }
 
-    .dashboard-stat-hint {
-        display: inline-block;
-        margin-left: 3px;
-        font-size: 0.64rem;
-        font-weight: 700;
-        text-transform: none;
+
+    .ep-stat-value {
+
+        position: relative;
+
+        z-index: 2;
+
+        margin: 0;
+
+        color: var(--ep-text);
+
+        font-size: 1.72rem;
+
+        line-height: 1.1;
+
+        font-weight: 900;
+
+        letter-spacing: -0.045em;
+    }
+
+
+    .ep-stat-value small {
+
+        color: #94a3b8;
+
+        font-size: 0.68rem;
+
+        font-weight: 750;
+
         letter-spacing: 0;
     }
 
-    .dashboard-stat-value {
-        margin: 0;
-        color: var(--dash-text);
-        font-size: 1.9rem;
-        line-height: 1.15;
-        font-weight: 850;
-        letter-spacing: -0.035em;
-    }
 
-    .dashboard-section-card {
+    /* =========================================================
+       SECTION CARD
+    ========================================================== */
+
+    .ep-section {
+
         overflow: hidden;
-        border: 1px solid var(--dash-border);
+
+        margin-bottom: 25px;
+
+        border:
+            1px solid var(--ep-border);
+
         border-radius: 22px;
-        background: var(--dash-card);
-        box-shadow: 0 12px 40px rgba(20, 30, 50, 0.055);
+
+        background:
+            #ffffff;
+
+        box-shadow:
+            0 12px 38px rgba(15,23,42,0.055);
     }
 
-    .dashboard-section-header {
+
+    .ep-section-header {
+
         display: flex;
+
         align-items: center;
+
         justify-content: space-between;
+
         gap: 15px;
-        padding: 22px 25px;
-        border-bottom: 1px solid var(--dash-border);
-        background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+
+        padding: 21px 24px;
+
+        border-bottom:
+            1px solid var(--ep-border);
+
+        background:
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #fbfbff
+            );
     }
 
-    .dashboard-section-title {
+
+    .ep-section-heading {
+
         display: flex;
+
         align-items: center;
-        gap: 11px;
-        margin: 0;
-        color: var(--dash-text);
-        font-size: 1.05rem;
-        font-weight: 850;
+
+        gap: 12px;
     }
 
-    .dashboard-section-title-icon {
+
+    .ep-section-icon {
+
         width: 40px;
         height: 40px;
-        display: inline-flex;
+
+        display: flex;
+
         align-items: center;
+
         justify-content: center;
+
         border-radius: 12px;
-        background: #eef2ff;
-        color: var(--dash-indigo);
+
+        color: #7c3aed;
+
+        background:
+            linear-gradient(
+                135deg,
+                #fce7f3,
+                #ede9fe
+            );
     }
 
-    .dashboard-table-wrapper { overflow-x: auto; }
-    .dashboard-main-table { width: 100%; border-collapse: collapse; }
-    .dashboard-main-table thead { background: #f8f9fc; }
-    .dashboard-main-table thead tr { border-bottom: 1px solid var(--dash-border); }
-    .dashboard-main-table th {
-        padding: 14px 19px;
-        color: #7a8495;
-        font-size: 0.68rem;
-        font-weight: 850;
-        letter-spacing: 0.075em;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
 
-    .dashboard-main-table td {
-        padding: 16px 19px;
-        border-bottom: 1px solid #edf0f4;
-        color: #596579;
-        font-size: 0.86rem;
-        vertical-align: middle;
-    }
+    .ep-section-title {
 
-    .dashboard-main-table tbody tr { transition: background 0.18s ease; }
-    .dashboard-main-table tbody tr:hover { background: #f9fbff; }
-    .dashboard-runner-name { color: #1b2638 !important; font-weight: 750 !important; }
-
-    .user-code-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 7px;
-        border: 1px solid #c7d2fe;
-        border-radius: 6px;
-        background: #eef2ff;
-        color: #4338ca;
-        font-family: monospace;
-        font-size: 0.68rem;
-        font-weight: 850;
-    }
-
-    .dashboard-ticket-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 36px;
-        height: 30px;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-weight: 850;
-    }
-
-    .btn-view-events {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 14px;
-        border-radius: 10px;
-        background: #eef2ff;
-        border: 1px solid #c7d2fe;
-        color: #4338ca;
-        font-size: 0.72rem;
-        font-weight: 800;
-        transition: all 0.18s ease;
-        cursor: pointer;
-    }
-
-    .btn-view-events:hover {
-        background: #4f46e5;
-        border-color: #4f46e5;
-        color: #ffffff;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-    }
-
-    .dashboard-empty-state { padding: 45px 20px !important; text-align: center; color: #8993a4 !important; }
-    .dashboard-empty-icon {
-        width: 48px;
-        height: 48px;
-        margin: 0 auto 11px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: #f1f4f8;
-        color: #9aa4b3;
-    }
-
-    .dashboard-modal { background: rgba(15, 23, 42, 0.62) !important; backdrop-filter: blur(6px); }
-    .dashboard-modal-panel {
-        overflow: hidden;
-        max-height: calc(100vh - 40px);
-        border: 1px solid rgba(255, 255, 255, 0.55);
-        border-radius: 22px !important;
-        background: #fff;
-        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.23) !important;
-        animation: dashboardModalOpen 0.2s ease-out;
-    }
-
-    @keyframes dashboardModalOpen {
-        from { opacity: 0; transform: translateY(12px) scale(0.985); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .dashboard-modal-header {
-        padding: 21px 25px !important;
-        background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
-        border-bottom: 1px solid var(--dash-border);
-    }
-
-    .dashboard-modal-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
         margin: 0;
-        color: var(--dash-text);
-        font-size: 1rem !important;
-        font-weight: 850 !important;
+
+        color: var(--ep-text);
+
+        font-size: 0.98rem;
+
+        font-weight: 900;
+
+        letter-spacing: -0.02em;
     }
 
-    .dashboard-modal-close {
-        width: 36px;
-        height: 36px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        border-radius: 10px;
-        background: transparent;
-        color: #8993a4;
-        font-size: 1.25rem;
-        transition: all 0.18s ease;
+
+    .ep-section-subtitle {
+
+        margin: 3px 0 0;
+
+        color: #9aa3b2;
+
+        font-size: 0.64rem;
     }
 
-    .dashboard-modal-close:hover { background: #fef2f2; color: #ef4444; }
-    .dashboard-modal-body { max-height: 55vh; overflow: auto; padding: 0 25px 20px; }
 
-    .revenue-status-section, .ticket-status-section {
-        margin-top: 22px;
-        overflow: hidden;
-        border: 1px solid var(--dash-border);
-        border-radius: 16px;
-        background: #fff;
+    /* =========================================================
+       TABLE
+    ========================================================== */
+
+    .ep-table-wrap {
+
+        overflow-x: auto;
     }
 
-    .status-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 15px 17px;
-        border-bottom: 1px solid var(--dash-border);
+
+    .ep-table {
+
+        width: 100%;
+
+        border-collapse: collapse;
     }
 
-    .status-section-header.live { background: linear-gradient(135deg, #f0fdf4, #f7fff9); }
-    .status-section-header.past { background: linear-gradient(135deg, #f8fafc, #f9fafb); }
 
-    .status-section-name {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        color: #263244;
-        font-size: 0.78rem;
+    .ep-table thead {
+
+        background:
+            #fafbfe;
+    }
+
+
+    .ep-table th {
+
+        padding:
+            13px 19px;
+
+        color: #8791a1;
+
+        font-size: 0.62rem;
+
         font-weight: 850;
+
+        letter-spacing: 0.075em;
+
         text-transform: uppercase;
-        letter-spacing: .04em;
-    }
 
-    .status-dot { width: 9px; height: 9px; border-radius: 50%; }
-    .status-dot.live { background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, .12); }
-    .status-dot.past { background: #64748b; box-shadow: 0 0 0 4px rgba(100, 116, 139, .1); }
-
-    .status-total { padding: 6px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 850; }
-    .status-total.live { background: #dcfce7; color: #15803d; }
-    .status-total.past { background: #e2e8f0; color: #475569; }
-
-    .dashboard-modal-table { width: 100%; border-collapse: collapse; }
-    .dashboard-modal-table thead th {
-        padding: 12px 12px;
-        background: #f8f9fc;
-        color: #7a8495;
-        border-bottom: 1px solid var(--dash-border);
-        font-size: 0.63rem;
-        font-weight: 850;
-        letter-spacing: 0.065em;
-        text-transform: uppercase;
         white-space: nowrap;
+
+        border-bottom:
+            1px solid var(--ep-border);
     }
 
-    .dashboard-modal-table tbody td {
-        padding: 13px 12px;
+
+    .ep-table td {
+
+        padding:
+            15px 19px;
+
         color: #596579;
-        border-bottom: 1px solid #edf0f4;
-        font-size: 0.81rem;
+
+        font-size: 0.79rem;
+
         vertical-align: middle;
+
+        border-bottom:
+            1px solid #edf0f4;
     }
 
-    .dashboard-modal-table tbody tr:hover { background: #fafbfe; }
-    .dashboard-revenue { color: #059669 !important; font-weight: 850 !important; }
-    .dashboard-past-revenue { color: #475569 !important; font-weight: 850 !important; }
 
-    .dashboard-ticket-number-small {
-        display: inline-flex;
+    .ep-table tbody tr {
+
+        transition:
+            background 0.18s ease;
+    }
+
+
+    .ep-table tbody tr:hover {
+
+        background:
+            linear-gradient(
+                90deg,
+                #ffffff,
+                #fafaff
+            );
+    }
+
+
+    .ep-runner-cell {
+
+        display: flex;
+
         align-items: center;
-        justify-content: center;
+
+        gap: 10px;
+    }
+
+
+    .ep-runner-avatar {
+
+        width: 34px;
+        height: 34px;
+
         min-width: 34px;
-        height: 28px;
-        padding: 0 9px;
-        border-radius: 8px;
-        background: #eef2ff;
-        color: #4f46e5;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 10px;
+
+        color: #ffffff;
+
+        background:
+            linear-gradient(
+                135deg,
+                #ec4899,
+                #7c3aed
+            );
+
+        font-size: 0.68rem;
+
+        font-weight: 900;
+    }
+
+
+    .ep-runner-name {
+
+        color: #1e293b;
+
+        font-weight: 800;
+    }
+
+
+    .ep-user-code {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        padding:
+            3px 7px;
+
+        margin-bottom: 2px;
+
+        border:
+            1px solid #ddd6fe;
+
+        border-radius: 6px;
+
+        background:
+            #f5f3ff;
+
+        color:
+            #6d28d9;
+
+        font-family: monospace;
+
+        font-size: 0.61rem;
+
         font-weight: 850;
     }
 
-    .dashboard-past-ticket-number { background: #f1f5f9; color: #475569; }
-    .status-no-data { padding: 25px 15px !important; text-align: center; color: #98a2b3 !important; font-size: .72rem !important; }
-    .status-no-data i { margin-right: 5px; color: #c1c8d2; }
 
-    .dashboard-modal-footer { padding: 18px 25px !important; background: #fafbfc; border-top: 1px solid var(--dash-border); }
-    .dashboard-close-button {
-        padding: 9px 17px;
-        border: 0;
-        border-radius: 10px;
-        background: #edf0f4;
-        color: #4b5565;
-        font-size: 0.78rem;
-        font-weight: 800;
-        transition: all 0.18s ease;
+    .ep-ticket-count {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        min-width: 34px;
+
+        height: 29px;
+
+        padding: 0 9px;
+
+        border-radius: 8px;
+
+        background:
+            #eef2ff;
+
+        color:
+            #4f46e5;
+
+        font-weight: 900;
     }
 
-    .dashboard-close-button:hover { background: #e1e5eb; color: #1f2937; }
+
+    .ep-view-button {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 7px;
+
+        padding:
+            7px 12px;
+
+        border:
+            1px solid #ddd6fe;
+
+        border-radius: 9px;
+
+        background:
+            #faf5ff;
+
+        color:
+            #6d28d9;
+
+        font-size: 0.67rem;
+
+        font-weight: 850;
+
+        transition:
+            all 0.18s ease;
+    }
+
+
+    .ep-view-button:hover {
+
+        color: #ffffff;
+
+        background:
+            linear-gradient(
+                135deg,
+                #ec4899,
+                #7c3aed
+            );
+
+        border-color:
+            transparent;
+
+        box-shadow:
+            0 6px 15px rgba(124,58,237,0.22);
+    }
+
+
+    /* =========================================================
+       EMPTY
+    ========================================================== */
+
+    .ep-empty {
+
+        padding:
+            55px 20px !important;
+
+        text-align: center;
+
+        color: #94a3b8 !important;
+    }
+
+
+    .ep-empty-icon {
+
+        width: 54px;
+        height: 54px;
+
+        margin:
+            0 auto 12px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 17px;
+
+        background:
+            #f1f5f9;
+
+        color:
+            #a8b1bf;
+
+        font-size: 1.1rem;
+    }
+
+
+    /* =========================================================
+       PAGINATION
+    ========================================================== */
+
+    .ep-pagination {
+
+        padding: 14px 18px;
+
+        border-top:
+            1px solid #edf0f4;
+
+        background:
+            #fafbfc;
+    }
+
+
+    /* =========================================================
+       MODAL
+    ========================================================== */
+
+    .ep-modal {
+
+        background:
+            rgba(15,23,42,0.68) !important;
+
+        backdrop-filter:
+            blur(7px);
+    }
+
+
+    .ep-modal-panel {
+
+        overflow: hidden;
+
+        max-height:
+            calc(100vh - 40px);
+
+        border:
+            1px solid rgba(255,255,255,0.55);
+
+        border-radius:
+            22px !important;
+
+        background:
+            #ffffff;
+
+        box-shadow:
+            0 30px 90px rgba(0,0,0,0.25) !important;
+
+        animation:
+            epModalOpen 0.22s ease-out;
+    }
+
+
+    @keyframes epModalOpen {
+
+        from {
+
+            opacity: 0;
+
+            transform:
+                translateY(12px)
+                scale(.985);
+        }
+
+        to {
+
+            opacity: 1;
+
+            transform:
+                translateY(0)
+                scale(1);
+        }
+    }
+
+
+    .ep-modal-header {
+
+        padding:
+            20px 24px !important;
+
+        border-bottom:
+            1px solid var(--ep-border);
+
+        background:
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #faf8ff
+            );
+    }
+
+
+    .ep-modal-title {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        margin: 0;
+
+        color: #172033;
+
+        font-size: 0.94rem !important;
+
+        font-weight: 900 !important;
+    }
+
+
+    .ep-modal-title i {
+
+        color:
+            #ec4899;
+    }
+
+
+    .ep-modal-close {
+
+        width: 35px;
+        height: 35px;
+
+        display: inline-flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border: 0;
+
+        border-radius: 9px;
+
+        background:
+            transparent;
+
+        color:
+            #94a3b8;
+
+        font-size:
+            1.15rem;
+
+        transition:
+            all .18s ease;
+    }
+
+
+    .ep-modal-close:hover {
+
+        background:
+            #fff1f2;
+
+        color:
+            #e11d48;
+    }
+
+
+    .ep-modal-body {
+
+        max-height:
+            55vh;
+
+        overflow:
+            auto;
+
+        padding:
+            0 24px 20px;
+    }
+
+
+    .ep-modal-footer {
+
+        padding:
+            17px 24px !important;
+
+        border-top:
+            1px solid var(--ep-border);
+
+        background:
+            #fafbfc;
+    }
+
+
+    .ep-close-button {
+
+        padding:
+            8px 16px;
+
+        border:
+            0;
+
+        border-radius:
+            9px;
+
+        background:
+            #edf0f4;
+
+        color:
+            #475569;
+
+        font-size:
+            0.72rem;
+
+        font-weight:
+            850;
+
+        transition:
+            all .18s ease;
+    }
+
+
+    .ep-close-button:hover {
+
+        background:
+            #e2e8f0;
+
+        color:
+            #1e293b;
+    }
+
+
+    /* =========================================================
+       STATUS SECTIONS
+    ========================================================== */
+
+    .ep-status-section {
+
+        margin-top:
+            21px;
+
+        overflow:
+            hidden;
+
+        border:
+            1px solid var(--ep-border);
+
+        border-radius:
+            15px;
+
+        background:
+            #ffffff;
+    }
+
+
+    .ep-status-header {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        gap: 15px;
+
+        padding:
+            14px 16px;
+
+        border-bottom:
+            1px solid var(--ep-border);
+    }
+
+
+    .ep-status-header.live {
+
+        background:
+            linear-gradient(
+                135deg,
+                #f0fdf4,
+                #f7fff9
+            );
+    }
+
+
+    .ep-status-header.past {
+
+        background:
+            linear-gradient(
+                135deg,
+                #f8fafc,
+                #fafbfc
+            );
+    }
+
+
+    .ep-status-name {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 9px;
+
+        color:
+            #263244;
+
+        font-size:
+            0.72rem;
+
+        font-weight:
+            900;
+
+        text-transform:
+            uppercase;
+
+        letter-spacing:
+            .045em;
+    }
+
+
+    .ep-status-dot {
+
+        width:
+            8px;
+
+        height:
+            8px;
+
+        border-radius:
+            50%;
+    }
+
+
+    .ep-status-dot.live {
+
+        background:
+            #22c55e;
+
+        box-shadow:
+            0 0 0 4px rgba(34,197,94,.11);
+    }
+
+
+    .ep-status-dot.past {
+
+        background:
+            #64748b;
+
+        box-shadow:
+            0 0 0 4px rgba(100,116,139,.09);
+    }
+
+
+    .ep-status-total {
+
+        padding:
+            5px 9px;
+
+        border-radius:
+            7px;
+
+        font-size:
+            0.64rem;
+
+        font-weight:
+            900;
+    }
+
+
+    .ep-status-total.live {
+
+        background:
+            #dcfce7;
+
+        color:
+            #15803d;
+    }
+
+
+    .ep-status-total.past {
+
+        background:
+            #e2e8f0;
+
+        color:
+            #475569;
+    }
+
+
+    .ep-modal-table {
+
+        width:
+            100%;
+
+        border-collapse:
+            collapse;
+    }
+
+
+    .ep-modal-table th {
+
+        padding:
+            11px 12px;
+
+        background:
+            #f8f9fc;
+
+        color:
+            #7a8495;
+
+        border-bottom:
+            1px solid var(--ep-border);
+
+        font-size:
+            0.60rem;
+
+        font-weight:
+            900;
+
+        letter-spacing:
+            .065em;
+
+        text-transform:
+            uppercase;
+
+        white-space:
+            nowrap;
+    }
+
+
+    .ep-modal-table td {
+
+        padding:
+            12px;
+
+        color:
+            #596579;
+
+        border-bottom:
+            1px solid #edf0f4;
+
+        font-size:
+            0.76rem;
+
+        vertical-align:
+            middle;
+    }
+
+
+    .ep-modal-table tbody tr:hover {
+
+        background:
+            #fafbfe;
+    }
+
+
+    .ep-revenue {
+
+        color:
+            #059669 !important;
+
+        font-weight:
+            900 !important;
+    }
+
+
+    .ep-past-revenue {
+
+        color:
+            #475569 !important;
+
+        font-weight:
+            900 !important;
+    }
+
+
+    .ep-small-ticket {
+
+        display:
+            inline-flex;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        min-width:
+            33px;
+
+        height:
+            27px;
+
+        padding:
+            0 8px;
+
+        border-radius:
+            7px;
+
+        background:
+            #eef2ff;
+
+        color:
+            #4f46e5;
+
+        font-weight:
+            900;
+    }
+
+
+    .ep-small-ticket.past {
+
+        background:
+            #f1f5f9;
+
+        color:
+            #475569;
+    }
+
+
+    .ep-no-data {
+
+        padding:
+            24px 15px !important;
+
+        text-align:
+            center;
+
+        color:
+            #98a2b3 !important;
+
+        font-size:
+            .69rem !important;
+    }
+
+
+    .ep-no-data i {
+
+        margin-right:
+            5px;
+
+        color:
+            #c1c8d2;
+    }
+
+
+    /* =========================================================
+       MOBILE
+    ========================================================== */
+
+    @media (max-width: 900px) {
+
+        .ep-stat-grid {
+
+            grid-template-columns:
+                1fr;
+        }
+
+        .ep-dashboard-intro {
+
+            padding:
+                24px;
+        }
+    }
+
 
     @media (max-width: 767px) {
-        .admin-dashboard { margin: -0.75rem; padding: 0.75rem; }
-        .dashboard-stat-card { min-height: 125px; padding: 20px !important; }
-        .dashboard-stat-icon { width: 52px; height: 52px; min-width: 52px; }
-        .dashboard-stat-value { font-size: 1.55rem; }
-        .dashboard-section-header { padding: 18px; }
-        .dashboard-main-table th, .dashboard-main-table td { padding: 12px 14px; }
-        .dashboard-modal-panel { max-height: calc(100vh - 24px); border-radius: 18px !important; }
-        .dashboard-modal-header, .dashboard-modal-footer { padding-left: 18px !important; padding-right: 18px !important; }
-        .dashboard-modal-body { padding-left: 18px; padding-right: 18px; }
+
+        .ep-dashboard {
+
+            margin:
+                -.75rem;
+
+            padding:
+                .75rem;
+        }
+
+
+        .ep-dashboard-intro {
+
+            min-height:
+                170px;
+        }
+
+
+        .ep-intro-icon {
+
+            display:
+                none;
+        }
+
+
+        .ep-stat-card {
+
+            min-height:
+                125px;
+
+            padding:
+                20px;
+        }
+
+
+        .ep-stat-value {
+
+            font-size:
+                1.5rem;
+        }
+
+
+        .ep-section-header {
+
+            padding:
+                18px;
+        }
+
+
+        .ep-table th,
+        .ep-table td {
+
+            padding:
+                12px 14px;
+        }
+
+
+        .ep-modal-panel {
+
+            max-height:
+                calc(100vh - 24px);
+
+            border-radius:
+                18px !important;
+        }
+
+
+        .ep-modal-header,
+        .ep-modal-footer {
+
+            padding-left:
+                18px !important;
+
+            padding-right:
+                18px !important;
+        }
+
+
+        .ep-modal-body {
+
+            padding-left:
+                18px;
+
+            padding-right:
+                18px;
+        }
     }
+
 </style>
 
-<div class="admin-dashboard">
+<div class="ep-dashboard">
 
-    {{-- STATS OVERVIEW --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {{-- TOTAL REVENUE --}}
-        <div onclick="openModal('revenueModal')" class="dashboard-stat-card revenue-card flex items-center space-x-4 cursor-pointer">
-            <div class="dashboard-stat-icon bg-emerald-100 text-emerald-600">
-                <i class="fa-solid fa-sack-dollar text-2xl"></i>
-            </div>
-            <div class="flex-1 dashboard-stat-content">
-                <p class="dashboard-stat-label">
-                    Total Revenue
-                    <span class="dashboard-stat-hint text-emerald-600">(Click for details)</span>
-                </p>
-                <h3 class="dashboard-stat-value">{{ number_format($totalRevenue) }} MMK</h3>
-            </div>
+
+{{-- =========================================================
+     EVENT PLUS DASHBOARD HERO
+========================================================== --}}
+
+<div class="ep-dashboard-intro">
+
+    <div class="ep-intro-content">
+
+        <div class="ep-intro-eyebrow">
+
+            <i class="fa-solid fa-sparkles"></i>
+
+            EVENT PLUS ADMIN
+
         </div>
 
-        {{-- TOTAL TICKETS --}}
-        <div onclick="openModal('ticketsModal')" class="dashboard-stat-card ticket-card flex items-center space-x-4 cursor-pointer">
-            <div class="dashboard-stat-icon bg-indigo-100 text-indigo-600">
-                <i class="fa-solid fa-ticket text-2xl"></i>
-            </div>
-            <div class="flex-1 dashboard-stat-content">
-                <p class="dashboard-stat-label">
-                    Tickets Sold
-                    <span class="dashboard-stat-hint text-indigo-600">(Click for details)</span>
-                </p>
-                <h3 class="dashboard-stat-value">{{ $totalTicketsSold }}</h3>
-            </div>
-        </div>
 
-        {{-- ACTIVE EVENTS --}}
-        <div class="dashboard-stat-card event-card flex items-center space-x-4">
-            <div class="dashboard-stat-icon bg-amber-100 text-amber-600">
-                <i class="fa-solid fa-person-running text-2xl"></i>
-            </div>
-            <div class="dashboard-stat-content">
-                <p class="dashboard-stat-label">Active Events</p>
-                <h3 class="dashboard-stat-value">{{ $activeEventsCount }}</h3>
-            </div>
-        </div>
+        <h2 class="ep-intro-title">
+
+            Everything happening,
+
+            <span>at a glance.</span>
+
+        </h2>
+
+
+        <p class="ep-intro-description">
+
+            Monitor event registrations, ticket sales, revenue and
+            runner activity from your Event Plus control center.
+
+        </p>
+
     </div>
 
-    {{-- RUNNERS & PURCHASED EVENTS DIRECTORY --}}
-    <div class="dashboard-section-card mb-8">
-        <div class="dashboard-section-header">
-            <h2 class="dashboard-section-title">
-                <span class="dashboard-section-title-icon">
-                    <i class="fa-solid fa-users"></i>
-                </span>
-                Runner Purchase Directory & History
-            </h2>
-        </div>
 
-        <div class="dashboard-table-wrapper">
-            <table class="dashboard-main-table text-left">
-                <thead>
-                    <tr>
-                        <th>User Code / Runner Name</th>
-                        <th>Email Address</th>
-                        <th>Phone</th>
-                        <th>Total Tickets</th>
-                        <th class="text-right">Purchased Events</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($loyaltyRunners as $index => $runner)
-                    @php
-                        $globalIndex = ($loyaltyRunners->currentPage() - 1) * $loyaltyRunners->perPage() + $index;
-                    @endphp
-                    <tr>
-                        <td class="dashboard-runner-name">
-                            <div class="flex items-center gap-2">
-                                <span class="user-code-badge">{{ $runner->user_code ?? 'SWE-' . str_pad($globalIndex + 1, 4, '0', STR_PAD_LEFT) }}</span>
-                                <span>{{ $runner->full_name }}</span>
-                            </div>
-                        </td>
-                        <td>{{ $runner->email }}</td>
-                        <td>{{ $runner->phone }}</td>
-                        <td>
-                            <span class="dashboard-ticket-number">{{ $runner->ticket_count }}</span>
-                        </td>
-                        <td class="text-right">
-                            <button type="button" onclick="openModal('runnerEventsModal-{{ $globalIndex }}')" class="btn-view-events">
-                                <i class="fa-solid fa-calendar-check"></i>
-                                View Events ({{ count($runner->purchased_events) }})
-                            </button>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="dashboard-empty-state">
-                            <div class="dashboard-empty-icon"><i class="fa-solid fa-users-slash"></i></div>
-                            No paid orders registered yet.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    <div class="ep-intro-icon">
 
-        {{-- PAGINATION LINKS --}}
-        @if($loyaltyRunners->hasPages())
-        <div class="p-4 border-t border-gray-100 bg-gray-50/50">
-            {{ $loyaltyRunners->links() }}
-        </div>
-        @endif
-    </div>
+        <i class="fa-solid fa-calendar-check"></i>
 
-    {{-- RUNNER EVENTS MODALS --}}
-    @foreach($loyaltyRunners as $index => $runner)
-    @php
-        $globalIndex = ($loyaltyRunners->currentPage() - 1) * $loyaltyRunners->perPage() + $index;
-    @endphp
-    <div id="runnerEventsModal-{{ $globalIndex }}" class="dashboard-modal fixed inset-0 hidden items-center justify-center z-50 p-4">
-        <div class="dashboard-modal-panel max-w-2xl w-full">
-            <div class="dashboard-modal-header flex justify-between items-center">
-                <h3 class="dashboard-modal-title">
-                    <i class="fa-solid fa-user-tag text-indigo-600"></i>
-                    Events Joined by {{ $runner->full_name }} ({{ $runner->user_code ?? 'SWE-' . str_pad($globalIndex + 1, 4, '0', STR_PAD_LEFT) }})
-                </h3>
-                <button onclick="closeModal('runnerEventsModal-{{ $globalIndex }}')" class="dashboard-modal-close">&times;</button>
-            </div>
-
-            <div class="dashboard-modal-body pt-4">
-                <div class="overflow-x-auto">
-                    <table class="dashboard-modal-table">
-                        <thead>
-                            <tr>
-                                <th>Event Title</th>
-                                <th>Category</th>
-                                <th>Status</th>
-                                <th class="text-center">Tickets</th>
-                                <th class="text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($runner->purchased_events as $item)
-                            <tr>
-                                <td class="font-bold text-gray-800">{{ $item['event_title'] }}</td>
-                                <td><span class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded">{{ $item['categories'] }}</span></td>
-                                <td>
-                                    <span class="text-xs font-extrabold uppercase {{ strtolower($item['event_status']) === 'live' ? 'text-emerald-600' : 'text-gray-500' }}">
-                                        {{ $item['event_status'] }}
-                                    </span>
-                                </td>
-                                <td class="text-center"><span class="dashboard-ticket-number-small">{{ $item['ticket_count'] }}</span></td>
-                                <td class="text-right font-bold text-emerald-600">{{ number_format($item['total_spent']) }} MMK</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="status-no-data">
-                                    <i class="fa-solid fa-calendar-xmark"></i> No active events found for this runner.
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="dashboard-modal-footer text-right">
-                <button onclick="closeModal('runnerEventsModal-{{ $globalIndex }}')" class="dashboard-close-button">Close</button>
-            </div>
-        </div>
-    </div>
-    @endforeach
-
-    {{-- REVENUE MODAL --}}
-    <div id="revenueModal" class="dashboard-modal fixed inset-0 hidden items-center justify-center z-50 p-4">
-        <div class="dashboard-modal-panel max-w-3xl w-full">
-            <div class="dashboard-modal-header flex justify-between items-center">
-                <h3 class="dashboard-modal-title">
-                    <i class="fa-solid fa-chart-column text-emerald-600"></i> Revenue Overview
-                </h3>
-                <button onclick="closeModal('revenueModal')" class="dashboard-modal-close">&times;</button>
-            </div>
-
-            <div class="dashboard-modal-body">
-                {{-- LIVE EVENTS --}}
-                <div class="revenue-status-section">
-                    <div class="status-section-header live">
-                        <div class="status-section-name"><span class="status-dot live"></span> Live Events</div>
-                        <span class="status-total live">{{ number_format(collect($eventRevenueBreakdown)->where('status', 'live')->sum('real_revenue')) }} MMK</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="dashboard-modal-table">
-                            <thead>
-                                <tr><th>Event</th><th>Status</th><th class="text-right">Revenue</th></tr>
-                            </thead>
-                            <tbody>
-                                @forelse(collect($eventRevenueBreakdown)->where('status', 'live') as $item)
-                                <tr>
-                                    <td class="font-semibold text-gray-800">{{ $item->title }}</td>
-                                    <td><span class="dashboard-status bg-green-100 text-green-700"><i class="fa-solid fa-circle text-[6px] mr-1"></i> LIVE</span></td>
-                                    <td class="text-right dashboard-revenue">{{ number_format($item->real_revenue) }} MMK</td>
-                                </tr>
-                                @empty
-                                <tr><td colspan="3" class="status-no-data"><i class="fa-solid fa-calendar-xmark"></i> No live event revenue yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {{-- PAST EVENTS --}}
-                <div class="revenue-status-section">
-                    <div class="status-section-header past">
-                        <div class="status-section-name"><span class="status-dot past"></span> Past Events</div>
-                        <span class="status-total past">{{ number_format(collect($eventRevenueBreakdown)->where('status', 'past')->sum('real_revenue')) }} MMK</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="dashboard-modal-table">
-                            <thead>
-                                <tr><th>Event</th><th>Status</th><th class="text-right">Revenue</th></tr>
-                            </thead>
-                            <tbody>
-                                @forelse(collect($eventRevenueBreakdown)->where('status', 'past') as $item)
-                                <tr>
-                                    <td class="font-semibold text-gray-800">{{ $item->title }}</td>
-                                    <td><span class="dashboard-status bg-slate-100 text-slate-600"><i class="fa-solid fa-clock-rotate-left mr-1"></i> PAST</span></td>
-                                    <td class="text-right dashboard-past-revenue">{{ number_format($item->real_revenue) }} MMK</td>
-                                </tr>
-                                @empty
-                                <tr><td colspan="3" class="status-no-data"><i class="fa-solid fa-calendar-xmark"></i> No past event revenue yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard-modal-footer text-right">
-                <button onclick="closeModal('revenueModal')" class="dashboard-close-button">Close</button>
-            </div>
-        </div>
-    </div>
-
-    {{-- TICKETS MODAL --}}
-    <div id="ticketsModal" class="dashboard-modal fixed inset-0 hidden items-center justify-center z-50 p-4">
-        <div class="dashboard-modal-panel max-w-3xl w-full">
-            <div class="dashboard-modal-header flex justify-between items-center">
-                <h3 class="dashboard-modal-title">
-                    <i class="fa-solid fa-ticket text-indigo-600"></i> Ticket Sales Overview
-                </h3>
-                <button onclick="closeModal('ticketsModal')" class="dashboard-modal-close">&times;</button>
-            </div>
-
-            <div class="dashboard-modal-body">
-                {{-- LIVE TICKETS --}}
-                <div class="ticket-status-section">
-                    <div class="status-section-header live">
-                        <div class="status-section-name"><span class="status-dot live"></span> Live Events</div>
-                        <span class="status-total live">{{ collect($categoryTicketBreakdown)->filter(fn($cat) => optional($cat->event)->status === 'live')->sum('paid_tickets_count') }} Tickets</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="dashboard-modal-table">
-                            <thead>
-                                <tr><th>Event</th><th>Category</th><th class="text-right">Paid Tickets</th></tr>
-                            </thead>
-                            <tbody>
-                                @forelse(collect($categoryTicketBreakdown)->filter(fn($cat) => optional($cat->event)->status === 'live') as $cat)
-                                <tr>
-                                    <td class="font-medium text-gray-800">{{ $cat->event->title ?? 'N/A' }}</td>
-                                    <td class="font-semibold text-indigo-600">{{ $cat->name }}</td>
-                                    <td class="text-right"><span class="dashboard-ticket-number-small">{{ $cat->paid_tickets_count }}</span></td>
-                                </tr>
-                                @empty
-                                <tr><td colspan="3" class="status-no-data"><i class="fa-solid fa-ticket-slash"></i> No live event tickets sold yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {{-- PAST TICKETS --}}
-                <div class="ticket-status-section">
-                    <div class="status-section-header past">
-                        <div class="status-section-name"><span class="status-dot past"></span> Past Events</div>
-                        <span class="status-total past">{{ collect($categoryTicketBreakdown)->filter(fn($cat) => optional($cat->event)->status === 'past')->sum('paid_tickets_count') }} Tickets</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="dashboard-modal-table">
-                            <thead>
-                                <tr><th>Event</th><th>Category</th><th class="text-right">Paid Tickets</th></tr>
-                            </thead>
-                            <tbody>
-                                @forelse(collect($categoryTicketBreakdown)->filter(fn($cat) => optional($cat->event)->status === 'past') as $cat)
-                                <tr>
-                                    <td class="font-medium text-gray-800">{{ $cat->event->title ?? 'N/A' }}</td>
-                                    <td class="font-semibold text-slate-600">{{ $cat->name }}</td>
-                                    <td class="text-right"><span class="dashboard-ticket-number-small dashboard-past-ticket-number">{{ $cat->paid_tickets_count }}</span></td>
-                                </tr>
-                                @empty
-                                <tr><td colspan="3" class="status-no-data"><i class="fa-solid fa-ticket-slash"></i> No past event tickets sold yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard-modal-footer text-right">
-                <button onclick="closeModal('ticketsModal')" class="dashboard-close-button">Close</button>
-            </div>
-        </div>
     </div>
 
 </div>
 
-<script>
-function openModal(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.classList.remove('hidden');
-        el.classList.add('flex');
-    }
-}
 
-function closeModal(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.classList.remove('flex');
-        el.classList.add('hidden');
+{{-- =========================================================
+     STATISTICS
+========================================================== --}}
+
+<div class="ep-stat-grid">
+
+
+    {{-- TOTAL REVENUE --}}
+
+    <div
+        onclick="openModal('revenueModal')"
+        class="ep-stat-card ep-stat-revenue"
+    >
+
+        <div class="ep-stat-top">
+
+            <div class="ep-stat-icon revenue">
+
+                <i class="fa-solid fa-sack-dollar"></i>
+
+            </div>
+
+
+            <span class="ep-stat-click">
+
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+
+                Details
+
+            </span>
+
+        </div>
+
+
+        <p class="ep-stat-label">
+            Total Revenue
+        </p>
+
+
+        <h3 class="ep-stat-value">
+
+            {{ number_format($totalRevenue) }}
+
+            <small>MMK</small>
+
+        </h3>
+
+    </div>
+
+
+    {{-- TOTAL TICKETS --}}
+
+    <div
+        onclick="openModal('ticketsModal')"
+        class="ep-stat-card ep-stat-ticket"
+    >
+
+        <div class="ep-stat-top">
+
+            <div class="ep-stat-icon ticket">
+
+                <i class="fa-solid fa-ticket"></i>
+
+            </div>
+
+
+            <span class="ep-stat-click">
+
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+
+                Details
+
+            </span>
+
+        </div>
+
+
+        <p class="ep-stat-label">
+            Tickets Sold
+        </p>
+
+
+        <h3 class="ep-stat-value">
+
+            {{ $totalTicketsSold }}
+
+        </h3>
+
+    </div>
+
+
+    {{-- ACTIVE EVENTS --}}
+
+    <div
+        class="ep-stat-card ep-stat-event"
+    >
+
+        <div class="ep-stat-top">
+
+            <div class="ep-stat-icon event">
+
+                <i class="fa-solid fa-calendar-days"></i>
+
+            </div>
+
+
+            <span class="ep-stat-click">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+                Running
+
+            </span>
+
+        </div>
+
+
+        <p class="ep-stat-label">
+            Active Events
+        </p>
+
+
+        <h3 class="ep-stat-value">
+
+            {{ $activeEventsCount }}
+
+        </h3>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     RUNNER PURCHASE DIRECTORY
+========================================================== --}}
+
+<div class="ep-section">
+
+    <div class="ep-section-header">
+
+        <div class="ep-section-heading">
+
+            <div class="ep-section-icon">
+
+                <i class="fa-solid fa-users"></i>
+
+            </div>
+
+
+            <div>
+
+                <h2 class="ep-section-title">
+
+                    Runner Purchase Directory
+
+                </h2>
+
+
+                <p class="ep-section-subtitle">
+
+                    Registration history and purchased events
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="ep-table-wrap">
+
+        <table class="ep-table text-left">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Runner
+                    </th>
+
+                    <th>
+                        Email Address
+                    </th>
+
+                    <th>
+                        Phone
+                    </th>
+
+                    <th>
+                        Tickets
+                    </th>
+
+                    <th class="text-right">
+                        Purchased Events
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                @forelse($loyaltyRunners as $index => $runner)
+
+                    @php
+
+                        $globalIndex =
+                            ($loyaltyRunners->currentPage() - 1)
+                            *
+                            $loyaltyRunners->perPage()
+                            +
+                            $index;
+
+                        $runnerName =
+                            $runner->full_name ?? 'Runner';
+
+                        $runnerInitial =
+                            strtoupper(
+                                substr(
+                                    $runnerName,
+                                    0,
+                                    1
+                                )
+                            );
+
+                    @endphp
+
+
+                    <tr>
+
+                        <td>
+
+                            <div class="ep-runner-cell">
+
+                                <div class="ep-runner-avatar">
+
+                                    {{ $runnerInitial }}
+
+                                </div>
+
+
+                                <div>
+
+                                    <div class="ep-user-code">
+
+                                        {{
+                                            $runner->user_code
+                                            ??
+                                            'EP-' .
+                                            str_pad(
+                                                $globalIndex + 1,
+                                                4,
+                                                '0',
+                                                STR_PAD_LEFT
+                                            )
+                                        }}
+
+                                    </div>
+
+
+                                    <div class="ep-runner-name">
+
+                                        {{ $runnerName }}
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ $runner->email }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ $runner->phone }}
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="ep-ticket-count">
+
+                                {{ $runner->ticket_count }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-right">
+
+                            <button
+                                type="button"
+                                onclick="openModal('runnerEventsModal-{{ $globalIndex }}')"
+                                class="ep-view-button"
+                            >
+
+                                <i class="fa-solid fa-calendar-check"></i>
+
+                                View Events
+
+                                <span>
+                                    ({{ count($runner->purchased_events) }})
+                                </span>
+
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                @empty
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="ep-empty"
+                        >
+
+                            <div class="ep-empty-icon">
+
+                                <i class="fa-solid fa-users-slash"></i>
+
+                            </div>
+
+
+                            No paid orders registered yet.
+
+                        </td>
+
+                    </tr>
+
+                @endforelse
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    {{-- PAGINATION --}}
+
+    @if($loyaltyRunners->hasPages())
+
+        <div class="ep-pagination">
+
+            {{ $loyaltyRunners->links() }}
+
+        </div>
+
+    @endif
+
+</div>
+
+
+{{-- =========================================================
+     RUNNER EVENTS MODALS
+========================================================== --}}
+
+@foreach($loyaltyRunners as $index => $runner)
+
+    @php
+
+        $globalIndex =
+            ($loyaltyRunners->currentPage() - 1)
+            *
+            $loyaltyRunners->perPage()
+            +
+            $index;
+
+    @endphp
+
+
+    <div
+        id="runnerEventsModal-{{ $globalIndex }}"
+        class="ep-modal fixed inset-0 hidden items-center justify-center z-50 p-4"
+    >
+
+        <div class="ep-modal-panel max-w-2xl w-full">
+
+
+            <div class="ep-modal-header flex justify-between items-center">
+
+                <h3 class="ep-modal-title">
+
+                    <i class="fa-solid fa-user-tag"></i>
+
+                    Events Joined by
+                    {{ $runner->full_name }}
+
+                    <span class="text-slate-400">
+                        (
+                        {{
+                            $runner->user_code
+                            ??
+                            'EP-' .
+                            str_pad(
+                                $globalIndex + 1,
+                                4,
+                                '0',
+                                STR_PAD_LEFT
+                            )
+                        }}
+                        )
+                    </span>
+
+                </h3>
+
+
+                <button
+                    onclick="closeModal('runnerEventsModal-{{ $globalIndex }}')"
+                    class="ep-modal-close"
+                    type="button"
+                    aria-label="Close"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="ep-modal-body pt-4">
+
+                <div class="overflow-x-auto">
+
+                    <table class="ep-modal-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Event
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th class="text-center">
+                                    Tickets
+                                </th>
+
+                                <th class="text-right">
+                                    Amount
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @forelse($runner->purchased_events as $item)
+
+                                <tr>
+
+                                    <td class="font-bold text-gray-800">
+
+                                        {{ $item['event_title'] }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded">
+
+                                            {{ $item['categories'] }}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span
+                                            class="text-xs font-extrabold uppercase
+                                            {{
+                                                strtolower($item['event_status']) === 'live'
+                                                ? 'text-emerald-600'
+                                                : 'text-gray-500'
+                                            }}"
+                                        >
+
+                                            {{ $item['event_status'] }}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td class="text-center">
+
+                                        <span class="ep-small-ticket">
+
+                                            {{ $item['ticket_count'] }}
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td class="text-right font-bold text-emerald-600">
+
+                                        {{ number_format($item['total_spent']) }}
+
+                                        MMK
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+
+                                    <td
+                                        colspan="5"
+                                        class="ep-no-data"
+                                    >
+
+                                        <i class="fa-solid fa-calendar-xmark"></i>
+
+                                        No active events found for this runner.
+
+                                    </td>
+
+                                </tr>
+
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <div class="ep-modal-footer text-right">
+
+                <button
+                    onclick="closeModal('runnerEventsModal-{{ $globalIndex }}')"
+                    class="ep-close-button"
+                    type="button"
+                >
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+@endforeach
+
+
+{{-- =========================================================
+     REVENUE MODAL
+========================================================== --}}
+
+<div
+    id="revenueModal"
+    class="ep-modal fixed inset-0 hidden items-center justify-center z-50 p-4"
+>
+
+    <div class="ep-modal-panel max-w-3xl w-full">
+
+
+        <div class="ep-modal-header flex justify-between items-center">
+
+            <h3 class="ep-modal-title">
+
+                <i class="fa-solid fa-chart-column"></i>
+
+                Revenue Overview
+
+            </h3>
+
+
+            <button
+                onclick="closeModal('revenueModal')"
+                class="ep-modal-close"
+                type="button"
+                aria-label="Close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="ep-modal-body">
+
+
+            {{-- LIVE EVENTS --}}
+
+            <div class="ep-status-section">
+
+                <div class="ep-status-header live">
+
+                    <div class="ep-status-name">
+
+                        <span class="ep-status-dot live"></span>
+
+                        Live Events
+
+                    </div>
+
+
+                    <span class="ep-status-total live">
+
+                        {{
+                            number_format(
+                                collect($eventRevenueBreakdown)
+                                ->where('status', 'live')
+                                ->sum('real_revenue')
+                            )
+                        }}
+
+                        MMK
+
+                    </span>
+
+                </div>
+
+
+                <div class="overflow-x-auto">
+
+                    <table class="ep-modal-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Event
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th class="text-right">
+                                    Revenue
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @forelse(
+                                collect($eventRevenueBreakdown)
+                                ->where('status', 'live')
+                                as $item
+                            )
+
+                                <tr>
+
+                                    <td class="font-semibold text-gray-800">
+
+                                        {{ $item->title }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="text-xs font-bold text-emerald-600">
+
+                                            <i class="fa-solid fa-circle text-[6px] mr-1"></i>
+
+                                            LIVE
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td class="text-right ep-revenue">
+
+                                        {{ number_format($item->real_revenue) }}
+
+                                        MMK
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+
+                                    <td
+                                        colspan="3"
+                                        class="ep-no-data"
+                                    >
+
+                                        <i class="fa-solid fa-calendar-xmark"></i>
+
+                                        No live event revenue yet.
+
+                                    </td>
+
+                                </tr>
+
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            {{-- PAST EVENTS --}}
+
+            <div class="ep-status-section">
+
+                <div class="ep-status-header past">
+
+                    <div class="ep-status-name">
+
+                        <span class="ep-status-dot past"></span>
+
+                        Past Events
+
+                    </div>
+
+
+                    <span class="ep-status-total past">
+
+                        {{
+                            number_format(
+                                collect($eventRevenueBreakdown)
+                                ->where('status', 'past')
+                                ->sum('real_revenue')
+                            )
+                        }}
+
+                        MMK
+
+                    </span>
+
+                </div>
+
+
+                <div class="overflow-x-auto">
+
+                    <table class="ep-modal-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Event
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th class="text-right">
+                                    Revenue
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @forelse(
+                                collect($eventRevenueBreakdown)
+                                ->where('status', 'past')
+                                as $item
+                            )
+
+                                <tr>
+
+                                    <td class="font-semibold text-gray-800">
+
+                                        {{ $item->title }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="text-xs font-bold text-slate-500">
+
+                                            <i class="fa-solid fa-clock-rotate-left mr-1"></i>
+
+                                            PAST
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <td class="text-right ep-past-revenue">
+
+                                        {{ number_format($item->real_revenue) }}
+
+                                        MMK
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+
+                                    <td
+                                        colspan="3"
+                                        class="ep-no-data"
+                                    >
+
+                                        <i class="fa-solid fa-calendar-xmark"></i>
+
+                                        No past event revenue yet.
+
+                                    </td>
+
+                                </tr>
+
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="ep-modal-footer text-right">
+
+            <button
+                onclick="closeModal('revenueModal')"
+                class="ep-close-button"
+                type="button"
+            >
+
+                Close
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     TICKETS MODAL
+========================================================== --}}
+
+<div
+    id="ticketsModal"
+    class="ep-modal fixed inset-0 hidden items-center justify-center z-50 p-4"
+>
+
+    <div class="ep-modal-panel max-w-3xl w-full">
+
+
+        <div class="ep-modal-header flex justify-between items-center">
+
+            <h3 class="ep-modal-title">
+
+                <i class="fa-solid fa-ticket"></i>
+
+                Ticket Sales Overview
+
+            </h3>
+
+
+            <button
+                onclick="closeModal('ticketsModal')"
+                class="ep-modal-close"
+                type="button"
+                aria-label="Close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="ep-modal-body">
+
+
+            {{-- LIVE TICKETS --}}
+
+            <div class="ep-status-section">
+
+                <div class="ep-status-header live">
+
+                    <div class="ep-status-name">
+
+                        <span class="ep-status-dot live"></span>
+
+                        Live Events
+
+                    </div>
+
+
+                    <span class="ep-status-total live">
+
+                        {{
+                            collect($categoryTicketBreakdown)
+                            ->filter(
+                                fn($cat) =>
+                                    optional($cat->event)->status === 'live'
+                            )
+                            ->sum('paid_tickets_count')
+                        }}
+
+                        Tickets
+
+                    </span>
+
+                </div>
+
+
+                <div class="overflow-x-auto">
+
+                    <table class="ep-modal-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Event
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th class="text-right">
+                                    Paid Tickets
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @forelse(
+
+                                collect($categoryTicketBreakdown)
+                                ->filter(
+                                    fn($cat) =>
+                                        optional($cat->event)->status === 'live'
+                                )
+
+                                as $cat
+
+                            )
+
+                                <tr>
+
+                                    <td class="font-medium text-gray-800">
+
+                                        {{ $cat->event->title ?? 'N/A' }}
+
+                                    </td>
+
+
+                                    <td class="font-semibold text-indigo-600">
+
+                                        {{ $cat->name }}
+
+                                    </td>
+
+
+                                    <td class="text-right">
+
+                                        <span class="ep-small-ticket">
+
+                                            {{ $cat->paid_tickets_count }}
+
+                                        </span>
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+
+                                    <td
+                                        colspan="3"
+                                        class="ep-no-data"
+                                    >
+
+                                        <i class="fa-solid fa-ticket-slash"></i>
+
+                                        No live event tickets sold yet.
+
+                                    </td>
+
+                                </tr>
+
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            {{-- PAST TICKETS --}}
+
+            <div class="ep-status-section">
+
+                <div class="ep-status-header past">
+
+                    <div class="ep-status-name">
+
+                        <span class="ep-status-dot past"></span>
+
+                        Past Events
+
+                    </div>
+
+
+                    <span class="ep-status-total past">
+
+                        {{
+                            collect($categoryTicketBreakdown)
+                            ->filter(
+                                fn($cat) =>
+                                    optional($cat->event)->status === 'past'
+                            )
+                            ->sum('paid_tickets_count')
+                        }}
+
+                        Tickets
+
+                    </span>
+
+                </div>
+
+
+                <div class="overflow-x-auto">
+
+                    <table class="ep-modal-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Event
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th class="text-right">
+                                    Paid Tickets
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @forelse(
+
+                                collect($categoryTicketBreakdown)
+                                ->filter(
+                                    fn($cat) =>
+                                        optional($cat->event)->status === 'past'
+                                )
+
+                                as $cat
+
+                            )
+
+                                <tr>
+
+                                    <td class="font-medium text-gray-800">
+
+                                        {{ $cat->event->title ?? 'N/A' }}
+
+                                    </td>
+
+
+                                    <td class="font-semibold text-slate-600">
+
+                                        {{ $cat->name }}
+
+                                    </td>
+
+
+                                    <td class="text-right">
+
+                                        <span class="ep-small-ticket past">
+
+                                            {{ $cat->paid_tickets_count }}
+
+                                        </span>
+
+                                    </td>
+
+                                </tr>
+
+                            @empty
+
+                                <tr>
+
+                                    <td
+                                        colspan="3"
+                                        class="ep-no-data"
+                                    >
+
+                                        <i class="fa-solid fa-ticket-slash"></i>
+
+                                        No past event tickets sold yet.
+
+                                    </td>
+
+                                </tr>
+
+                            @endforelse
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="ep-modal-footer text-right">
+
+            <button
+                onclick="closeModal('ticketsModal')"
+                class="ep-close-button"
+                type="button"
+            >
+
+                Close
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+</div>
+
+{{-- =========================================================
+MODAL JAVASCRIPT
+========================================================== --}}
+
+<script>
+
+    function openModal(id) {
+
+        const el = document.getElementById(id);
+
+        if (!el) {
+            return;
+        }
+
+        el.classList.remove('hidden');
+
+        el.classList.add('flex');
+
+        document.body.style.overflow = 'hidden';
     }
-}
+
+
+    function closeModal(id) {
+
+        const el = document.getElementById(id);
+
+        if (!el) {
+            return;
+        }
+
+        el.classList.remove('flex');
+
+        el.classList.add('hidden');
+
+        document.body.style.overflow = '';
+    }
+
+
+    /* Close modal when clicking outside the panel */
+
+    document.addEventListener('click', function(event) {
+
+        if (
+            event.target.classList &&
+            event.target.classList.contains('ep-modal')
+        ) {
+
+            const modalId = event.target.id;
+
+            closeModal(modalId);
+        }
+
+    });
+
+
+    /* ESC key */
+
+    document.addEventListener('keydown', function(event) {
+
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        const openModalElement =
+            document.querySelector('.ep-modal.flex');
+
+        if (openModalElement) {
+
+            closeModal(
+                openModalElement.id
+            );
+
+        }
+
+    });
+
 </script>
 
 @endsection
