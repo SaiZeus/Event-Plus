@@ -28,7 +28,7 @@ class SendTicketEmailJob implements ShouldQueue
     {
         try {
             Mail::to($this->attendee->email)
-                ->bcc('swezonticketing@gmail.com')
+                ->bcc('eventplusticketing@gmail.com')
                 ->send(new TicketConfirmationMail($this->attendee));
         } catch (Exception $e) {
             Log::error("Failed to send queued ticket email to {$this->attendee->email}: " . $e->getMessage());
