@@ -1208,7 +1208,7 @@
                                 </h3>
 
                                 <p>
-                                    Basic details about your marathon event.
+                                    Basic details about your event.
                                 </p>
 
                             </div>
@@ -1862,7 +1862,7 @@
                                 name="description"
                                 rows="4"
                                 required
-                                placeholder="Write a description about your marathon event..."
+                                placeholder="Write a description about your event..."
                                 class="event-textarea"
                             >{{ old('description', $event->description) }}</textarea>
 
@@ -1913,7 +1913,7 @@
                                     </strong>
 
                                     <span>
-                                        Choose a high-quality image for your marathon (Optional when updating).
+                                        Choose a high-quality image for your event (Optional when updating).
                                     </span>
 
                                 </div>

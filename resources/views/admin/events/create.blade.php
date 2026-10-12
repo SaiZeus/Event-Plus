@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Create New Event')
-@section('page-title', 'Create Marathon Event')
+@section('page-title', 'Create Event')
 
 @section('content')
 
@@ -1000,7 +1000,7 @@
     <div class="event-form-wrapper">
 
     <div class="event-page-header">
-        <h1>Create Marathon Event</h1>
+        <h1>Create Event</h1>
         <p>
             Set up your event details, tickets, capacity and participant information.
         </p>
@@ -1016,7 +1016,7 @@
                 </div>
 
                 <div>
-                    <h2>New Marathon Event</h2>
+                    <h2>New Event</h2>
                     <p>
                         Complete the information below to publish your event.
                     </p>
@@ -1118,7 +1118,7 @@
 
                         <div>
                             <h3>Event Information</h3>
-                            <p>Basic details about your marathon event.</p>
+                            <p>Basic details about your event.</p>
                         </div>
 
                     </div>
@@ -1626,7 +1626,7 @@
                             name="description"
                             rows="4"
                             required
-                            placeholder="Write a description about your marathon event..."
+                            placeholder="Write a description about your event..."
                             class="event-textarea">{{ old('description') }}</textarea>
 
                     </div>
@@ -1663,7 +1663,7 @@
                                 <strong>Event Banner Image</strong>
 
                                 <span>
-                                    Choose a high-quality image for your marathon.
+                                    Choose a high-quality image for your event.
                                 </span>
 
                             </div>

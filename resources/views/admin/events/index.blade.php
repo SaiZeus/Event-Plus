@@ -988,7 +988,7 @@
 
             <i class="fa-solid fa-calendar-check"></i>
 
-            {{ $events->count() }} Marathon Events
+            {{ $events->count() }} Events
 
         </span>
 
