@@ -112,9 +112,9 @@
             <!-- LOGO HEADER -->
             <div class="header">
                 @if(isset($message))
-                    <img src="{{ $message->embed(public_path('assets/img/logo/Swezon_Logo1.1V.png')) }}" alt="Swezon Logo" style="max-height: 110px; width: auto; object-fit: contain; display: block; margin: 0 auto; border: 0;">
+                    <img src="{{ $message->embed(public_path('assets/img/logo/Eventplus.png')) }}" alt="Eventplus" style="max-height: 110px; width: auto; object-fit: contain; display: block; margin: 0 auto; border: 0;">
                 @else
-                    <img src="{{ asset('assets/img/logo/Swezon_Logo1.1V.png') }}" alt="Swezon Logo" style="max-height: 110px; width: auto; object-fit: contain; display: block; margin: 0 auto; border: 0;">
+                    <img src="{{ asset('assets/img/logo/Eventplus.png') }}" alt="Eventplus" style="max-height: 110px; width: auto; object-fit: contain; display: block; margin: 0 auto; border: 0;">
                 @endif
             </div>
 
@@ -165,7 +165,7 @@
                     <strong>Event Contact Details</strong><br>
                     Email: {{ $event->creator_email ?? 'N/A' }}<br>
                     Phone: {{ $event->creator_phone ?? 'N/A' }}<br>
-                    Website: <a href="https://swezon.com.mm/" target="_blank" style="color: #4f46e5; text-decoration: none;">https://swezon.com.mm/</a>
+                    Website: <a href="https://eventplus.com.mm/" target="_blank" style="color: #4f46e5; text-decoration: none;">https://eventplus.com.mm/</a>
                 </div>
 
                 <p><strong>Documents Attached:</strong></p>
@@ -186,12 +186,12 @@
                 <p style="font-size: 13px; color: #555; margin-top: 20px;">If the above information is incorrect, please contact us at <a href="mailto:contact@ahotu.com" style="color: #4f46e5;">contact@ahotu.com</a>.</p>
                 
                 <p style="margin-top: 25px;">Thank you for your registration!<br>
-                If you have any questions about the event, please contact <strong>{{ $event->creator_email ?? 'xxxxxxxxxxx@gmail.com' }}</strong>. For any questions about your payment or to change your registration information, please contact <strong>swezonticketing@gmail.com</strong>.</p>
+                If you have any questions about the event, please contact <strong>{{ $event->creator_email ?? 'xxxxxxxxxxx@gmail.com' }}</strong>. For any questions about your payment or to change your registration information, please contact <strong>eventplusticketing@gmail.com</strong>.</p>
             </div>
 
             <!-- FOOTER -->
             <div class="footer">
-                <p>This is an automated message. Please do not reply directly to this email.<br>&copy; {{ date('Y') }} Swezon. All rights reserved.</p>
+                <p>This is an automated message. Please do not reply directly to this email.<br>&copy; {{ date('Y') }} Eventplus. All rights reserved.</p>
             </div>
             
         </div>
