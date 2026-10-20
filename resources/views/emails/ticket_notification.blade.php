@@ -133,7 +133,7 @@
             <div class="content">
                 <h2 style="color: #172033; font-size: 20px; margin-top: 0; font-weight: 800;">{{ $event->title }}</h2>
                 <p>Dear <strong>{{ $attendee->full_name }}</strong>,</p>
-                <p>Congratulations! You have successfully registered for <strong>{{ $event->title }}</strong>, title-sponsored by Myanmar Airways International (MAI).</p>
+                <p>Congratulations! You have successfully registered for <strong>{{ $event->title }}</strong>.</p>
                 
                 <table class="details-table" cellpadding="0" cellspacing="0">
                     <tr>
