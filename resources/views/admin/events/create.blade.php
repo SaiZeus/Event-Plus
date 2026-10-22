@@ -902,48 +902,49 @@
         height: 16px;
     }
 
-    /* T-SHIRT SIZE SELECTION STYLING */
-
+    /* T-Shirt Sizes Section - aligned with Edit Event */
     .tshirt-sizes-wrapper {
-        margin-top: 16px;
-        padding: 16px;
-        border: 1px dashed #cbd5e1;
-        border-radius: 12px;
-        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 12px;
     }
 
-    .size-toggle-grid {
+    .tshirt-sizes-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 8px;
-        margin-top: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
     }
 
-    .size-card {
+    .tshirt-size-card {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 8px;
-        border: 1px solid #e2e8f0;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
         border-radius: 8px;
-        background: #f8fafc;
+        background: #ffffff;
         cursor: pointer;
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: #334155;
-        transition: all 0.15s ease;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #374151;
     }
 
-    .size-card:hover {
-        border-color: #818cf8;
-        background: #eef2ff;
-    }
-
-    .size-card input[type="checkbox"] {
+    .tshirt-size-card input[type="checkbox"] {
         accent-color: #4f46e5;
         width: 15px;
         height: 15px;
+    }
+
+    .custom-tshirt-input-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+        align-items: center;
+    }
+
+    .custom-tshirt-input-group input {
+        max-width: 250px;
     }
 
     @media (max-width: 767px) {
@@ -1338,74 +1339,105 @@
 
                     </div>
 
-                    <div class="fields-toggle-box mb-4">
+                    @php
+                        $enabledFields = old('enabled_fields', [
+                            'viber',
+                            'father_name',
+                            'blood_type',
+                            'tshirt_size',
+                            'has_medical_condition',
+                            'itra',
+                            'experience',
+                            'address'
+                        ]);
 
+                        $availableFields = [
+                            'viber' => 'Viber Number',
+                            'father_name' => 'Father Name',
+                            'blood_type' => 'Blood Type',
+                            'tshirt_size' => 'T-Shirt Size',
+                            'has_medical_condition' => 'Medical Condition',
+                            'itra' => 'ITRA Details',
+                            'experience' => 'Running Experience',
+                            'address' => 'Address'
+                        ];
+
+                        $selectedTshirtSizes = old('tshirt_sizes', ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']);
+                        $standardSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+                        $customSizes = array_values(array_diff($selectedTshirtSizes, $standardSizes));
+                    @endphp
+
+                    <div class="fields-toggle-box mb-4">
                         <label class="event-label mb-2">
                             Display Fields in Registration Form
                         </label>
 
                         <div class="toggle-grid">
-
-                            @php
-                                $availableFields = [
-                                    'viber' => 'Viber Number',
-                                    'father_name' => 'Father Name',
-                                    'blood_type' => 'Blood Type',
-                                    'tshirt_size' => 'T-Shirt Size',
-                                    'has_medical_condition' => 'Medical Condition',
-                                    'itra' => 'ITRA Details',
-                                    'experience' => 'Running Experience',
-                                    'address' => 'Address'
-                                ];
-                            @endphp
-
                             @foreach($availableFields as $fieldKey => $fieldLabel)
-
                                 <label class="toggle-card">
-
                                     <input
                                         type="checkbox"
                                         name="enabled_fields[]"
                                         value="{{ $fieldKey }}"
-                                        id="{{ $fieldKey === 'tshirt_size' ? 'toggle_tshirt_size' : '' }}"
-                                        checked>
-
+                                        id="field_toggle_{{ $fieldKey }}"
+                                        {{ in_array($fieldKey, $enabledFields) ? 'checked' : '' }}>
                                     <span>{{ $fieldLabel }}</span>
-
                                 </label>
-
                             @endforeach
-
                         </div>
+                    </div>
 
-                        {{-- T-SHIRT SIZE SELECTION BOX --}}
-                        <div id="tshirt_sizes_box" class="tshirt-sizes-wrapper">
-                            <label class="event-label mb-1">
-                                Available T-Shirt Sizes
-                            </label>
-                            <p class="field-help mt-0 mb-2">
-                                Tick the sizes that participants can select during registration.
-                            </p>
+                    {{-- T-SHIRT SIZES CONFIGURATION: MATCHES EDIT EVENT --}}
+                    <div
+                        id="tshirt_sizes_config_box"
+                        class="fields-toggle-box mb-4"
+                        style="{{ in_array('tshirt_size', $enabledFields) ? 'display: block;' : 'display: none;' }}">
 
-                            @php
-                                $allSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-                                $selectedSizes = old('available_tshirt_sizes', $allSizes);
-                            @endphp
+                        <label class="event-label mb-1">Available T-Shirt Sizes</label>
+                        <p class="field-help mb-3 mt-0">
+                            Select which shirt sizes participants can choose during registration.
+                        </p>
 
-                            <div class="size-toggle-grid">
-                                @foreach($allSizes as $size)
-                                    <label class="size-card">
+                        <div class="tshirt-sizes-wrapper">
+                            <div class="tshirt-sizes-grid" id="tshirt_sizes_grid">
+                                @foreach($standardSizes as $size)
+                                    <label class="tshirt-size-card">
                                         <input
                                             type="checkbox"
-                                            name="available_tshirt_sizes[]"
+                                            name="tshirt_sizes[]"
                                             value="{{ $size }}"
-                                            {{ in_array($size, $selectedSizes) ? 'checked' : '' }}>
+                                            {{ in_array($size, $selectedTshirtSizes) ? 'checked' : '' }}>
                                         <span>{{ $size }}</span>
                                     </label>
                                 @endforeach
+
+                                @foreach($customSizes as $customSize)
+                                    <label class="tshirt-size-card custom-size-card">
+                                        <input
+                                            type="checkbox"
+                                            name="tshirt_sizes[]"
+                                            value="{{ $customSize }}"
+                                            checked>
+                                        <span>{{ $customSize }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="custom-tshirt-input-group mt-2">
+                                <input
+                                    type="text"
+                                    id="custom_tshirt_input"
+                                    placeholder="Add custom size (e.g. 4XL, Kids M)"
+                                    class="event-input">
+                                <button
+                                    type="button"
+                                    id="add_custom_tshirt_btn"
+                                    class="add-category-button"
+                                    style="padding: 0 15px; white-space: nowrap;">
+                                    <i class="fa-solid fa-plus"></i> Add
+                                </button>
                             </div>
                         </div>
-
                     </div>
 
                     <div class="fields-toggle-box">
@@ -2772,16 +2804,52 @@ document.addEventListener('DOMContentLoaded', function () {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // T-SHIRT SIZE TOGGLE SCRIPT
-    const toggleTshirtSize = document.getElementById('toggle_tshirt_size');
-    const tshirtSizesBox = document.getElementById('tshirt_sizes_box');
+    // T-Shirt size configuration - same behavior as Edit Event
+    const tshirtCheckbox = document.getElementById('field_toggle_tshirt_size');
+    const tshirtConfigBox = document.getElementById('tshirt_sizes_config_box');
 
-    if (toggleTshirtSize && tshirtSizesBox) {
-        function handleTshirtToggle() {
-            tshirtSizesBox.style.display = toggleTshirtSize.checked ? 'block' : 'none';
-        }
-        toggleTshirtSize.addEventListener('change', handleTshirtToggle);
-        handleTshirtToggle();
+    if (tshirtCheckbox && tshirtConfigBox) {
+        tshirtCheckbox.addEventListener('change', function () {
+            tshirtConfigBox.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    // Add custom T-shirt sizes, matching Edit Event
+    const addCustomBtn = document.getElementById('add_custom_tshirt_btn');
+    const customInput = document.getElementById('custom_tshirt_input');
+    const tshirtGrid = document.getElementById('tshirt_sizes_grid');
+
+    if (addCustomBtn && customInput && tshirtGrid) {
+        addCustomBtn.addEventListener('click', function () {
+            const value = customInput.value.trim().toUpperCase();
+            if (!value) return;
+
+            const existingInputs = tshirtGrid.querySelectorAll('input[type="checkbox"]');
+            for (const input of existingInputs) {
+                if (input.value.toUpperCase() === value) {
+                    input.checked = true;
+                    customInput.value = '';
+                    return;
+                }
+            }
+
+            const label = document.createElement('label');
+            label.className = 'tshirt-size-card custom-size-card';
+            label.innerHTML = `
+                <input type="checkbox" name="tshirt_sizes[]" value="${value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" checked>
+                <span></span>
+            `;
+            label.querySelector('span').textContent = value;
+            tshirtGrid.appendChild(label);
+            customInput.value = '';
+        });
+
+        customInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomBtn.click();
+            }
+        });
     }
 
     let categoryIndex = 1;
