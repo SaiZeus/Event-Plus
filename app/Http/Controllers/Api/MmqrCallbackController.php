@@ -14,7 +14,7 @@ class MmqrCallbackController extends Controller
 {
     /**
      * CB Bank MMQR Callback Handler
-     * URL: https://swezon.com.mm/api/payment/mmqr/callback
+     * URL: https://eventplus.com.mm/api/payment/mmqr/callback
      */
     public function handleCallback(Request $request)
     {
