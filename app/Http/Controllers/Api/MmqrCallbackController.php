@@ -20,106 +20,118 @@ class MmqrCallbackController extends Controller
     {
         Log::info('MMQR Callback Received', $request->all());
 
-        $referenceNo     = $request->input('referenceNo');
-        $transStatusCode  = $request->input('transStatusCode');
-        $qrReferenceNo   = $request->input('qrReferenceNo');
+        $referenceNo = $request->input('referenceNo');
+        $transStatusCode = $request->input('transStatusCode');
+        $qrReferenceNo = $request->input('qrReferenceNo');
 
-        if (!$referenceNo) {
+        if (! $referenceNo) {
             return response()->json([
                 'qrReferenceNo' => $qrReferenceNo,
-                'returnCode'    => '0014',
-                'message'       => 'Missing reference number.',
+                'returnCode' => '0014',
+                'message' => 'Missing reference number.',
             ], 400);
         }
 
         try {
-            return DB::transaction(function () use ($request, $referenceNo, $transStatusCode, $qrReferenceNo) {
-                // Lock the order row to prevent race conditions during concurrent callbacks
+            return DB::transaction(function () use (
+                $request,
+                $referenceNo,
+                $transStatusCode,
+                $qrReferenceNo
+            ) {
+                // Lock the order to prevent concurrent callback processing.
                 $order = Order::with('attendees.ticketCategory.event')
                     ->where('order_number', $referenceNo)
                     ->lockForUpdate()
                     ->first();
 
-                if (!$order) {
+                if (! $order) {
                     return response()->json([
                         'qrReferenceNo' => $qrReferenceNo,
-                        'returnCode'    => '0006',
-                        'message'       => 'Invalid reference number.',
+                        'returnCode' => '0006',
+                        'message' => 'Invalid reference number.',
                     ], 404);
                 }
 
-                if ($transStatusCode === 'SUCCESS') {
-                    // Prevent duplicate execution if webhook is resent
-                    if ($order->payment_status === 'paid') {
-                        return response()->json([
-                            'qrReferenceNo' => $qrReferenceNo,
-                            'returnCode'    => '0000',
-                            'message'       => 'The transaction is succeeded',
-                        ]);
-                    }
+                // Do not process an order that has already been paid.
+                // This also prevents a later failure callback from downgrading it.
+                $currentStatus = strtolower((string) $order->payment_status);
 
-                    // Check ticket capacity to handle race conditions (last ticket edge case)
+                if (in_array($currentStatus, ['paid', 'approved', 'completed'], true)) {
+                    return response()->json([
+                        'qrReferenceNo' => $qrReferenceNo,
+                        'returnCode' => '0000',
+                        'message' => 'The transaction is succeeded',
+                    ]);
+                }
+
+                if ($transStatusCode === 'SUCCESS') {
+                    // Check capacity before confirming payment.
                     foreach ($order->attendees as $attendee) {
                         $category = $attendee->ticketCategory;
+
                         if ($category && $category->capacity !== null) {
                             if (($category->tickets_sold + 1) > $category->capacity) {
-                                // Overbook condition detected: Flag order for manual refund/support review
+                                // Flag the order for manual refund/support review.
                                 $order->update([
                                     'payment_status' => 'refund_required',
                                     'transaction_id' => $request->input('transactionId'),
                                 ]);
 
-                                Log::warning("MMQR Overbook Detected for Order {$referenceNo}. Flagged for refund.");
+                                Log::warning(
+                                    "MMQR Overbook Detected for Order {$referenceNo}. Flagged for refund."
+                                );
 
                                 return response()->json([
                                     'qrReferenceNo' => $qrReferenceNo,
-                                    'returnCode'    => '0007',
-                                    'message'       => 'Ticket capacity exceeded. Order flagged for refund.',
+                                    'returnCode' => '0007',
+                                    'message' => 'Ticket capacity exceeded. Order flagged for refund.',
                                 ]);
                             }
                         }
                     }
 
-                    // Complete payment update
+                    // Updating the payment status triggers the Order model observer.
+                    // The observer generates ticket codes/bibs and increments tickets_sold.
                     $order->update([
                         'payment_status' => 'paid',
                         'payment_method' => 'MMQR',
                         'transaction_id' => $request->input('transactionId'),
                     ]);
 
-                    // Increment tickets sold and dispatch email jobs to queue instantly
+                    // Do not increment tickets_sold here.
+                    // Dispatch ticket emails without blocking the callback response.
                     foreach ($order->attendees as $attendee) {
-                        if ($attendee->ticketCategory) {
-                            $attendee->ticketCategory->increment('tickets_sold');
-                        }
-
-                        // Dispatch to background queue instead of blocking the webhook response
                         SendTicketEmailJob::dispatch($attendee);
                     }
 
                     return response()->json([
                         'qrReferenceNo' => $qrReferenceNo,
-                        'returnCode'    => '0000',
-                        'message'       => 'The transaction is succeeded',
+                        'returnCode' => '0000',
+                        'message' => 'The transaction is succeeded',
                     ]);
                 }
 
-                // Payment status is not SUCCESS
-                $order->update(['payment_status' => 'failed']);
+                // Payment status is not SUCCESS.
+                $order->update([
+                    'payment_status' => 'failed',
+                ]);
 
                 return response()->json([
                     'qrReferenceNo' => $qrReferenceNo,
-                    'returnCode'    => '0007',
-                    'message'       => 'Transaction failed',
+                    'returnCode' => '0007',
+                    'message' => 'Transaction failed',
                 ]);
             });
         } catch (Exception $e) {
-            Log::error('MMQR Callback Transaction Exception', ['error' => $e->getMessage()]);
+            Log::error('MMQR Callback Transaction Exception', [
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'qrReferenceNo' => $qrReferenceNo,
-                'returnCode'    => '9999',
-                'message'       => 'Internal server error processing callback.',
+                'returnCode' => '9999',
+                'message' => 'Internal server error processing callback.',
             ], 500);
         }
     }

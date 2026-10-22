@@ -13,18 +13,18 @@ class Order extends Model
     protected $fillable = [
         'event_id',
         'reference',
-        'order_number', 
-        'total_amount', 
-        'payment_method', 
-        'payment_status', 
-        'payment_proof'
+        'order_number',
+        'total_amount',
+        'payment_method',
+        'payment_status',
+        'payment_proof',
     ];
 
     /**
-     * Boot the model to auto-generate a reference code on creation 
-     * and auto-generate ticket codes when an order is marked as paid.
+     * Boot the model to generate references and attendee ticket details
+     * when an order enters a paid-equivalent status.
      */
-    protected static function booted()
+    protected static function booted(): void
     {
         static::creating(function ($order) {
             if (empty($order->reference)) {
@@ -32,119 +32,168 @@ class Order extends Model
             }
         });
 
-        // Automatically generate ticket codes and bibs if payment status changes to paid
         static::updated(function ($order) {
-            if ($order->isDirty('payment_status') && $order->payment_status === 'paid') {
-                $order->load('attendees.ticketCategory.event');
+            if (! $order->wasChanged('payment_status')) {
+                return;
+            }
 
-                foreach ($order->attendees as $attendee) {
-                    $category = $attendee->ticketCategory;
-                    $event = $category->event ?? null;
+            $paymentStatus = strtolower((string) $order->payment_status);
 
-                    if ($category && empty($attendee->ticket_code) && $event) {
-                        $category->increment('tickets_sold');
+            if (! in_array($paymentStatus, ['paid', 'approved', 'completed'], true)) {
+                return;
+            }
 
-                        // 1. Generate Bib Name if enabled
-                        $generatedBib = $attendee->bib_name;
-                        if (empty($generatedBib) && $event->enable_bib_number) {
-                            $nextNum = 1; // Default fallback initialization to prevent undefined variable errors
-                            
-                            if ($event->share_bib_prefix) {
-                                $prefix = !empty($event->event_bib_prefix) ? $event->event_bib_prefix : 'BIB';
-                                $startNum = $event->event_bib_start_number ?? 1;
-                                
-                                $dbBibs = Attendee::whereHas('ticketCategory', function ($q) use ($event) {
-                                        $q->where('event_id', $event->id);
-                                    })
-                                    ->whereNotNull('bib_name')
-                                    ->pluck('bib_name')
-                                    ->map(function ($bib) use ($prefix) {
-                                        $clean = str_replace(strtoupper($prefix) . '-', '', strtoupper($bib));
-                                        return is_numeric($clean) ? (int)$clean : null;
-                                    })
-                                    ->filter()
-                                    ->toArray();
+            $order->load('attendees.ticketCategory.event');
 
-                                sort($dbBibs);
-                                $nextNum = $startNum;
-                                foreach ($dbBibs as $num) {
-                                    if ($num == $nextNum) {
-                                        $nextNum++;
-                                    } elseif ($num > $nextNum) {
-                                        break;
-                                    }
-                                }
-                            } else {
-                                $prefix = !empty($category->bib_prefix) ? $category->bib_prefix : 'BIB';
-                                $startNum = $category->bib_start_number ?? 1;
-                                
-                                $dbBibs = Attendee::where('ticket_category_id', $category->id)
-                                    ->whereNotNull('bib_name')
-                                    ->pluck('bib_name')
-                                    ->map(function ($bib) use ($prefix) {
-                                        $clean = str_replace(strtoupper($prefix) . '-', '', strtoupper($bib));
-                                        return is_numeric($clean) ? (int)$clean : null;
-                                    })
-                                    ->filter()
-                                    ->toArray();
+            foreach ($order->attendees as $attendee) {
+                $category = $attendee->ticketCategory;
+                $event = $category?->event;
 
-                                sort($dbBibs);
-                                $nextNum = $startNum;
-                                foreach ($dbBibs as $num) {
-                                    if ($num == $nextNum) {
-                                        $nextNum++;
-                                    } elseif ($num > $nextNum) {
-                                        break;
-                                    }
-                                }
-                            }
+                if (! $category || ! $event || ! empty($attendee->ticket_code)) {
+                    continue;
+                }
 
-                            $generatedBib = strtoupper($prefix) . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
-                        }
+                /*
+                 * This observer is the single intended place to increment
+                 * tickets_sold. Remove the other increments from the MMQR
+                 * callback and checkout controller in the next steps.
+                 */
+                $category->increment('tickets_sold');
 
-                        // 2. Generate Ticket Code (Gap Filling Logic)
-                        $ticketCode = $attendee->ticket_code;
-                        if (empty($ticketCode)) {
-                            $ticketPrefix = !empty($event->event_bib_prefix) ? $event->event_bib_prefix : 'BGR26';
+                // 1. Generate the bib number if enabled.
+                $generatedBib = $attendee->bib_name;
 
-                            $dbRegs = Attendee::whereHas('ticketCategory', function ($q) use ($event) {
-                                    $q->where('event_id', $event->id);
-                                })
-                                ->whereNotNull('ticket_code')
-                                ->pluck('ticket_code')
-                                ->map(function ($code) use ($ticketPrefix) {
-                                    $clean = str_replace(strtoupper($ticketPrefix), '', strtoupper($code));
-                                    return is_numeric($clean) ? (int)$clean : null;
-                                })
-                                ->filter()
-                                ->toArray();
+                if (empty($generatedBib) && $event->enable_bib_number) {
+                    $nextNum = 1;
 
-                            sort($dbRegs);
+                    if ($event->share_bib_prefix) {
+                        $prefix = ! empty($event->event_bib_prefix)
+                            ? $event->event_bib_prefix
+                            : 'BIB';
 
-                            $nextRegNum = 1;
-                            foreach ($dbRegs as $num) {
-                                if ($num == $nextRegNum) {
-                                    $nextRegNum++;
-                                } elseif ($num > $nextRegNum) { // Fixed: safely compares against $nextRegNum now
-                                    break;
-                                }
-                            }
-                            $ticketCode = strtoupper($ticketPrefix) . str_pad($nextRegNum, 4, '0', STR_PAD_LEFT);
-                        }
+                        $startNum = $event->event_bib_start_number ?? 1;
 
-                        // Save the generated codes directly
-                        $attendee->update([
-                            'bib_name'    => $generatedBib,
-                            'ticket_code' => $ticketCode,
-                        ]);
+                        $dbBibs = Attendee::whereHas('ticketCategory', function ($query) use ($event) {
+                            $query->where('event_id', $event->id);
+                        })
+                            ->whereNotNull('bib_name')
+                            ->pluck('bib_name')
+                            ->map(function ($bib) use ($prefix) {
+                                $clean = str_replace(
+                                    strtoupper($prefix) . '-',
+                                    '',
+                                    strtoupper($bib)
+                                );
 
-                        // Increment promo code usage if applicable
-                        if (!empty($attendee->promo_code_id)) {
-                            $promo = PromoCode::find($attendee->promo_code_id);
-                            if ($promo) {
-                                $promo->increment('uses_count');
+                                return is_numeric($clean) ? (int) $clean : null;
+                            })
+                            ->filter()
+                            ->toArray();
+
+                        sort($dbBibs);
+
+                        $nextNum = $startNum;
+
+                        foreach ($dbBibs as $num) {
+                            if ($num == $nextNum) {
+                                $nextNum++;
+                            } elseif ($num > $nextNum) {
+                                break;
                             }
                         }
+                    } else {
+                        $prefix = ! empty($category->bib_prefix)
+                            ? $category->bib_prefix
+                            : 'BIB';
+
+                        $startNum = $category->bib_start_number ?? 1;
+
+                        $dbBibs = Attendee::where('ticket_category_id', $category->id)
+                            ->whereNotNull('bib_name')
+                            ->pluck('bib_name')
+                            ->map(function ($bib) use ($prefix) {
+                                $clean = str_replace(
+                                    strtoupper($prefix) . '-',
+                                    '',
+                                    strtoupper($bib)
+                                );
+
+                                return is_numeric($clean) ? (int) $clean : null;
+                            })
+                            ->filter()
+                            ->toArray();
+
+                        sort($dbBibs);
+
+                        $nextNum = $startNum;
+
+                        foreach ($dbBibs as $num) {
+                            if ($num == $nextNum) {
+                                $nextNum++;
+                            } elseif ($num > $nextNum) {
+                                break;
+                            }
+                        }
+                    }
+
+                    $generatedBib = strtoupper($prefix)
+                        . '-'
+                        . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
+                }
+
+                // 2. Generate the ticket code using the existing gap-filling logic.
+                $ticketCode = $attendee->ticket_code;
+
+                if (empty($ticketCode)) {
+                    $ticketPrefix = ! empty($event->event_bib_prefix)
+                        ? $event->event_bib_prefix
+                        : 'BGR26';
+
+                    $dbRegs = Attendee::whereHas('ticketCategory', function ($query) use ($event) {
+                        $query->where('event_id', $event->id);
+                    })
+                        ->whereNotNull('ticket_code')
+                        ->pluck('ticket_code')
+                        ->map(function ($code) use ($ticketPrefix) {
+                            $clean = str_replace(
+                                strtoupper($ticketPrefix),
+                                '',
+                                strtoupper($code)
+                            );
+
+                            return is_numeric($clean) ? (int) $clean : null;
+                        })
+                        ->filter()
+                        ->toArray();
+
+                    sort($dbRegs);
+
+                    $nextRegNum = 1;
+
+                    foreach ($dbRegs as $num) {
+                        if ($num == $nextRegNum) {
+                            $nextRegNum++;
+                        } elseif ($num > $nextRegNum) {
+                            break;
+                        }
+                    }
+
+                    $ticketCode = strtoupper($ticketPrefix)
+                        . str_pad($nextRegNum, 4, '0', STR_PAD_LEFT);
+                }
+
+                // Save the generated codes.
+                $attendee->update([
+                    'bib_name' => $generatedBib,
+                    'ticket_code' => $ticketCode,
+                ]);
+
+                // Increment promo usage if applicable.
+                if (! empty($attendee->promo_code_id)) {
+                    $promo = PromoCode::find($attendee->promo_code_id);
+
+                    if ($promo) {
+                        $promo->increment('uses_count');
                     }
                 }
             }
@@ -152,7 +201,7 @@ class Order extends Model
     }
 
     /**
-     * Get the route key for the model (replaces ID with reference in URLs).
+     * Use the reference instead of the ID in URLs.
      */
     public function getRouteKeyName(): string
     {
@@ -160,7 +209,7 @@ class Order extends Model
     }
 
     /**
-     * Relationship to Event
+     * Relationship to Event.
      */
     public function event()
     {
@@ -168,7 +217,7 @@ class Order extends Model
     }
 
     /**
-     * Relationship to Attendees
+     * Relationship to Attendees.
      */
     public function attendees()
     {
