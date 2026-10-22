@@ -13,11 +13,14 @@ return [
     ],
 
     'production' => [
-        'base_url'  => env('MMQR_PROD_BASE_URL', 'https://myanmarpay.cbbank.com.mm:7443/dynamicqrapi/v1'),
-        'user_id'   => env('MMQR_PROD_USER_ID', 'swezon'),
-        'password'  => env('MMQR_PROD_PASSWORD', 'G1E3N]T09IIVwy}E*?Vniu6B#'),
-        'source_id' => env('MMQR_PROD_SOURCE_ID', 'swezon'),
-        'mid'       => env('MMQR_PROD_MID', '223780111255150'),
-        'tid'       => env('MMQR_PROD_TID', '52000080'),
-    ],
+    'base_url'  => env('CB_BANK_MMQ_BASE_URL', 'https://myanmarpay.cbbank.com.mm:7443/dynamicqrapi/v1'),
+    'user_id'   => env('CB_BANK_MMQ_USER_ID', 'EVENTPLUS'),
+    'password'  => env('CB_BANK_MMQ_PASSWORD', 'c.nN0DfM6LQXP0i6+d!a-)tp:'),
+    'source_id' => env('CB_BANK_MMQ_SOURCE_ID', 'EVENTPLUS'),
+    'mid'       => env('CB_BANK_MMQ_MERCHANT_ID', '223780111843857'),
+    'tid'       => env('CB_BANK_MMQ_TERMINAL_ID', '52000097'),
+    'merchant_name' => env('CB_BANK_MMQ_MERCHANT_NAME', 'EVENTPLUS'),
+    'public_ip' => env('CB_BANK_MMQ_PUBLIC_IP', '165.22.48.231'),
+    'callback_url' => env('CB_BANK_MMQ_CALLBACK_URL', 'https://eventplus.com.mm/api/payment/mmqr/callback'),
+],
 ];
