@@ -1,125 +1,153 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <title>Event Ticket</title>
+
     <style>
         @page {
             margin: 0;
-            size: 1600px 517px;
+            size: 1200pt 387.75pt;
         }
-        body {
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
             margin: 0;
             padding: 0;
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            width: 1600px;
+            height: 517px;
+            font-family: Helvetica, Arial, sans-serif;
         }
+
         .ticket-wrapper {
             position: relative;
             width: 1600px;
             height: 517px;
+            overflow: hidden;
+            background: #ffffff;
         }
-        .ticket-bg {
+
+        .ticket-background {
             position: absolute;
             top: 0;
             left: 0;
             width: 1600px;
             height: 517px;
         }
-        .qr-box {
+
+        .ticket-element {
             position: absolute;
-            top: 126px;
-            left: 950px;
-            width: 310px;
-            height: 310px;
-        }
-        .qr-box img {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        
-        /* Ticket Number Area */
-        .ticket-number-area {
-            position: absolute;
-            top: 300px;
-            left: 1390px;
-            width: 60px;
-            height: 360px;
-        }
-        .ticket-number {
-            font-size: 24px;
-            font-weight: 800;
-            color: #000000;
-            -webkit-transform: rotate(270deg);
-            transform: rotate(270deg);
-            -webkit-transform-origin: top left;
-            transform-origin: top left;
-            position: absolute;
-            top: 0;
-            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 4px;
+            text-align: center;
             white-space: nowrap;
+            box-sizing: border-box;
         }
 
-        /* Name & Phone Area */
-        .buyer-data-area {
-            position: absolute;
-            top: 390px;
-            left: 1480px;
-            width: 60px;
-            height: 500px;
-        }
-        .buyer-info-group {
-            -webkit-transform: rotate(270deg);
-            transform: rotate(270deg);
-            -webkit-transform-origin: top left;
-            transform-origin: top left;
-            position: absolute;
-            top: 0;
-            left: 0;
+        .ticket-element-text {
+            display: block;
+            width: 100%;
+            overflow: hidden;
             white-space: nowrap;
+            text-overflow: clip;
+            line-height: 1.2;
         }
-        .buyer-name {
-            font-size: 30px;
-            font-weight: 700;
-            color: #FFFFFF;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 10px;
+
+        .ticket-element-qr {
+            padding: 0;
+            background: #ffffff;
         }
-        .buyer-phone {
-            font-size: 28px;
-            font-weight: 600;
-            color: #FFFFFF;
+
+        .ticket-element-qr img {
             display: block;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 <body>
+    @php
+        $design = $ticketDesign ?? ($attendee->ticketCategory->ticket_design ?? []);
+        $design = is_array($design) ? $design : [];
+
+        $elements = is_array($design['elements'] ?? null)
+            ? $design['elements']
+            : [];
+
+        $event = $attendee->ticketCategory->event ?? null;
+
+        $elementValues = [
+            'attendee_name' => $attendee->full_name ?? '',
+            'phone' => $attendee->phone ?? '',
+            'ticket_number' => $formattedTicketRef ?? $attendee->ticket_code ?? '',
+            'bib_number' => $attendee->bib_number ?? '',
+            'event_name' => $event->title ?? '',
+        ];
+    @endphp
+
     <div class="ticket-wrapper">
-        @isset($ticketBgBase64)
-            <img src="{{ $ticketBgBase64 }}" class="ticket-bg" alt="Ticket">
-        @endisset
+        @if(!empty($ticketBgBase64))
+            <img
+                src="{{ $ticketBgBase64 }}"
+                class="ticket-background"
+                alt="Ticket background"
+            >
+        @elseif(!empty($design['background']))
+            {{-- The controller should convert the stored background to a data URI. --}}
+        @endif
 
-        <div class="qr-box">
-            @isset($qrBase64)
-                <img src="{{ $qrBase64 }}" alt="QR Code">
-            @endisset
-        </div>
+        @foreach($elements as $element)
+            @php
+                $type = $element['type'] ?? '';
 
-        <!-- Ticket Number Area -->
-        <div class="ticket-number-area">
-            <div class="ticket-number">
-                {{ $formattedTicketRef ?? '' }}
+                $x = max(0, min(1600, (float) ($element['x'] ?? 0)));
+                $y = max(0, min(517, (float) ($element['y'] ?? 0)));
+                $width = max(1, min(1600, (float) ($element['width'] ?? 100)));
+                $height = max(1, min(517, (float) ($element['height'] ?? 40)));
+                $fontSize = max(6, min(120, (float) ($element['fontSize'] ?? 24)));
+                $rotation = max(-360, min(360, (float) ($element['rotation'] ?? 0)));
+
+                $color = $element['color'] ?? '#222222';
+
+                if (!is_string($color) || !preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+                    $color = '#222222';
+                }
+
+                $style = sprintf(
+                    'left: %.2fpx; top: %.2fpx; width: %.2fpx; height: %.2fpx; font-size: %.2fpx; color: %s; transform: rotate(%.2fdeg);',
+                    $x,
+                    $y,
+                    $width,
+                    $height,
+                    $fontSize,
+                    $color,
+                    $rotation
+                );
+            @endphp
+
+            <div
+                class="ticket-element {{ $type === 'qr' ? 'ticket-element-qr' : '' }}"
+                style="{{ $style }}"
+            >
+                @if($type === 'qr')
+                    @if(!empty($qrBase64))
+                        <img
+                            src="{{ $qrBase64 }}"
+                            alt="Ticket verification QR code"
+                        >
+                    @endif
+                @elseif(array_key_exists($type, $elementValues))
+                    <span class="ticket-element-text">{{ $elementValues[$type] }}</span>
+                @endif
             </div>
-        </div>
-
-        <!-- Name & Phone Area -->
-        <div class="buyer-data-area">
-            <div class="buyer-info-group">
-                <span class="buyer-name">{{ $attendee->full_name ?? '' }}</span>
-                <span class="buyer-phone">{{ $attendee->phone ?? '' }}</span>
-            </div>
-        </div>
+        @endforeach
     </div>
 </body>
 </html>

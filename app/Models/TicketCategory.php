@@ -18,7 +18,15 @@ class TicketCategory extends Model
         'tickets_sold',
         'bib_prefix',
         'bib_start_number',
+        'ticket_design',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'ticket_design' => 'array',
+        ];
+    }
 
     public function event()
     {

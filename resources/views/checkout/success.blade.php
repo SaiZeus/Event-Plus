@@ -876,137 +876,65 @@
         transform: rotate(2deg);
     }
 
-    /* =========================================================
-       HIDDEN TICKET RENDERING
-       KEEPING ORIGINAL FUNCTIONALITY
-    ========================================================= */
+   /* =========================================================
+   TICKET DESIGN STUDIO RENDERING
+========================================================= */
 
-    .hidden-ticket-container {
-        position: absolute;
+.hidden-ticket-container {
+    position: absolute;
+    left: -99999px;
+    top: 0;
+    pointer-events: none;
+}
 
-        left: -9999px;
-        top: -9999px;
+.ticket-wrapper {
+    position: relative;
+    width: 1600px;
+    height: 517px;
+    overflow: hidden;
+    background: #fff;
+}
 
-        visibility: visible;
-        opacity: 0;
+.ticket-bg {
+    position: absolute;
+    inset: 0;
+    width: 1600px;
+    height: 517px;
+    object-fit: fill;
+}
 
-        pointer-events: none;
-    }
+.ticket-element {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 4px;
+    overflow: hidden;
+    text-align: center;
+    white-space: nowrap;
+    transform-origin: center center;
+}
 
-    .ticket-wrapper {
-        position: relative;
+.ticket-element-text {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    line-height: 1.2;
+}
 
-        width: 1600px;
-        height: 517px;
-    }
+.ticket-element-qr {
+    padding: 0;
+    background: #fff;
+}
 
-    .ticket-bg {
-        position: absolute;
-
-        top: 0;
-        left: 0;
-
-        width: 1600px;
-        height: 517px;
-    }
-
-    .qr-box {
-        position: absolute;
-
-        top: 126px;
-        left: 950px;
-
-        width: 310px;
-        height: 310px;
-    }
-
-    .qr-box img {
-        display: block;
-
-        width: 100%;
-        height: 100%;
-    }
-
-    /* Ticket Number */
-
-    .ticket-number-area {
-        position: absolute;
-
-        top: 300px;
-        left: 1390px;
-
-        width: 60px;
-        height: 360px;
-    }
-
-    .ticket-number {
-        position: absolute;
-
-        top: 0;
-        left: 0;
-
-        font-size: 24px;
-        font-weight: 800;
-
-        color: #000;
-
-        white-space: nowrap;
-
-        -webkit-transform: rotate(270deg);
-        transform: rotate(270deg);
-
-        -webkit-transform-origin: top left;
-        transform-origin: top left;
-    }
-
-    /* Buyer Data */
-
-    .buyer-data-area {
-        position: absolute;
-
-        top: 390px;
-        left: 1480px;
-
-        width: 60px;
-        height: 500px;
-    }
-
-    .buyer-info-group {
-        position: absolute;
-
-        top: 0;
-        left: 0;
-
-        white-space: nowrap;
-
-        -webkit-transform: rotate(270deg);
-        transform: rotate(270deg);
-
-        -webkit-transform-origin: top left;
-        transform-origin: top left;
-    }
-
-    .buyer-name {
-        display: block;
-
-        margin-bottom: 10px;
-
-        color: #fff;
-
-        font-size: 30px;
-        font-weight: 700;
-
-        text-transform: uppercase;
-    }
-
-    .buyer-phone {
-        display: block;
-
-        color: #fff;
-
-        font-size: 28px;
-        font-weight: 600;
-    }
+.ticket-element-qr img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
 
     /* =========================================================
        MOBILE
@@ -1457,96 +1385,137 @@
 
 
 {{-- =========================================================
-     HIDDEN TICKET RENDERING CONTAINER
-
-     Backend / ticket generation functionality preserved.
+     TICKETS USING SAVED TICKET DESIGN STUDIO SETTINGS
 ========================================================= --}}
 
-<div
-    class="hidden-ticket-container"
-    id="ticket-nodes-wrapper"
->
+<div class="hidden-ticket-container" id="ticket-nodes-wrapper">
 
     @foreach($order->attendees as $index => $attendee)
 
         @php
+            $attendee->loadMissing('ticketCategory.event');
 
+            $category = $attendee->ticketCategory;
+            $ticketEvent = $category->event ?? $order->event;
+
+            $design = $category->ticket_design ?? [];
+            $design = is_array($design) ? $design : [];
+
+            $elements = is_array($design['elements'] ?? null)
+                ? $design['elements']
+                : [];
+
+            /*
+             * Load the saved background from public storage.
+             */
+            $ticketBgBase64 = null;
+            $background = $design['background'] ?? null;
+
+            if (is_string($background) && $background !== '') {
+                try {
+                    if (preg_match('~^https?://~i', $background)) {
+                        $imageData = @file_get_contents(
+                            $background,
+                            false,
+                            stream_context_create([
+                                'http' => ['timeout' => 5],
+                            ])
+                        );
+                    } else {
+                        $backgroundPath = ltrim($background, '/');
+
+                        if (str_starts_with($backgroundPath, 'storage/')) {
+                            $backgroundPath = substr(
+                                $backgroundPath,
+                                strlen('storage/')
+                            );
+                        }
+
+                        $imageData = \Illuminate\Support\Facades\Storage::disk('public')
+                            ->exists($backgroundPath)
+                                ? \Illuminate\Support\Facades\Storage::disk('public')
+                                    ->get($backgroundPath)
+                                : null;
+                    }
+
+                    if (!empty($imageData)) {
+                        $mime = 'image/jpeg';
+
+                        if (function_exists('finfo_open')) {
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+                            if ($finfo) {
+                                $detectedMime = finfo_buffer($finfo, $imageData);
+                                finfo_close($finfo);
+
+                                if (in_array($detectedMime, [
+                                    'image/jpeg',
+                                    'image/png',
+                                    'image/gif',
+                                    'image/webp',
+                                ], true)) {
+                                    $mime = $detectedMime;
+                                }
+                            }
+                        }
+
+                        $ticketBgBase64 = 'data:' . $mime
+                            . ';base64,' . base64_encode($imageData);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning(
+                        'Could not load ticket background for success page.',
+                        [
+                            'attendee_id' => $attendee->id,
+                            'background' => $background,
+                            'error' => $e->getMessage(),
+                        ]
+                    );
+                }
+            }
+
+            /*
+             * Ensure the attendee has a verification token.
+             */
             if (empty($attendee->verification_token)) {
-
                 $attendee->verification_token =
                     \Illuminate\Support\Str::random(64);
 
                 $attendee->save();
-
             }
 
-            // Existing ticket number
-            $sequentialTicketNumber =
-                $attendee->ticket_code;
+            $verificationUrl = route('ticket.verify', [
+                'token' => $attendee->verification_token,
+            ]);
 
+            $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=310x310&data='
+                . urlencode($verificationUrl);
 
-            // Ticket background
-            $ticketBgPath =
-                public_path('assets/img/ticket/ticket1.jpg');
+            $qrContext = stream_context_create([
+                'http' => ['timeout' => 5],
+            ]);
 
-            $ticketBgBase64 =
-                (
-                    file_exists($ticketBgPath)
-                    &&
-                    filesize($ticketBgPath) <= 2 * 1024 * 1024
-                )
-                ?
-                'data:image/jpeg;base64,' .
-                base64_encode(
-                    file_get_contents($ticketBgPath)
-                )
-                :
-                null;
+            $qrImageData = @file_get_contents(
+                $qrApiUrl,
+                false,
+                $qrContext
+            );
 
+            $qrBase64 = $qrImageData
+                ? 'data:image/png;base64,' . base64_encode($qrImageData)
+                : null;
 
-            // Verification URL
-            $verificationUrl =
-                route(
-                    'ticket.verify',
-                    [
-                        'token' =>
-                            $attendee->verification_token
-                    ]
-                );
-
-
-            // QR code API
-            $qrApiUrl =
-                'https://api.qrserver.com/v1/create-qr-code/?size=310x310&data=' .
-                urlencode($verificationUrl);
-
-
-            $context =
-                stream_context_create([
-                    'http' => [
-                        'timeout' => 5
-                    ]
-                ]);
-
-
-            $qrImageData =
-                @file_get_contents(
-                    $qrApiUrl,
-                    false,
-                    $context
-                );
-
-
-            $qrBase64 =
-                $qrImageData
-                ?
-                'data:image/png;base64,' .
-                base64_encode($qrImageData)
-                :
-                null;
-
+            /*
+             * Values available to the saved design elements.
+             */
+            $elementValues = [
+                'attendee_name' => $attendee->full_name ?? '',
+                'phone' => $attendee->phone ?? '',
+                'ticket_number' => $attendee->ticket_code ?? '',
+                'bib_number' => $attendee->bib_number ?? '',
+                'event_name' => $ticketEvent->title ?? '',
+            ];
         @endphp
-
 
         <div
             class="ticket-wrapper"
@@ -1554,63 +1523,80 @@
         >
 
             @if($ticketBgBase64)
-
                 <img
                     src="{{ $ticketBgBase64 }}"
                     class="ticket-bg"
-                    alt="Ticket Background"
+                    alt="Ticket background"
                 >
-
             @endif
 
+            @foreach($elements as $element)
 
-            {{-- QR CODE --}}
+                @php
+                    $type = $element['type'] ?? '';
 
-            <div class="qr-box">
+                    $x = max(0, min(1600, (float) ($element['x'] ?? 0)));
+                    $y = max(0, min(517, (float) ($element['y'] ?? 0)));
 
-                <img
-                    src="{{ $qrBase64 }}"
-                    class="ticket-qr"
-                    alt="QR Code"
+                    $width = max(1, min(1600, (float) ($element['width'] ?? 100)));
+                    $height = max(1, min(517, (float) ($element['height'] ?? 40)));
+
+                    $fontSize = max(6, min(120, (float) ($element['fontSize'] ?? 24)));
+                    $rotation = max(-360, min(360, (float) ($element['rotation'] ?? 0)));
+
+                    $color = $element['color'] ?? '#222222';
+
+                    if (!is_string($color) ||
+                        !preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+                        $color = '#222222';
+                    }
+
+                    $elementStyle = sprintf(
+                        'left:%.2fpx;top:%.2fpx;width:%.2fpx;height:%.2fpx;font-size:%.2fpx;color:%s;transform:rotate(%.2fdeg);',
+                        $x,
+                        $y,
+                        $width,
+                        $height,
+                        $fontSize,
+                        $color,
+                        $rotation
+                    );
+
+                    /*
+                     * Preserve the existing JavaScript ticket filename logic.
+                     */
+                    $elementClass = 'ticket-element';
+
+                    if ($type === 'qr') {
+                        $elementClass .= ' ticket-element-qr';
+                    } elseif ($type === 'ticket_number') {
+                        $elementClass .= ' ticket-number';
+                    }
+                @endphp
+
+                <div
+                    class="{{ $elementClass }}"
+                    style="{{ $elementStyle }}"
                 >
+                    @if($type === 'qr')
 
-            </div>
+                        @if($qrBase64)
+                            <img
+                                src="{{ $qrBase64 }}"
+                                alt="Ticket verification QR code"
+                            >
+                        @endif
 
+                    @elseif(array_key_exists($type, $elementValues))
 
-            {{-- Ticket Number --}}
+                        <span class="ticket-element-text">
+                            {{ $elementValues[$type] }}
+                        </span>
 
-            <div class="ticket-number-area">
-
-                <div class="ticket-number">
-
-                    {{ $sequentialTicketNumber }}
-
+                    @endif
                 </div>
 
-            </div>
-
-
-            {{-- Name & Phone --}}
-
-            <div class="buyer-data-area">
-
-                <div class="buyer-info-group">
-
-                    <span class="buyer-name">
-
-                        {{ $attendee->full_name ?? '' }}
-
-                    </span>
-
-                    <span class="buyer-phone">
-
-                        {{ $attendee->phone ?? '' }}
-
-                    </span>
-
-                </div>
-
-            </div>
+            @endforeach
 
         </div>
 

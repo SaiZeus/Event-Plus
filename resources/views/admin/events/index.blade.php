@@ -816,6 +816,17 @@
         .ep-actions {
             min-width: 250px;
         }
+
+        .ep-action-ticket-design {
+    border-color: #ddd6fe;
+    background: #f5f3ff;
+    color: #6d28d9;
+}
+
+.ep-action-ticket-design:hover {
+    background: #ede9fe;
+    color: #5b21b6;
+}
     }
 </style>
 
@@ -1273,6 +1284,15 @@
                         <td>
 
                             <div class="ep-actions">
+
+                            {{-- Ticket Design --}}
+<a
+    href="{{ route('admin.events.ticket-design', $event) }}"
+    class="ep-action ep-action-ticket-design"
+>
+    <i class="fa-solid fa-palette"></i>
+    Ticket Design
+</a>
 
                                 {{-- Promo Codes --}}
 

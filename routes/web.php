@@ -110,6 +110,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'restrict.even
     Route::post('/events/{event:slug}/promo-codes', [AdminEventController::class, 'storePromoCode'])->name('events.promo_codes.store');
     Route::delete('/promo-codes/{id}', [AdminEventController::class, 'destroyPromoCode'])->name('promo_codes.destroy');
 
+    Route::get(
+    '/events/{event}/ticket-design',
+    [\App\Http\Controllers\AdminEventController::class, 'ticketDesign']
+)->name('events.ticket-design');
+
+Route::post(
+    '/events/{event}/ticket-design',
+    [\App\Http\Controllers\AdminEventController::class, 'saveTicketDesign']
+)->name('events.ticket-design.save');
+
     // Attendee Routes
     Route::get('/events/{event:slug}/attendees', [AdminEventController::class, 'attendees'])->name('events.attendees');
     Route::get('/attendees/{id}/download-ticket', [AdminEventController::class, 'downloadAttendeeTicket'])->name('attendees.download_ticket');

@@ -2359,121 +2359,171 @@ class AdminEventController extends Controller
         );
     }
 
-    public function downloadAttendeeTicket($id)
+    
 
-    {
+public function downloadAttendeeTicket($id)
+{
+    ini_set('memory_limit', '1024M');
 
-        ini_set('memory_limit', '1024M');
+    $attendee = Attendee::with([
+        'ticketCategory.event',
+    ])->findOrFail($id);
 
+    if (empty($attendee->verification_token)) {
+        $attendee->verification_token = Str::random(64);
+        $attendee->save();
+    }
 
+    $category = $attendee->ticketCategory;
+    $event = $category?->event;
 
-        $attendee = Attendee::with(
+    $sequentialTicketNumber = $attendee->ticket_code;
 
-            'ticketCategory.event'
+    /*
+    |--------------------------------------------------------------------------
+    | Load the saved category ticket design
+    |--------------------------------------------------------------------------
+    */
+    $design = $category?->ticket_design ?? [];
+    $design = is_array($design) ? $design : [];
 
-        )->findOrFail($id);
+    $elements = $design['elements'] ?? [];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Load the custom background, with ticket1.jpg as a fallback
+    |--------------------------------------------------------------------------
+    */
+    $ticketBgBase64 = null;
+    $customBackground = $design['background'] ?? null;
 
+    if ($customBackground) {
+        $customPath = Storage::disk('public')->path($customBackground);
 
-        if (empty($attendee->verification_token)) {
+        if (
+            is_file($customPath) &&
+            filesize($customPath) <= 10 * 1024 * 1024
+        ) {
+            $imageInfo = @getimagesize($customPath);
 
-            $attendee->verification_token = Str::random(64);
+            if ($imageInfo !== false) {
+                $mime = $imageInfo['mime'] ?? '';
 
-            $attendee->save();
-
+                if (in_array($mime, ['image/jpeg', 'image/png'], true)) {
+                    $ticketBgBase64 = 'data:' . $mime . ';base64,' .
+                        base64_encode(file_get_contents($customPath));
+                }
+            }
         }
+    }
 
-
-
-        // Calculate sequential ticket number based on creation order (ignoring deleted records)
-
-        $sequentialTicketNumber = $attendee->ticket_code;
-
-
-
-        // Encode local ticket background image safely
-
+    // Use the old background only when no valid custom background is available.
+    if (!$ticketBgBase64) {
         $ticketBgPath = public_path('assets/img/ticket/ticket1.jpg');
 
-        $ticketBgBase64 = null;
+        if (
+            is_file($ticketBgPath) &&
+            filesize($ticketBgPath) <= 10 * 1024 * 1024
+        ) {
+            $imageInfo = @getimagesize($ticketBgPath);
 
+            if ($imageInfo !== false) {
+                $mime = $imageInfo['mime'] ?? 'image/jpeg';
 
-
-        if (file_exists($ticketBgPath) && filesize($ticketBgPath) <= 2 * 1024 * 1024) {
-
-            $ticketBgBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($ticketBgPath));
-
+                $ticketBgBase64 = 'data:' . $mime . ';base64,' .
+                    base64_encode(file_get_contents($ticketBgPath));
+            }
         }
-
-
-
-        $verificationUrl = route(
-
-            'ticket.verify',
-
-            [
-
-                'token' => $attendee->verification_token
-
-            ]
-
-        );
-
-
-
-        $qrApiUrl = 'https\://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($verificationUrl);
-
-        $context = stream_context_create(['http' => ['timeout' => 3]]);
-
-        $qrImageData = @file_get_contents($qrApiUrl, false, $context);
-
-
-
-        $qrBase64 = $qrImageData
-
-            ? 'data:image/png;base64,' . base64_encode($qrImageData)
-
-            : null;
-
-
-
-        $pdf = Pdf::setOptions([
-
-            'isHtml5ParserEnabled' => true,
-
-            'isRemoteEnabled' => false,
-
-            'defaultFont' => 'sans-serif',
-
-            'isFontSubsettingEnabled' => true,
-
-        ])->loadView(
-
-            'emails.ticket_pdf',
-
-            [
-
-                'attendee' => $attendee,
-
-                'ticketBgBase64' => $ticketBgBase64,
-
-                'qrBase64' => $qrBase64,
-
-                'formattedTicketRef' => $sequentialTicketNumber
-
-            ]
-
-        )->setPaper('a4', 'landscape'); // Forces 16:9-ish widescreen landscape presentation
-
-
-
-        $filename = 'Ticket\_' . $sequentialTicketNumber . '.pdf';
-
-
-
-        return $pdf->download($filename);
-
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate the verification QR code locally
+    |--------------------------------------------------------------------------
+    */
+    $verificationUrl = route('ticket.verify', [
+        'token' => $attendee->verification_token,
+    ]);
+
+    $qrBase64 = null;
+
+    if (function_exists('imagecreatetruecolor')) {
+        $qrSize = 300;
+        $qrImage = imagecreatetruecolor($qrSize, $qrSize);
+
+        if ($qrImage !== false) {
+            $white = imagecolorallocate($qrImage, 255, 255, 255);
+            $black = imagecolorallocate($qrImage, 0, 0, 0);
+
+            imagefill($qrImage, 0, 0, $white);
+
+            // A QR code requires a QR encoder; GD alone cannot encode one.
+            imagedestroy($qrImage);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create QR code using the configured external QR service
+    |--------------------------------------------------------------------------
+    | The API response is converted to a data URI so Dompdf doesn't need
+    | to load a remote image while rendering the PDF.
+    */
+    $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&data=' .
+        urlencode($verificationUrl);
+
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 10,
+            'follow_location' => 1,
+            'user_agent' => 'EventPlusTicketPDF/1.0',
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ],
+    ]);
+
+    $qrImageData = @file_get_contents($qrApiUrl, false, $context);
+
+    if ($qrImageData !== false && str_starts_with($qrImageData, "\x89PNG\r\n\x1a\n")) {
+        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrImageData);
+    } else {
+        \Log::warning('Ticket QR code generation failed', [
+            'attendee_id' => $attendee->id,
+            'verification_url' => $verificationUrl,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Render the PDF
+    |--------------------------------------------------------------------------
+    */
+    $pdf = Pdf::setOptions([
+        'isHtml5ParserEnabled' => true,
+        'isRemoteEnabled' => false,
+        'defaultFont' => 'sans-serif',
+        'isFontSubsettingEnabled' => true,
+    ])->loadView('emails.ticket_pdf', [
+        'attendee' => $attendee,
+        'event' => $event,
+        'ticketCategory' => $category,
+        'ticketBgBase64' => $ticketBgBase64,
+        'qrBase64' => $qrBase64,
+        'formattedTicketRef' => $sequentialTicketNumber,
+        'ticketDesign' => $design,
+        'ticketElements' => $elements,
+    ])->setPaper('a4', 'landscape');
+
+    $safeTicketCode = preg_replace(
+        '/[^A-Za-z0-9_-]/',
+        '_',
+        (string) ($sequentialTicketNumber ?: $attendee->id)
+    );
+
+    return $pdf->download('Ticket_' . $safeTicketCode . '.pdf');
+}
 
 
 
@@ -2966,5 +3016,164 @@ class AdminEventController extends Controller
         );
 
     }
+
+ 
+public function ticketDesign(\App\Models\Event $event)
+{
+    $categories = $event->ticketCategories()
+        ->orderBy('id')
+        ->get();
+
+    $selectedCategory = $categories->first();
+
+    return view('admin.events.ticket-design', [
+        'event' => $event,
+        'categories' => $categories,
+        'selectedCategory' => $selectedCategory,
+    ]);
+}
+
+public function saveTicketDesign(
+    \Illuminate\Http\Request $request,
+    \App\Models\Event $event
+) {
+    // Decode the ticket design JSON sent by the Blade form.
+    $decodedDesign = json_decode(
+        $request->input('ticket_design', ''),
+        true
+    );
+
+    if (!is_array($decodedDesign)) {
+        return back()
+            ->withErrors([
+                'ticket_design' => 'Invalid ticket design data. Please try again.',
+            ])
+            ->withInput();
+    }
+
+    $request->merge([
+        'ticket_design' => $decodedDesign,
+    ]);
+
+    // Validate the design and optional background image.
+    $validated = $request->validate([
+        'ticket_category_id' => [
+            'required',
+            'integer',
+        ],
+
+        'ticket_design' => [
+            'required',
+            'array',
+        ],
+
+        'ticket_design.elements' => [
+            'required',
+            'array',
+        ],
+
+        'ticket_design.elements.*.type' => [
+            'required',
+            'in:qr,attendee_name,phone,ticket_number,bib_number,event_name',
+        ],
+
+        'ticket_design.elements.*.x' => [
+            'required',
+            'numeric',
+            'between:0,1600',
+        ],
+
+        'ticket_design.elements.*.y' => [
+            'required',
+            'numeric',
+            'between:0,517',
+        ],
+
+        'ticket_design.elements.*.width' => [
+            'required',
+            'numeric',
+            'between:1,1600',
+        ],
+
+        'ticket_design.elements.*.height' => [
+            'required',
+            'numeric',
+            'between:1,517',
+        ],
+
+        'ticket_design.elements.*.fontSize' => [
+            'nullable',
+            'numeric',
+            'between:6,120',
+        ],
+
+        'ticket_design.elements.*.color' => [
+            'nullable',
+            'regex:/^#[0-9A-Fa-f]{6}$/',
+        ],
+
+        'ticket_design.elements.*.rotation' => [
+            'nullable',
+            'numeric',
+            'between:-360,360',
+        ],
+
+        'background_image' => [
+            'nullable',
+            'image',
+            'mimes:jpg,jpeg,png',
+            'max:5120', // Maximum 5 MB
+        ],
+
+        'remove_background' => [
+            'nullable',
+            'boolean',
+        ],
+    ]);
+
+    // Ensure this category belongs to the selected event.
+    $category = $event->ticketCategories()
+        ->where('id', $validated['ticket_category_id'])
+        ->firstOrFail();
+
+    $design = $validated['ticket_design'];
+
+    // Get the previously saved background image path.
+    $existingDesign = $category->ticket_design ?? [];
+    $oldBackground = $existingDesign['background'] ?? null;
+
+    if ($request->hasFile('background_image')) {
+        // Store the new JPG/PNG in storage/app/public/ticket-backgrounds.
+        $newBackground = $request->file('background_image')
+            ->store('ticket-backgrounds', 'public');
+
+        $design['background'] = $newBackground;
+
+        // Delete the previous image after the new upload succeeds.
+        if ($oldBackground) {
+            \Illuminate\Support\Facades\Storage::disk('public')
+                ->delete($oldBackground);
+        }
+    } elseif ($request->boolean('remove_background')) {
+        // Remove the existing background when requested.
+        $design['background'] = null;
+
+        if ($oldBackground) {
+            \Illuminate\Support\Facades\Storage::disk('public')
+                ->delete($oldBackground);
+        }
+    } else {
+        // Keep the existing background if no change was requested.
+        $design['background'] = $oldBackground;
+    }
+
+    // Save the design and background path for this category.
+    $category->ticket_design = $design;
+    $category->save();
+
+    return redirect()
+        ->route('admin.events.ticket-design', $event)
+        ->with('success', 'Ticket design saved successfully.');
+}
 
 }
