@@ -141,34 +141,66 @@ class Order extends Model
                         . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
                 }
 
-                // 2. Generate the ticket code using the existing gap-filling logic.
+                // 2. Generate the ticket code using the selected BIB prefix mode.
+                // Keep the existing ticket-code format (PREFIX0001, without a hyphen).
                 $ticketCode = $attendee->ticket_code;
 
                 if (empty($ticketCode)) {
-                    $ticketPrefix = ! empty($event->event_bib_prefix)
-                        ? $event->event_bib_prefix
-                        : 'BGR26';
+                    if ($event->share_bib_prefix) {
+                        $ticketPrefix = ! empty($event->event_bib_prefix)
+                            ? strtoupper($event->event_bib_prefix)
+                            : 'BGR26';
 
-                    $dbRegs = Attendee::whereHas('ticketCategory', function ($query) use ($event) {
-                        $query->where('event_id', $event->id);
-                    })
-                        ->whereNotNull('ticket_code')
-                        ->pluck('ticket_code')
-                        ->map(function ($code) use ($ticketPrefix) {
-                            $clean = str_replace(
-                                strtoupper($ticketPrefix),
-                                '',
-                                strtoupper($code)
-                            );
+                        $startRegNum = (int) ($event->event_bib_start_number ?? 1);
 
-                            return is_numeric($clean) ? (int) $clean : null;
+                        // Shared mode: find used numbers across every category in this event.
+                        $dbRegs = Attendee::whereHas('ticketCategory', function ($query) use ($event) {
+                            $query->where('event_id', $event->id);
                         })
-                        ->filter()
-                        ->toArray();
+                            ->whereNotNull('ticket_code')
+                            ->pluck('ticket_code')
+                            ->map(function ($code) use ($ticketPrefix) {
+                                $code = strtoupper((string) $code);
+
+                                if (! str_starts_with($code, $ticketPrefix)) {
+                                    return null;
+                                }
+
+                                $clean = substr($code, strlen($ticketPrefix));
+
+                                return is_numeric($clean) ? (int) $clean : null;
+                            })
+                            ->filter(fn ($num) => $num !== null)
+                            ->toArray();
+                    } else {
+                        $ticketPrefix = ! empty($category->bib_prefix)
+                            ? strtoupper($category->bib_prefix)
+                            : 'BGR26';
+
+                        $startRegNum = (int) ($category->bib_start_number ?? 1);
+
+                        // Separate mode: find used numbers only within this ticket category.
+                        $dbRegs = Attendee::where('ticket_category_id', $category->id)
+                            ->whereNotNull('ticket_code')
+                            ->pluck('ticket_code')
+                            ->map(function ($code) use ($ticketPrefix) {
+                                $code = strtoupper((string) $code);
+
+                                if (! str_starts_with($code, $ticketPrefix)) {
+                                    return null;
+                                }
+
+                                $clean = substr($code, strlen($ticketPrefix));
+
+                                return is_numeric($clean) ? (int) $clean : null;
+                            })
+                            ->filter(fn ($num) => $num !== null)
+                            ->toArray();
+                    }
 
                     sort($dbRegs);
 
-                    $nextRegNum = 1;
+                    $nextRegNum = $startRegNum;
 
                     foreach ($dbRegs as $num) {
                         if ($num == $nextRegNum) {
@@ -178,7 +210,7 @@ class Order extends Model
                         }
                     }
 
-                    $ticketCode = strtoupper($ticketPrefix)
+                    $ticketCode = $ticketPrefix
                         . str_pad($nextRegNum, 4, '0', STR_PAD_LEFT);
                 }
 
