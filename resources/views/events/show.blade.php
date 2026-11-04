@@ -2227,12 +2227,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
 
                                 <div class="row g-2">
-                                    ${enableBibNumber ? `
-                                        <div class="col-md-4">
-                                            <label class="form-label">BIB Name (Max 10 chars) <span class="required-star">*</span></label>
-                                            <input type="text" name="attendees[${formIndex}][bib_name]" maxlength="10" class="form-control" placeholder="Runner Name" required>
-                                        </div>
-                                    ` : ''}
+                                    
 
                                     ${isFieldEnabled('blood_type') ? `
                                         <div class="col-md-4">

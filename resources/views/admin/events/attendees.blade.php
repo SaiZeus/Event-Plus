@@ -638,6 +638,28 @@
     min-width: 0;
 }
 
+.runner-edit-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin: 0 0 6px;
+    padding: 5px 8px;
+    border: 1px solid #fed7aa;
+    border-radius: 7px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: .58rem;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.runner-edit-inline:hover {
+    background: #ffedd5;
+    border-color: #fdba74;
+}
+
 .runner-code {
     display: inline-flex;
     align-items: center;
@@ -1295,9 +1317,29 @@
         align-self: flex-start;
     }
 
+    .edit-runner-modal {
+        align-items: flex-start !important;
+        padding: 8px !important;
+        overflow-y: auto;
+    }
+
     .edit-runner-modal-card {
-        max-height: 95vh;
+        max-height: calc(100dvh - 16px);
+        margin: auto 0;
         border-radius: 18px !important;
+    }
+
+    .edit-modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        padding: 14px 16px;
+    }
+
+    .edit-modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
     }
 
     .edit-modal-body {
@@ -1558,6 +1600,8 @@
      REGISTERED PARTICIPANTS
      ===================================================== --}}
 
+@foreach($attendees->groupBy('ticket_category_id') as $categoryAttendees)
+
 <div class="participants-card">
 
     <div class="participants-header">
@@ -1571,11 +1615,11 @@
             <div>
 
                 <h3>
-                    Registered Participants
+                    {{ $categoryAttendees->first()->ticketCategory->name ?? 'Uncategorized' }}
                 </h3>
 
                 <p>
-                    Manage runners registered for this event
+                    {{ $categoryAttendees->count() }} registered runners in this ticket category
                 </p>
 
             </div>
@@ -1583,7 +1627,7 @@
         </div>
 
         <span class="participant-count">
-            {{ $attendees->count() }} Runners
+            {{ $categoryAttendees->count() }} Runners
         </span>
 
     </div>
@@ -1644,7 +1688,7 @@
 
             <tbody>
 
-                @forelse($attendees as $attendee)
+                @foreach($categoryAttendees as $attendee)
 
                     <tr>
 
@@ -1663,6 +1707,15 @@
                                 </div>
 
                                 <div class="runner-identity-content">
+
+                                    @if(!auth('admin')->user()->isEventAdmin())
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-modal-{{ $attendee->id }}').classList.remove('hidden')"
+                                                class="runner-edit-inline">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                            Edit Runner
+                                        </button>
+                                    @endif
 
                                     <span class="runner-code">
                                         {{ $attendee->ticket_code }}
@@ -2077,25 +2130,12 @@
                                     </a>
 
 
-                                    {{-- Edit --}}
-
-                                    <button type="button"
-                                            onclick="document.getElementById('edit-modal-{{ $attendee->id }}').classList.remove('hidden')"
-                                            class="attendee-action edit-attendee-button">
-
-                                        <i class="fa-solid fa-pen-to-square"></i>
-
-                                        Edit
-
-                                    </button>
-
-
                                     {{-- Delete --}}
 
                                     <form action="{{ route('admin.attendees.destroy', $attendee->id) }}"
                                           method="POST"
                                           class="inline-block"
-                                          onsubmit="return confirm('Are you sure you want to delete this attendee?');">
+                                          onsubmit="return confirmAttendeeDeletion(event, this);">
 
                                         @csrf
                                         @method('DELETE')
@@ -2120,32 +2160,7 @@
                     </tr>
 
 
-                @empty
-
-                    <tr>
-
-                        <td colspan="{{ auth('admin')->user()->isEventAdmin() ? 8 : 9 }}"
-                            class="attendees-empty-state">
-
-                            <div class="attendees-empty-icon">
-
-                                <i class="fa-solid fa-users-slash"></i>
-
-                            </div>
-
-                            <h3>
-                                No Runners Registered
-                            </h3>
-
-                            <p>
-                                No runners registered for this event yet.
-                            </p>
-
-                        </td>
-
-                    </tr>
-
-                @endforelse
+@endforeach
 
             </tbody>
 
@@ -2155,6 +2170,18 @@
 
 </div>
 
+
+@endforeach
+
+@if($attendees->isEmpty())
+    <div class="participants-card">
+        <div class="attendees-empty-state">
+            <div class="attendees-empty-icon"><i class="fa-solid fa-users-slash"></i></div>
+            <h3>No Runners Registered</h3>
+            <p>No runners registered for this event yet.</p>
+        </div>
+    </div>
+@endif
 
 {{-- =====================================================
      EDIT RUNNER MODALS — SUPER ADMIN ONLY
@@ -2446,9 +2473,13 @@
 
                                 <input type="text"
                                        name="bib_number"
-                                       value="{{ $attendee->bib_number }}"
+                                       value="{{ $attendee->bib_number ?: $attendee->bib_name }}"
+                                       maxlength="50"
                                        class="edit-input"
-                                       placeholder="e.g. 1001">
+                                       placeholder="e.g. GH-0001 or 1001">
+                                <p class="field-help" style="margin:5px 0 0;color:#8a91a0;font-size:.58rem;">
+                                    Enter the runner's BIB code/number here.
+                                </p>
 
                             </div>
 
@@ -2476,21 +2507,32 @@
                                     T-Shirt Size
                                 </label>
 
-                                <select name="tshirt_size"
-                                        class="edit-select">
+                                @php
+                                    $availableTshirtSizes = $event->tshirt_sizes ?? [];
+                                    if (is_string($availableTshirtSizes)) {
+                                        $availableTshirtSizes = json_decode($availableTshirtSizes, true) ?: [];
+                                    }
+                                    $availableTshirtSizes = is_array($availableTshirtSizes)
+                                        ? array_values(array_unique($availableTshirtSizes))
+                                        : [];
+                                @endphp
 
-                                    @foreach(['S', 'M', 'L', 'XL', '2XL'] as $size)
-
-                                        <option value="{{ $size }}"
-                                            {{ $attendee->tshirt_size === $size ? 'selected' : '' }}>
-
-                                            {{ $size }}
-
-                                        </option>
-
-                                    @endforeach
-
-                                </select>
+                                @if(count($availableTshirtSizes))
+                                    <select name="tshirt_size" class="edit-select">
+                                        <option value="">Select size</option>
+                                        @foreach($availableTshirtSizes as $size)
+                                            <option value="{{ $size }}"
+                                                {{ $attendee->tshirt_size === $size ? 'selected' : '' }}>
+                                                {{ $size }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <input type="hidden" name="tshirt_size" value="{{ $attendee->tshirt_size }}">
+                                    <div class="edit-input" style="background:#f8fafc;color:#98a2b3;">
+                                        No T-shirt sizes configured for this event
+                                    </div>
+                                @endif
 
                             </div>
 
@@ -2689,6 +2731,42 @@
 
 
 </div>
+
+<script>
+function confirmAttendeeDeletion(event, form) {
+    event.preventDefault();
+
+    if (!window.confirm(
+        'Are you sure you want to delete this attendee? This action cannot be undone and may update the order revenue.'
+    )) {
+        return false;
+    }
+
+    const adminPassword = window.prompt(
+        'Super Admin verification required.\n\nEnter your Super Admin password to confirm deletion:'
+    );
+
+    if (adminPassword === null || adminPassword.trim() === '') {
+        window.alert('Password verification was cancelled. The attendee was not deleted.');
+        return false;
+    }
+
+    // Send the password to Laravel for secure server-side Hash::check verification.
+    let passwordInput = form.querySelector('input[name="admin_password"]');
+
+    if (!passwordInput) {
+        passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'admin_password';
+        form.appendChild(passwordInput);
+    }
+
+    passwordInput.value = adminPassword;
+    form.submit();
+
+    return false;
+}
+</script>
 
 @if(auth('admin')->user()->isEventAdmin())
 

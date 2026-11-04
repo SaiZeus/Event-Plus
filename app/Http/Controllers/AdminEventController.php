@@ -34,6 +34,8 @@ use App\Exports\EventAttendeesExport;
 
 use Maatwebsite\Excel\Facades\Excel;
 
+use Illuminate\Support\Facades\Hash;
+
 
 
 class AdminEventController extends Controller
@@ -2300,64 +2302,102 @@ class AdminEventController extends Controller
 
 
 
-    public function destroyAttendee($id)
-    {
-        DB::transaction(function () use ($id) {
-            $attendee = Attendee::with('ticketCategory', 'order')->lockForUpdate()->findOrFail($id);
-            $category = $attendee->ticketCategory;
-            $order = $attendee->order;
+   
+public function destroyAttendee(Request $request, $id)
+{
+    // Only a Super Admin can delete attendees.
+    $admin = auth('admin')->user();
 
-            // Recalculate every category that could be affected if this order is deleted.
-            $affectedCategoryIds = [];
-            if ($category) {
-                $affectedCategoryIds[] = $category->id;
-            }
-
-            if ($order) {
-                $affectedCategoryIds = array_merge(
-                    $affectedCategoryIds,
-                    $order->attendees()->pluck('ticket_category_id')->all()
-                );
-                $affectedCategoryIds = array_values(array_unique(array_filter($affectedCategoryIds)));
-
-                // Preserve the existing revenue adjustment behavior.
-                $ticketPrice = (strtolower((string) $attendee->nationality) === 'foreigner')
-                    ? ($category->foreign_price ?? $category->local_price ?? 0)
-                    : ($category->local_price ?? 0);
-
-                $newTotal = max(0, (float) $order->total_amount - (float) $ticketPrice);
-                $hasOtherAttendees = $order->attendees()->where('id', '!=', $attendee->id)->exists();
-
-                // Delete the attendee first so the order's attendee relation is accurate.
-                $attendee->delete();
-
-                if (!$hasOtherAttendees || $newTotal <= 0) {
-                    $order->delete();
-                } else {
-                    $order->update(['total_amount' => $newTotal]);
-                }
-            } else {
-                $attendee->delete();
-            }
-
-            // Match tickets_sold to the admin Attendees page's paid-equivalent statuses.
-            // Pending/failed attendees do not count, and existing counter drift is corrected.
-            foreach ($affectedCategoryIds as $categoryId) {
-                $soldCount = Attendee::where('ticket_category_id', $categoryId)
-                    ->whereHas('order', function ($query) {
-                        $query->whereRaw("LOWER(payment_status) IN ('paid', 'approved', 'completed')");
-                    })
-                    ->count();
-
-                TicketCategory::whereKey($categoryId)->update(['tickets_sold' => $soldCount]);
-            }
-        });
-
-        return back()->with(
-            'success',
-            'Attendee deleted and revenue updated successfully!'
-        );
+    if (!$admin || $admin->isEventAdmin()) {
+        abort(403, 'Only Super Admins can delete attendees.');
     }
+
+    // Require the Super Admin's password.
+    $request->validate([
+        'admin_password' => ['required', 'string'],
+    ]);
+
+    if (!Hash::check($request->input('admin_password'), $admin->password)) {
+        return back()->withErrors([
+            'admin_password' => 'Incorrect Super Admin password. The attendee was not deleted.',
+        ]);
+    }
+
+    DB::transaction(function () use ($id) {
+        $attendee = Attendee::with('ticketCategory', 'order')
+            ->lockForUpdate()
+            ->findOrFail($id);
+
+        $category = $attendee->ticketCategory;
+        $order = $attendee->order;
+
+        // Recalculate every category that could be affected.
+        $affectedCategoryIds = [];
+
+        if ($category) {
+            $affectedCategoryIds[] = $category->id;
+        }
+
+        if ($order) {
+            $affectedCategoryIds = array_merge(
+                $affectedCategoryIds,
+                $order->attendees()->pluck('ticket_category_id')->all()
+            );
+
+            $affectedCategoryIds = array_values(
+                array_unique(array_filter($affectedCategoryIds))
+            );
+
+            // Preserve existing revenue adjustment behavior.
+            $ticketPrice = (strtolower((string) $attendee->nationality) === 'foreigner')
+                ? ($category->foreign_price ?? $category->local_price ?? 0)
+                : ($category->local_price ?? 0);
+
+            $newTotal = max(
+                0,
+                (float) $order->total_amount - (float) $ticketPrice
+            );
+
+            $hasOtherAttendees = $order->attendees()
+                ->where('id', '!=', $attendee->id)
+                ->exists();
+
+            // Delete attendee first.
+            $attendee->delete();
+
+            if (!$hasOtherAttendees || $newTotal <= 0) {
+                $order->delete();
+            } else {
+                $order->update([
+                    'total_amount' => $newTotal,
+                ]);
+            }
+        } else {
+            $attendee->delete();
+        }
+
+        // Recalculate tickets_sold for affected categories.
+        foreach ($affectedCategoryIds as $categoryId) {
+            $soldCount = Attendee::where('ticket_category_id', $categoryId)
+                ->whereHas('order', function ($query) {
+                    $query->whereRaw(
+                        "LOWER(payment_status) IN ('paid', 'approved', 'completed')"
+                    );
+                })
+                ->count();
+
+            TicketCategory::whereKey($categoryId)->update([
+                'tickets_sold' => $soldCount,
+            ]);
+        }
+    });
+
+    return back()->with(
+        'success',
+        'Attendee deleted and revenue updated successfully!'
+    );
+}
+
 
     
 
@@ -2815,180 +2855,123 @@ public function downloadAttendeeTicket($id)
 
 
 
-    public function destroy(Event $event)
-
-    {
-
-        $event->load([
-
-            'ticketCategories',
-
-            'promoCodes',
-
-            'items'
-
-        ]);
-
-
-
-        $categoryIds = $event->ticketCategories()
-
-            ->pluck('id');
-
-
-
-        Attendee::whereIn(
-
-            'ticket_category_id',
-
-            $categoryIds
-
-        )->delete();
-
-
-
-        Order::where(
-
-            'event_id',
-
-            $event->id
-
-        )->delete();
-
-
-
-        $event->ticketCategories()->delete();
-
-
-
-        $event->promoCodes()->delete();
-
-
-
-        foreach ($event->items as $item) {
-
-
-
-            if ($item->image) {
-
-                Storage::disk('public')->delete(
-
-                    $item->image
-
-                );
-
-            }
-
-
-
-            $item->delete();
-
-        }
-
-
-
-        if ($event->image) {
-
-            Storage::disk('public')->delete(
-
-                $event->image
-
-            );
-
-        }
-
-
-
-        if ($event->english_waiver) {
-
-            Storage::disk('public')->delete(
-
-                $event->english_waiver
-
-            );
-
-        }
-
-
-
-        if ($event->burmese_waiver) {
-
-            Storage::disk('public')->delete(
-
-                $event->burmese_waiver
-
-            );
-
-        }
-
-
-
-        if ($event->english_consent) {
-
-            Storage::disk('public')->delete(
-
-                $event->english_consent
-
-            );
-
-        }
-
-
-
-        if ($event->burmese_consent) {
-
-            Storage::disk('public')->delete(
-
-                $event->burmese_consent
-
-            );
-
-        }
-
-
-
-        if ($event->english_race_guide) {
-
-            Storage::disk('public')->delete(
-
-                $event->english_race_guide
-
-            );
-
-        }
-
-
-
-        if ($event->burmese_race_guide) {
-
-            Storage::disk('public')->delete(
-
-                $event->burmese_race_guide
-
-            );
-
-        }
-
-
-
-        $event->delete();
-
-
-
+    public function destroy(Request $request, Event $event)
+{
+    // Get the currently logged-in admin
+    $admin = auth('admin')->user();
+
+    if (!$admin) {
         return redirect()
-
-            ->route('admin.events.index')
-
-            ->with(
-
-                'success',
-
-                'Event deleted successfully!'
-
-            );
-
+            ->route('admin.login')
+            ->with('error', 'Please log in to continue.');
     }
 
+    // Only Super Admin can delete events
+    if ($admin->isEventAdmin()) {
+        abort(403, 'Only Super Admin can delete events.');
+    }
+
+    // Validate the password field
+    $request->validate([
+        'admin_password' => ['required', 'string'],
+    ], [
+        'admin_password.required' => 'Please enter your admin password.',
+    ]);
+
+    // Verify the password against the logged-in admin account
+    if (!Hash::check($request->input('admin_password'), $admin->password)) {
+        return back()
+            ->withErrors([
+                'admin_password' => 'Incorrect admin password. The event was not deleted.',
+            ]);
+    }
+
+    // Password verified. Continue with event deletion.
+    $event->load([
+        'ticketCategories',
+        'promoCodes',
+        'items'
+    ]);
+
+    $categoryIds = $event->ticketCategories()
+        ->pluck('id');
+
+    Attendee::whereIn(
+        'ticket_category_id',
+        $categoryIds
+    )->delete();
+
+    Order::where(
+        'event_id',
+        $event->id
+    )->delete();
+
+    $event->ticketCategories()->delete();
+
+    $event->promoCodes()->delete();
+
+    foreach ($event->items as $item) {
+
+        if ($item->image) {
+            Storage::disk('public')->delete(
+                $item->image
+            );
+        }
+
+        $item->delete();
+    }
+
+    if ($event->image) {
+        Storage::disk('public')->delete(
+            $event->image
+        );
+    }
+
+    if ($event->english_waiver) {
+        Storage::disk('public')->delete(
+            $event->english_waiver
+        );
+    }
+
+    if ($event->burmese_waiver) {
+        Storage::disk('public')->delete(
+            $event->burmese_waiver
+        );
+    }
+
+    if ($event->english_consent) {
+        Storage::disk('public')->delete(
+            $event->english_consent
+        );
+    }
+
+    if ($event->burmese_consent) {
+        Storage::disk('public')->delete(
+            $event->burmese_consent
+        );
+    }
+
+    if ($event->english_race_guide) {
+        Storage::disk('public')->delete(
+            $event->english_race_guide
+        );
+    }
+
+    if ($event->burmese_race_guide) {
+        Storage::disk('public')->delete(
+            $event->burmese_race_guide
+        );
+    }
+
+    $event->delete();
+
+    return redirect()
+        ->route('admin.events.index')
+        ->with(
+            'success',
+            'Event deleted successfully!'
+        );
+}
 
 
     public function exportAttendees(Event $event)
