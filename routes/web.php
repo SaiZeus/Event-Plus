@@ -145,6 +145,7 @@ Route::get('/test-email', function () {
 });
 
 Route::get('/akjbdakbd/status/{token}', [TicketVerificationController::class, 'show'])->name('ticket.verify');
+Route::get('/akjbdakbd/status/{token}/download', [TicketVerificationController::class, 'downloadPdf'])->name('ticket.download_pdf');
 
 Route::get('/preview-ticket-email', function () {
     $attendee = App\Models\Attendee::with('ticketCategory.event')->first();

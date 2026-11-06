@@ -643,6 +643,16 @@
 
 
         {{-- =====================================================
+             DOWNLOAD BUTTON
+        ====================================================== --}}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="{{ route('ticket.download_pdf', $attendee->verification_token) }}" class="btn-download" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #7c3aed; color: #fff; border-radius: 50px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+                <i class="fa-solid fa-download"></i> Download Report (PDF)
+            </a>
+        </div>
+
+
+        {{-- =====================================================
              TICKET CARD
         ====================================================== --}}
         <div class="ticket-card">
