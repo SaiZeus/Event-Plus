@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -475,6 +474,12 @@
                         <tr>
                             <td class="label">Gender</td>
                             <td class="value">{{ ucfirst($attendee->gender ?? '-') }}</td>
+                        </tr>
+
+                        {{-- T-SHIRT SIZE --}}
+                        <tr>
+                            <td class="label">T-Shirt Size</td>
+                            <td class="value">{{ $attendee->tshirt_size ?? '-' }}</td>
                         </tr>
 
                         <tr>

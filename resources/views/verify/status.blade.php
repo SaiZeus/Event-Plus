@@ -3,7 +3,6 @@
 @section('title', 'Ticket Verification Status')
 
 @push('styles')
-<!-- Font Awesome 6 CDN Fallback to ensure icons render properly -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 @endpush
 
@@ -18,21 +17,9 @@
         min-height: calc(100vh - 80px);
         padding: 45px 15px 65px;
         background:
-            radial-gradient(
-                circle at 8% 8%,
-                rgba(124, 58, 237, 0.10),
-                transparent 30%
-            ),
-            radial-gradient(
-                circle at 92% 90%,
-                rgba(236, 72, 153, 0.09),
-                transparent 30%
-            ),
-            linear-gradient(
-                180deg,
-                #f8f7fc 0%,
-                #f5f7fb 100%
-            );
+            radial-gradient(circle at 8% 8%, rgba(124, 58, 237, 0.10), transparent 30%),
+            radial-gradient(circle at 92% 90%, rgba(236, 72, 153, 0.09), transparent 30%),
+            linear-gradient(180deg, #f8f7fc 0%, #f5f7fb 100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -43,10 +30,7 @@
         max-width: 650px;
     }
 
-    /* =========================================================
-       HEADER
-       ========================================================= */
-
+    /* HEADER */
     .verification-header {
         text-align: center;
         margin-bottom: 24px;
@@ -88,10 +72,7 @@
         font-size: .82rem;
     }
 
-    /* =========================================================
-       MAIN TICKET CARD
-       ========================================================= */
-
+    /* MAIN TICKET CARD */
     .ticket-card {
         position: relative;
         overflow: hidden;
@@ -111,12 +92,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(
-            90deg,
-            #4c1d95,
-            #7c3aed,
-            #ec4899
-        );
+        background: linear-gradient(90deg, #4c1d95, #7c3aed, #ec4899);
     }
 
     .ticket-card::after {
@@ -131,10 +107,7 @@
         pointer-events: none;
     }
 
-    /* =========================================================
-       STATUS
-       ========================================================= */
-
+    /* STATUS */
     .ticket-status {
         position: relative;
         z-index: 1;
@@ -166,21 +139,14 @@
 
     .status-icon.active {
         color: #7c3aed;
-        background: linear-gradient(
-            145deg,
-            #f3e8ff,
-            #fce7f3
-        );
-        box-shadow:
-            0 0 0 9px rgba(124, 58, 237, .045),
-            0 12px 30px rgba(124, 58, 237, .13);
+        background: linear-gradient(145deg, #f3e8ff, #fce7f3);
+        box-shadow: 0 0 0 9px rgba(124, 58, 237, .045), 0 12px 30px rgba(124, 58, 237, .13);
     }
 
     .status-icon.expired {
         color: #64748b;
         background: #f1f5f9;
-        box-shadow:
-            0 0 0 9px rgba(100, 116, 139, .045);
+        box-shadow: 0 0 0 9px rgba(100, 116, 139, .045);
     }
 
     .status-badge {
@@ -222,10 +188,7 @@
         margin: 0;
     }
 
-    /* =========================================================
-       DIVIDER
-       ========================================================= */
-
+    /* DIVIDER */
     .ticket-divider {
         position: relative;
         height: 1px;
@@ -244,18 +207,10 @@
         border-radius: 50%;
     }
 
-    .ticket-divider::before {
-        left: -36px;
-    }
+    .ticket-divider::before { left: -36px; }
+    .ticket-divider::after { right: -36px; }
 
-    .ticket-divider::after {
-        right: -36px;
-    }
-
-    /* =========================================================
-       INFORMATION
-       ========================================================= */
-
+    /* INFORMATION */
     .ticket-info {
         position: relative;
         z-index: 1;
@@ -266,14 +221,8 @@
         scrollbar-color: #c4b5fd transparent;
     }
 
-    .ticket-info::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    .ticket-info::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
+    .ticket-info::-webkit-scrollbar { width: 5px; }
+    .ticket-info::-webkit-scrollbar-track { background: transparent; }
     .ticket-info::-webkit-scrollbar-thumb {
         background: #c4b5fd;
         border-radius: 20px;
@@ -299,6 +248,7 @@
     .info-item:nth-child(10) { animation-delay: .60s; }
     .info-item:nth-child(11) { animation-delay: .65s; }
     .info-item:nth-child(12) { animation-delay: .70s; }
+    .info-item:nth-child(13) { animation-delay: .75s; }
 
     .info-item + .info-item {
         border-top: 1px solid #f1f3f7;
@@ -310,20 +260,14 @@
         width: 40px;
         height: 40px;
         border-radius: 12px;
-        background: linear-gradient(
-            145deg,
-            #f5f3ff,
-            #fdf2f8
-        );
+        background: linear-gradient(145deg, #f5f3ff, #fdf2f8);
         color: #6d28d9;
         border: 1px solid #ede9fe;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: .95rem;
-        transition:
-            transform .25s ease,
-            box-shadow .25s ease;
+        transition: transform .25s ease, box-shadow .25s ease;
     }
 
     .info-item:hover .info-icon {
@@ -364,10 +308,7 @@
         font-weight: 600;
     }
 
-    /* =========================================================
-       MESSAGE
-       ========================================================= */
-
+    /* MESSAGE */
     .verification-message {
         position: relative;
         z-index: 1;
@@ -383,12 +324,7 @@
     }
 
     .verification-message.active {
-        background:
-            linear-gradient(
-                135deg,
-                #faf5ff,
-                #fdf2f8
-            );
+        background: linear-gradient(135deg, #faf5ff, #fdf2f8);
         color: #5b21b6;
         border: 1px solid #eadcff;
     }
@@ -399,9 +335,7 @@
         border: 1px solid #e2e8f0;
     }
 
-    .verification-message strong {
-        font-weight: 850;
-    }
+    .verification-message strong { font-weight: 850; }
 
     .message-icon {
         flex: 0 0 auto;
@@ -409,18 +343,10 @@
         margin-top: 2px;
     }
 
-    .verification-message.active .message-icon {
-        color: #7c3aed;
-    }
+    .verification-message.active .message-icon { color: #7c3aed; }
+    .verification-message.expired .message-icon { color: #64748b; }
 
-    .verification-message.expired .message-icon {
-        color: #64748b;
-    }
-
-    /* =========================================================
-       FOOTER
-       ========================================================= */
-
+    /* FOOTER */
     .verification-footer {
         text-align: center;
         margin-top: 18px;
@@ -434,10 +360,7 @@
         color: #7c3aed;
     }
 
-    /* =========================================================
-       ANIMATIONS
-       ========================================================= */
-
+    /* ANIMATIONS */
     @keyframes epFadeDown {
         from { opacity: 0; transform: translateY(-14px); }
         to { opacity: 1; transform: translateY(0); }
@@ -469,10 +392,7 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* =========================================================
-       MOBILE
-       ========================================================= */
-
+    /* MOBILE */
     @media (max-width: 576px) {
         .verification-page {
             min-height: calc(100vh - 60px);
@@ -480,9 +400,7 @@
             align-items: flex-start;
         }
 
-        .verification-header {
-            margin-bottom: 17px;
-        }
+        .verification-header { margin-bottom: 17px; }
 
         .verification-header .small-label {
             font-size: .63rem;
@@ -494,17 +412,10 @@
             margin-top: 10px;
         }
 
-        .verification-header p {
-            font-size: .75rem;
-        }
+        .verification-header p { font-size: .75rem; }
+        .ticket-card { border-radius: 21px; }
 
-        .ticket-card {
-            border-radius: 21px;
-        }
-
-        .ticket-status {
-            padding: 30px 18px 26px;
-        }
+        .ticket-status { padding: 30px 18px 26px; }
 
         .status-icon {
             width: 67px;
@@ -523,13 +434,8 @@
             margin-top: 14px;
         }
 
-        .verification-text {
-            font-size: .78rem;
-        }
-
-        .ticket-divider {
-            margin: 0 18px;
-        }
+        .verification-text { font-size: .78rem; }
+        .ticket-divider { margin: 0 18px; }
 
         .ticket-info {
             padding: 19px 17px 17px;
@@ -549,13 +455,8 @@
             font-size: .82rem;
         }
 
-        .info-label {
-            font-size: .61rem;
-        }
-
-        .info-value {
-            font-size: .84rem;
-        }
+        .info-label { font-size: .61rem; }
+        .info-value { font-size: .84rem; }
 
         .verification-message {
             margin: 0 17px 18px;
@@ -581,9 +482,7 @@
             padding-right: 14px;
         }
 
-        .ticket-name {
-            font-size: 1.25rem;
-        }
+        .ticket-name { font-size: 1.25rem; }
 
         .ticket-info {
             padding-left: 13px;
@@ -596,10 +495,7 @@
         }
     }
 
-    /* =========================================================
-       REDUCED MOTION
-       ========================================================= */
-
+    /* REDUCED MOTION */
     @media (prefers-reduced-motion: reduce) {
         .verification-header,
         .ticket-card,
@@ -610,20 +506,15 @@
             animation: none !important;
         }
 
-        .info-icon {
-            transition: none !important;
-        }
+        .info-icon { transition: none !important; }
     }
 </style>
-
 
 <div class="verification-page">
 
     <div class="verification-wrapper">
 
-        {{-- =====================================================
-             PAGE HEADER
-        ====================================================== --}}
+        {{-- PAGE HEADER --}}
         <div class="verification-header">
 
             <div class="small-label">
@@ -631,9 +522,7 @@
                 Ticket Verification
             </div>
 
-            <h2>
-                Ticket Status
-            </h2>
+            <h2>Ticket Status</h2>
 
             <p>
                 Verify the registration and attendee information
@@ -641,26 +530,19 @@
 
         </div>
 
-
-        {{-- =====================================================
-             DOWNLOAD BUTTON
-        ====================================================== --}}
+        {{-- DOWNLOAD BUTTON --}}
         <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{{ route('ticket.download_pdf', $attendee->verification_token) }}" class="btn-download" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #7c3aed; color: #fff; border-radius: 50px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+            <a href="{{ route('ticket.download_pdf', $attendee->verification_token) }}"
+               class="btn-download"
+               style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #7c3aed; color: #fff; border-radius: 50px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
                 <i class="fa-solid fa-download"></i> Download Report (PDF)
             </a>
         </div>
 
-
-        {{-- =====================================================
-             TICKET CARD
-        ====================================================== --}}
+        {{-- TICKET CARD --}}
         <div class="ticket-card">
 
-
-            {{-- =================================================
-                 STATUS
-            ================================================== --}}
+            {{-- STATUS --}}
             <div class="ticket-status">
 
                 @if($isExpired)
@@ -687,7 +569,6 @@
 
                 @endif
 
-
                 <h1 class="ticket-name">
                     {{ $attendee->full_name }}
                 </h1>
@@ -698,28 +579,19 @@
 
             </div>
 
-
-            {{-- =================================================
-                 DIVIDER
-            ================================================== --}}
+            {{-- DIVIDER --}}
             <div class="ticket-divider"></div>
 
-
-            {{-- =================================================
-                 ATTENDEE INFORMATION
-            ================================================== --}}
+            {{-- ATTENDEE INFORMATION --}}
             <div class="ticket-info">
-
 
                 {{-- REG CODE / TICKET REFERENCE --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-barcode"></i>
                     </div>
 
                     <div class="info-content">
-
                         <span class="info-label">
                             Reg Code / Ticket Ref
                         </span>
@@ -727,71 +599,49 @@
                         <span class="info-value">
                             {{ $attendee->ticket_code }}
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- EVENT NAME --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-calendar-days"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Event
-                        </span>
+                        <span class="info-label">Event</span>
 
                         <span class="info-value">
                             {{ $attendee->ticketCategory->event->title ?? 'N/A' }}
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- TICKET CATEGORY --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-ticket"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Ticket Category
-                        </span>
+                        <span class="info-label">Ticket Category</span>
 
                         <span class="info-value">
                             {{ $attendee->ticketCategory->name ?? 'N/A' }}
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- EVENT DATE --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-regular fa-calendar"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Event Date
-                        </span>
+                        <span class="info-label">Event Date</span>
 
                         <span class="info-value">
-
                             {{
                                 isset($attendee->ticketCategory->event->event_date)
                                     ? \Carbon\Carbon::parse(
@@ -799,321 +649,222 @@
                                       )->format('F d, Y - h:i A')
                                     : 'N/A'
                             }}
-
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- FATHER'S NAME --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-user-group"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Father's Name
-                        </span>
+                        <span class="info-label">Father's Name</span>
 
                         <span class="info-value">
                             {{ $attendee->father_name ?? '-' }}
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- CONTACT INFORMATION --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-phone"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Contact / Email
-                        </span>
+                        <span class="info-label">Contact / Email</span>
 
                         <span class="info-value">
-
                             {{ $attendee->phone ?? '-' }}
 
                             @if($attendee->email)
-
                                 <br>
-
                                 <small class="text-muted">
                                     {{ $attendee->email }}
                                 </small>
-
                             @endif
-
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- EMERGENCY CONTACT --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-heart-pulse"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Emergency Contact
-                        </span>
+                        <span class="info-label">Emergency Contact</span>
 
                         <span class="info-value">
-
                             {{ $attendee->emergency_contact ?? '-' }}
 
                             @if($attendee->emergency_phone)
                                 ({{ $attendee->emergency_phone }})
                             @endif
-
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- NRC / PASSPORT / COUNTRY --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-id-card"></i>
                     </div>
 
                     <div class="info-content">
-
                         <span class="info-label">
                             NRC / Passport / Country
                         </span>
 
                         <span class="info-value">
-
                             {{ $attendee->nrc_passport ?? '-' }}
 
                             <span class="text-muted">
                                 ({{ $attendee->country ?? 'Myanmar' }})
                             </span>
-
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- DEMOGRAPHICS --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-person"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Demographics
-                        </span>
+                        <span class="info-label">Demographics</span>
 
                         <span class="info-value">
-
                             {{ ucfirst($attendee->gender ?? '-') }}
 
                             @if($attendee->dob)
-
                                 &bull;
-
-                                Age:
-                                {{ \Carbon\Carbon::parse($attendee->dob)->age }}
-                                yrs
-
-                                (DOB:
-                                {{ $attendee->dob }})
-
+                                Age: {{ \Carbon\Carbon::parse($attendee->dob)->age }} yrs
+                                (DOB: {{ $attendee->dob }})
                             @endif
-
                         </span>
-
                     </div>
-
                 </div>
 
+                {{-- T-SHIRT SIZE --}}
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fa-solid fa-shirt"></i>
+                    </div>
+
+                    <div class="info-content">
+                        <span class="info-label">T-Shirt Size</span>
+
+                        <span class="info-value">
+                            {{ $attendee->tshirt_size ?? '-' }}
+                        </span>
+                    </div>
+                </div>
 
                 {{-- HEALTH & ITRA --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-heart-circle-check"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Health & ITRA
-                        </span>
+                        <span class="info-label">Health & ITRA</span>
 
                         <span class="info-value">
-
                             Medical Cond:
                             {{ $attendee->medical_conditions ?? 'None' }}
 
                             @if($attendee->itra_profile)
-
                                 <br>
-
-                                ITRA:
-                                {{ $attendee->itra_profile }}
-
+                                ITRA: {{ $attendee->itra_profile }}
                             @endif
-
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- ADDRESS & EXPERIENCE --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-location-dot"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Address & Experience
-                        </span>
+                        <span class="info-label">Address & Experience</span>
 
                         <span class="info-value">
-
                             {{ $attendee->address ?? '-' }}
 
                             @if($attendee->running_experience)
-
                                 <br>
-
                                 <small class="text-muted">
-                                    Exp:
-                                    {{ $attendee->running_experience }}
+                                    Exp: {{ $attendee->running_experience }}
                                 </small>
-
                             @endif
-
                         </span>
-
                     </div>
-
                 </div>
-
 
                 {{-- PROMO APPLIED --}}
                 <div class="info-item">
-
                     <div class="info-icon">
                         <i class="fa-solid fa-tag"></i>
                     </div>
 
                     <div class="info-content">
-
-                        <span class="info-label">
-                            Promo Applied
-                        </span>
+                        <span class="info-label">Promo Applied</span>
 
                         <span class="info-value">
                             {{ $attendee->promo_code ?? 'None' }}
                         </span>
-
                     </div>
-
                 </div>
-
 
             </div>
 
-
-            {{-- =================================================
-                 VERIFICATION MESSAGE
-            ================================================== --}}
+            {{-- VERIFICATION MESSAGE --}}
             @if($isExpired)
 
                 <div class="verification-message expired">
-
                     <div class="message-icon">
                         <i class="fa-solid fa-circle-info"></i>
                     </div>
 
                     <div>
-
-                        <strong>
-                            Ticket Expired
-                        </strong>
-
+                        <strong>Ticket Expired</strong>
                         <br>
-
                         This event has passed and the ticket status
                         is now expired.
-
                     </div>
-
                 </div>
 
             @else
 
                 <div class="verification-message active">
-
                     <div class="message-icon">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
 
                     <div>
-
-                        <strong>
-                            Ticket Valid
-                        </strong>
-
+                        <strong>Ticket Valid</strong>
                         <br>
-
                         This ticket is valid and the event is
                         currently active.
-
                     </div>
-
                 </div>
 
             @endif
 
-
         </div>
 
-
-        {{-- =====================================================
-             FOOTER
-        ====================================================== --}}
+        {{-- FOOTER --}}
         <div class="verification-footer">
-
             <i class="fa-solid fa-shield-halved"></i>
-
             Secure ticket verification
-
         </div>
 
     </div>
