@@ -4,1035 +4,929 @@
 
 @section('content')
 
-<!-- Font Awesome CDN for Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+@php
+    $hasEn    = filled($event->english_race_guide);
+    $hasMm    = filled($event->burmese_race_guide);
+    $hasGuide = $hasEn || $hasMm;
+    $hasBoth  = $hasEn && $hasMm;
 
-<style>
-    /* =========================================================
-       PREMIUM EVENT RACE GUIDE
-       Event-focused frontend only
-       Backend / routes / forms / JS preserved
-    ========================================================= */
+    $enUrl = $hasEn ? asset('storage/' . $event->english_race_guide) : null;
+    $mmUrl = $hasMm ? asset('storage/' . $event->burmese_race_guide) : null;
 
-    .race-guide-page {
-        --rg-navy: #0e0928;
-        --rg-navy-2: #171039;
-        --rg-purple: #291452;
-        --rg-pink: #ff2f92;
-        --rg-pink-dark: #e51d7d;
-        --rg-pink-soft: #fff0f8;
-        --rg-lavender: #f6f2ff;
-        --rg-lavender-2: #eee8ff;
-        --rg-text: #19142e;
-        --rg-muted: #756f84;
-        --rg-border: rgba(34, 24, 76, .10);
+    $firstLang  = $hasEn ? 'en' : 'mm';
+    $firstUrl   = $hasEn ? $enUrl : $mmUrl;
+    $firstLabel = $hasEn ? 'English guide' : 'Burmese guide';
+@endphp
 
-        position: relative;
-        min-height: 100vh;
-        overflow: hidden;
-        background:
-            radial-gradient(circle at 4% 18%, rgba(255, 47, 146, .07), transparent 24%),
-            radial-gradient(circle at 96% 40%, rgba(108, 74, 255, .08), transparent 25%),
-            linear-gradient(180deg, #fbfaff 0%, #f3effd 100%);
-        color: var(--rg-text);
-    }
+<div class="rg">
 
-    .race-guide-page::before {
-        content: "";
-        position: absolute;
-        width: 500px;
-        height: 500px;
-        right: -280px;
-        top: 430px;
-        border-radius: 50%;
-        background: rgba(255, 47, 146, .045);
-        pointer-events: none;
-    }
+    {{-- =========================================================
+    HERO
+    ========================================================= --}}
 
-    .race-guide-page::after {
-        content: "";
-        position: absolute;
-        width: 420px;
-        height: 420px;
-        left: -250px;
-        bottom: -180px;
-        border-radius: 50%;
-        background: rgba(104, 75, 230, .055);
-        pointer-events: none;
-    }
+    <header class="rg-hero">
 
-    /* =========================================================
-       HERO
-    ========================================================= */
+        <div class="container">
 
-    .race-guide-hero {
-        position: relative;
-        overflow: hidden;
-        min-height: 340px;
-        border-radius: 0 0 45px 45px;
-        background:
-            radial-gradient(circle at 82% 18%, rgba(255, 47, 146, .30), transparent 27%),
-            radial-gradient(circle at 12% 100%, rgba(110, 74, 255, .27), transparent 35%),
-            linear-gradient(125deg, #0b0823 0%, #171039 50%, #2a1251 100%);
-        box-shadow: 0 25px 70px rgba(15, 9, 40, .18);
-    }
+            <ol class="rg-steps" aria-label="Registration progress">
 
-    .race-guide-hero::before {
-        content: "";
-        position: absolute;
-        width: 470px;
-        height: 470px;
-        right: -150px;
-        top: -270px;
-        border: 1px solid rgba(255, 255, 255, .12);
-        border-radius: 50%;
-    }
+                <li class="is-done">
+                    <span class="rg-steps__n" aria-hidden="true"><i class="fas fa-check"></i></span>
+                    Tickets
+                </li>
 
-    .race-guide-hero::after {
-        content: "";
-        position: absolute;
-        width: 800px;
-        height: 170px;
-        left: -120px;
-        bottom: -125px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, .045);
-        transform: rotate(-7deg);
-    }
+                <li class="is-done">
+                    <span class="rg-steps__n" aria-hidden="true"><i class="fas fa-check"></i></span>
+                    Participant details
+                </li>
 
-    .race-guide-hero-inner {
-        position: relative;
-        z-index: 2;
-        max-width: 1180px;
-        min-height: 340px;
-        margin: 0 auto;
-        padding: 58px 30px 82px;
-        display: flex;
-        align-items: center;
-    }
+                <li class="is-done">
+                    <span class="rg-steps__n" aria-hidden="true"><i class="fas fa-check"></i></span>
+                    Waiver
+                </li>
 
-    .race-guide-hero-content {
-        max-width: 780px;
-    }
+                <li class="is-current" aria-current="step">
+                    <span class="rg-steps__n" aria-hidden="true">4</span>
+                    {{ $hasGuide ? 'Race guide' : 'Payment' }}
+                </li>
 
-    .hero-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: 9px;
-        margin-bottom: 17px;
-        padding: 8px 14px;
-        border: 1px solid rgba(255, 255, 255, .14);
-        border-radius: 50px;
-        background: rgba(255, 255, 255, .07);
-        color: rgba(255, 255, 255, .86);
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: .16em;
-        text-transform: uppercase;
-        backdrop-filter: blur(10px);
-    }
+            </ol>
 
-    .hero-kicker i {
-        color: #ff4da4;
-    }
+            @if($hasGuide)
 
-    .race-guide-hero h1 {
-        margin: 0 0 14px;
-        color: #fff;
-        font-size: clamp(2.4rem, 5vw, 4.7rem);
-        line-height: .98;
-        font-weight: 900;
-        letter-spacing: -.05em;
-    }
+                <h1 class="rg-title">Read the race guide</h1>
 
-    .race-guide-hero h1 span {
-        color: #ff429c;
-    }
+                <p class="rg-lead">
+                    Everything you need to know before race day for <strong>{{ $event->title }}</strong>.
+                    Read it through, then confirm to continue to payment.
+                </p>
 
-    .hero-description {
-        max-width: 680px;
-        margin: 0;
-        color: rgba(255, 255, 255, .68);
-        font-size: 14px;
-        line-height: 1.75;
-    }
+            @else
 
-    /* =========================================================
-       WAVE
-    ========================================================= */
+                <h1 class="rg-title">You're ready for payment</h1>
 
-    .race-guide-wave {
-        position: absolute;
-        z-index: 4;
-        left: 0;
-        right: 0;
-        bottom: -1px;
-        height: 70px;
-        pointer-events: none;
-    }
+                <p class="rg-lead">
+                    There's no race guide to read for <strong>{{ $event->title }}</strong>.
+                    Continue whenever you're ready.
+                </p>
 
-    .race-guide-wave svg {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-
-    /* =========================================================
-       CONTENT
-    ========================================================= */
-
-    .race-guide-content {
-        position: relative;
-        z-index: 5;
-        padding: 0 0 85px;
-    }
-
-    .race-guide-container {
-        max-width: 1120px;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
-
-    /* =========================================================
-       GUIDE CARD
-    ========================================================= */
-
-    .race-guide-card {
-        position: relative;
-        margin-top: -15px;
-        padding: 34px;
-        border: 1px solid rgba(34, 24, 76, .08);
-        border-radius: 30px;
-        background: rgba(255, 255, 255, .97);
-        box-shadow:
-            0 28px 75px rgba(32, 20, 76, .10),
-            0 5px 18px rgba(32, 20, 76, .035);
-    }
-
-    .race-guide-card::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 4px;
-        border-radius: 30px 30px 0 0;
-        background: linear-gradient(90deg, #ff2f92, #a05cff);
-    }
-
-    /* =========================================================
-       GUIDE HEADER
-    ========================================================= */
-
-    .race-guide-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 25px;
-        margin-bottom: 25px;
-        flex-wrap: wrap;
-    }
-
-    .race-guide-title {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .race-guide-title-icon {
-        width: 54px;
-        height: 54px;
-        flex: 0 0 54px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        background:
-            linear-gradient(145deg, #fff0f8, #f0eaff);
-        color: var(--rg-pink);
-        font-size: 20px;
-        box-shadow: 0 8px 20px rgba(255, 47, 146, .08);
-    }
-
-    .guide-eyebrow {
-        margin-bottom: 4px;
-        color: var(--rg-pink-dark);
-        font-size: 9px;
-        font-weight: 900;
-        letter-spacing: .15em;
-        text-transform: uppercase;
-    }
-
-    .race-guide-title h3 {
-        margin: 0;
-        color: var(--rg-navy);
-        font-size: clamp(1.4rem, 2.5vw, 1.9rem);
-        line-height: 1.1;
-        font-weight: 900;
-        letter-spacing: -.035em;
-    }
-
-    .race-guide-title p {
-        margin: 5px 0 0;
-        color: var(--rg-muted) !important;
-        font-size: 12px;
-        font-weight: 650;
-    }
-
-    /* =========================================================
-       LANGUAGE TABS
-    ========================================================= */
-
-    .guide-tabs {
-        display: flex;
-        align-items: center;
-        padding: 5px;
-        gap: 4px;
-        border: 1px solid #e6e0ef;
-        border-radius: 15px;
-        background: #f8f6fc;
-    }
-
-    .guide-tabs .btn-tab {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        min-height: 39px;
-        border: 0;
-        padding: 8px 15px;
-        border-radius: 11px;
-        background: transparent;
-        color: #746d82;
-        font-size: 11px;
-        font-weight: 850;
-        white-space: nowrap;
-        transition:
-            color .2s ease,
-            background .2s ease,
-            box-shadow .2s ease,
-            transform .2s ease;
-    }
-
-    .guide-tabs .btn-tab:hover:not(.active) {
-        color: var(--rg-navy);
-        background: #fff;
-    }
-
-    .guide-tabs .btn-tab.active {
-        background: var(--rg-navy);
-        color: #fff;
-        box-shadow: 0 6px 16px rgba(14, 9, 40, .18);
-    }
-
-    .guide-tabs .btn-tab.active i {
-        color: #ff4da4;
-    }
-
-    /* =========================================================
-       PDF VIEWER
-    ========================================================= */
-
-    .guide-viewer-label {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 11px;
-    }
-
-    .guide-viewer-label span:first-child {
-        color: var(--rg-navy);
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-    }
-
-    .guide-viewer-label span:last-child {
-        color: #a09aaa;
-        font-size: 10px;
-        font-weight: 650;
-    }
-
-    .pdf-viewer-wrap {
-        position: relative;
-        width: 100%;
-        height: 650px;
-        overflow: hidden;
-        border: 1px solid #ddd6e9;
-        border-radius: 22px;
-        background: #eae6f1;
-        box-shadow:
-            inset 0 0 0 5px rgba(255, 255, 255, .65),
-            0 14px 35px rgba(31, 19, 68, .07);
-    }
-
-    .pdf-viewer-wrap::before {
-        content: "";
-        position: absolute;
-        z-index: 3;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 5px;
-        background: linear-gradient(90deg, #ff2f92, #a15bff);
-        pointer-events: none;
-    }
-
-    .pdf-viewer-wrap iframe {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        height: 100%;
-        border: none;
-        background: #eeeaf4;
-    }
-
-    /* =========================================================
-       READ & CONTINUE
-    ========================================================= */
-
-    .guide-confirmation {
-        position: relative;
-        margin-top: 25px;
-        padding: 20px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 47, 146, .13);
-        border-radius: 21px;
-        background:
-            linear-gradient(135deg, #fff8fc 0%, #f8f4ff 100%);
-    }
-
-    .guide-confirmation::before {
-        content: "";
-        position: absolute;
-        width: 180px;
-        height: 180px;
-        right: -90px;
-        top: -110px;
-        border-radius: 50%;
-        background: rgba(255, 47, 146, .06);
-    }
-
-    .confirmation-inner {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 22px;
-    }
-
-    .confirmation-check {
-        display: flex;
-        align-items: flex-start;
-        gap: 13px;
-        min-width: 0;
-    }
-
-    .confirmation-icon {
-        width: 39px;
-        height: 39px;
-        flex: 0 0 39px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: #fff;
-        color: var(--rg-pink);
-        box-shadow: 0 5px 15px rgba(35, 20, 82, .06);
-    }
-
-    .accept-checkbox-card {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-    }
-
-    .accept-checkbox-card .form-check {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        margin: 0;
-    }
-
-    .accept-checkbox-card .form-check-input {
-        width: 20px;
-        height: 20px;
-        flex: 0 0 20px;
-        margin-top: 1px;
-        border: 2px solid #d6cfdf;
-        border-radius: 6px;
-        cursor: pointer;
-        box-shadow: none;
-    }
-
-    .accept-checkbox-card .form-check-input:checked {
-        background-color: var(--rg-pink);
-        border-color: var(--rg-pink);
-        box-shadow: 0 4px 12px rgba(255, 47, 146, .22);
-    }
-
-    .accept-checkbox-card label {
-        color: #342e43;
-        font-size: 12px;
-        line-height: 1.6;
-        font-weight: 750;
-        cursor: pointer;
-    }
-
-    /* =========================================================
-       PAYMENT CTA
-    ========================================================= */
-
-    .accept-btn {
-        position: relative;
-        z-index: 2;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 53px;
-        min-width: 205px;
-        padding: 10px 22px;
-        border: 0;
-        border-radius: 15px;
-        background:
-            linear-gradient(135deg, #ff3193 0%, #e91d7f 100%);
-        color: #fff !important;
-        font-size: 12px;
-        font-weight: 900;
-        letter-spacing: .01em;
-        white-space: nowrap;
-        box-shadow: 0 12px 28px rgba(255, 47, 146, .27);
-        transition:
-            transform .25s ease,
-            box-shadow .25s ease,
-            background .25s ease;
-    }
-
-    .accept-btn:hover:not(:disabled) {
-        transform: translateY(-3px);
-        background:
-            linear-gradient(135deg, #ff48a0 0%, #ed207f 100%);
-        box-shadow: 0 17px 34px rgba(255, 47, 146, .34);
-    }
-
-    .accept-btn:active:not(:disabled) {
-        transform: translateY(-1px);
-    }
-
-    .accept-btn:disabled {
-        background: #ddd7e6 !important;
-        color: #958d9f !important;
-        box-shadow: none !important;
-        opacity: .75;
-        cursor: not-allowed;
-        transform: none !important;
-    }
-
-    /* =========================================================
-       BOTTOM EVENT MESSAGE
-    ========================================================= */
-
-    .guide-footer-note {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-top: 20px;
-        color: #8b8498;
-        font-size: 10px;
-        font-weight: 650;
-        text-align: center;
-    }
-
-    .guide-footer-note i {
-        color: var(--rg-pink);
-    }
-
-    /* =========================================================
-       RESPONSIVE
-    ========================================================= */
-
-    @media (max-width: 767.98px) {
-
-        .race-guide-hero {
-            min-height: 300px;
-            border-radius: 0 0 30px 30px;
-        }
-
-        .race-guide-hero-inner {
-            min-height: 300px;
-            padding: 44px 20px 70px;
-        }
-
-        .race-guide-hero h1 {
-            font-size: 2.55rem;
-        }
-
-        .hero-description {
-            font-size: 12px;
-        }
-
-        .race-guide-content {
-            padding-bottom: 50px;
-        }
-
-        .race-guide-container {
-            padding: 0 13px;
-        }
-
-        .race-guide-card {
-            margin-top: -8px;
-            padding: 21px 15px;
-            border-radius: 22px;
-        }
-
-        .race-guide-header {
-            align-items: flex-start;
-            gap: 17px;
-            margin-bottom: 20px;
-        }
-
-        .race-guide-title {
-            width: 100%;
-        }
-
-        .race-guide-title-icon {
-            width: 46px;
-            height: 46px;
-            flex-basis: 46px;
-            border-radius: 13px;
-            font-size: 17px;
-        }
-
-        .race-guide-title h3 {
-            font-size: 1.4rem;
-        }
-
-        .guide-tabs {
-            width: 100%;
-        }
-
-        .guide-tabs .btn-tab {
-            flex: 1;
-            padding: 8px 8px;
-            font-size: 10px;
-        }
-
-        .pdf-viewer-wrap {
-            height: 500px;
-            border-radius: 17px;
-        }
-
-        .guide-confirmation {
-            padding: 17px;
-            border-radius: 18px;
-        }
-
-        .confirmation-inner {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 17px;
-        }
-
-        .accept-btn {
-            width: 100%;
-            min-width: 0;
-        }
-    }
-
-    @media (max-width: 420px) {
-
-        .race-guide-hero h1 {
-            font-size: 2.2rem;
-        }
-
-        .pdf-viewer-wrap {
-            height: 430px;
-        }
-
-        .guide-tabs .btn-tab {
-            font-size: 9px;
-        }
-    }
-
-    /* =========================================================
-       SUBTLE ANIMATION
-    ========================================================= */
-
-    @media (prefers-reduced-motion: no-preference) {
-
-        .race-guide-card {
-            animation: guideFadeUp .55s ease both;
-        }
-
-        @keyframes guideFadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    }
-</style>
-
-{{-- =========================================================
-EVENT HERO
-========================================================= --}}
-
-<section class="race-guide-hero">
-
-    <div class="race-guide-hero-inner">
-
-        <div class="race-guide-hero-content">
-
-            <div class="hero-kicker">
-                <i class="fas fa-flag-checkered"></i>
-                Official Event Information
-            </div>
-
-            <h1>
-                Know the race.<br>
-                <span>Own the experience.</span>
-            </h1>
-
-            <p class="hero-description">
-                Everything you need to know before race day.
-                Review the official race guide carefully before continuing
-                to the payment stage.
-            </p>
+            @endif
 
         </div>
 
-    </div>
+    </header>
 
 
-    <div class="race-guide-wave">
+    {{-- =========================================================
+    MAIN
+    ========================================================= --}}
 
-        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+    <main class="rg-main">
 
-            <path
-                d="M0,63
-                   C170,112 345,16 540,48
-                   C735,80 865,108 1080,48
-                   C1240,10 1345,25 1440,50
-                   L1440,100
-                   L0,100 Z"
-                fill="#fbfaff">
-            </path>
+        <div class="container">
 
-        </svg>
+            <div class="rg-card">
 
-    </div>
+                @if($hasGuide)
 
-</section>
+                    {{-- =================================================
+                         HEADER + LANGUAGE TABS
+                    ================================================== --}}
 
-{{-- =========================================================
-MAIN GUIDE CONTENT
-========================================================= --}}
+                    <div class="rg-head">
 
-<section class="race-guide-page race-guide-content">
-
-    <div class="race-guide-container">
-
-        <div class="race-guide-card">
-
-
-            {{-- =================================================
-                 HEADER
-            ================================================== --}}
-
-            <div class="race-guide-header">
-
-                <div class="race-guide-title">
-
-                    <div class="race-guide-title-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-
-                    <div>
-
-                        <div class="guide-eyebrow">
-                            Participant briefing
+                        <div>
+                            <h2 class="rg-h">Official race guide</h2>
+                            <p class="rg-sub">{{ $event->title }}</p>
                         </div>
 
-                        <h3>
-                            Official Event Race Guide
-                        </h3>
+                        @if($hasBoth)
 
-                        <p>
-                            {{ $event->title }}
+                            <div class="rg-tabs" role="tablist" aria-label="Guide language">
+
+                                <button
+                                    type="button"
+                                    class="btn-tab active"
+                                    id="tab-en"
+                                    role="tab"
+                                    aria-selected="true"
+                                    aria-controls="pdf-frame-en"
+                                >
+                                    <i class="fas fa-globe" aria-hidden="true"></i>
+                                    <span>English</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn-tab"
+                                    id="tab-mm"
+                                    role="tab"
+                                    aria-selected="false"
+                                    aria-controls="pdf-frame-mm"
+                                    tabindex="-1"
+                                >
+                                    <i class="fas fa-language" aria-hidden="true"></i>
+                                    <span>Burmese</span>
+                                </button>
+
+                            </div>
+
+                        @else
+
+                            <span class="rg-lang">
+                                <i class="fas fa-language" aria-hidden="true"></i>
+                                {{ $hasEn ? 'English' : 'Burmese' }}
+                            </span>
+
+                        @endif
+
+                    </div>
+
+
+                    {{-- =================================================
+                         TOOLBAR
+                    ================================================== --}}
+
+                    <div class="rg-toolbar">
+
+                        <p class="rg-toolbar__now">
+                            <i class="far fa-file-pdf" aria-hidden="true"></i>
+                            <span id="rg-now">{{ $firstLabel }}</span>
                         </p>
 
-                    </div>
-
-                </div>
-
-
-                {{-- LANGUAGE TABS --}}
-
-                @if($event->english_race_guide && $event->burmese_race_guide)
-
-                    <div class="guide-tabs">
-
-                        <button type="button"
-                                class="btn-tab active"
-                                id="tab-en"
-                                onclick="switchGuide('en')">
-
-                            <i class="fas fa-globe"></i>
-                            English
-
-                        </button>
-
-
-                        <button type="button"
-                                class="btn-tab"
-                                id="tab-mm"
-                                onclick="switchGuide('mm')">
-
-                            <i class="fas fa-language"></i>
-                            Burmese
-
-                        </button>
+                        <a
+                            href="{{ $firstUrl }}"
+                            id="rg-open"
+                            class="rg-btn rg-btn--outline rg-btn--sm"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <span>Open in new tab</span>
+                        </a>
 
                     </div>
 
+
+                    {{-- =================================================
+                         PDF VIEWER
+                    ================================================== --}}
+
+                    <div class="rg-viewer">
+
+                        @if($hasEn)
+                            <iframe
+                                id="pdf-frame-en"
+                                title="English race guide"
+                                data-url="{{ $enUrl }}"
+                                src="{{ $enUrl }}#toolbar=0&view=FitH"
+                                {{ $firstLang === 'en' ? '' : 'hidden' }}
+                            ></iframe>
+                        @endif
+
+                        @if($hasMm)
+                            <iframe
+                                id="pdf-frame-mm"
+                                title="Burmese race guide"
+                                data-url="{{ $mmUrl }}"
+                                src="{{ $mmUrl }}#toolbar=0&view=FitH"
+                                {{ $firstLang === 'mm' ? '' : 'hidden' }}
+                            ></iframe>
+                        @endif
+
+                    </div>
+
+                    <p class="rg-viewer-note">
+                        Can't see the guide, or it's hard to read on your phone? Use
+                        <strong>Open in new tab</strong> above.
+                    </p>
+
+                @else
+
+                    {{-- =================================================
+                         NO GUIDE FOR THIS EVENT
+                    ================================================== --}}
+
+                    <div class="rg-empty">
+
+                        <span class="rg-empty__icon" aria-hidden="true">
+                            <i class="fas fa-flag-checkered"></i>
+                        </span>
+
+                        <div>
+                            <h2 class="rg-h">No race guide for this event</h2>
+                            <p class="rg-sub">
+                                The organiser hasn't added one, so there's nothing more to read.
+                                Check your details are right, then continue to payment.
+                            </p>
+                        </div>
+
+                    </div>
+
                 @endif
-
-            </div>
-
-
-            {{-- =================================================
-                 PDF VIEWER
-            ================================================== --}}
-
-            <div class="guide-viewer-label">
-
-                <span>
-                    <i class="fas fa-file-alt me-1"></i>
-                    Race guide document
-                </span>
-
-                <span>
-                    Please read before proceeding
-                </span>
-
-            </div>
-
-
-            <div class="pdf-viewer-wrap">
-
-                @if($event->english_race_guide)
-
-                    <iframe
-                        id="pdf-frame-en"
-                        src="{{ asset('storage/' . $event->english_race_guide) }}#toolbar=0&view=FitH">
-                    </iframe>
-
-                @endif
-
-
-                @if($event->burmese_race_guide)
-
-                    <iframe
-                        id="pdf-frame-mm"
-                        src="{{ asset('storage/' . $event->burmese_race_guide) }}#toolbar=0&view=FitH"
-                        style="{{ $event->english_race_guide ? 'display: none;' : '' }}">
-                    </iframe>
-
-                @endif
-
-            </div>
-
-
-            {{-- =================================================
-                 FORM
-                 DIRECTLY POSTS TO CHECKOUT
-            ================================================== --}}
-
-            <form action="{{ route('checkout.process') }}"
-                  method="POST">
-
-                @csrf
-
-                <input type="hidden"
-                       name="event_id"
-                       value="{{ $event->id }}">
-
-                <input type="hidden"
-                       name="promo_code"
-                       value="{{ $promoCode }}">
-
-
-                {{-- ATTENDEE DATA UNCHANGED --}}
-
-                @foreach($attendees as $index => $attendee)
-
-                    @foreach($attendee as $key => $value)
-
-                        <input type="hidden"
-                               name="attendees[{{ $index }}][{{ $key }}]"
-                               value="{{ $value }}">
-
-                    @endforeach
-
-                @endforeach
 
 
                 {{-- =================================================
-                     CONFIRMATION
+                     FORM (POSTS DIRECTLY TO CHECKOUT)
                 ================================================== --}}
 
-                <div class="guide-confirmation">
+                <form action="{{ route('checkout.process') }}" method="POST">
 
-                    <div class="confirmation-inner">
+                    @csrf
 
-                        <div class="confirmation-check">
+                    <input type="hidden" name="event_id" value="{{ $event->id }}">
 
-                            <div class="confirmation-icon">
-                                <i class="fas fa-check"></i>
+                    <input type="hidden" name="promo_code" value="{{ $promoCode }}">
+
+
+                    {{-- GROUP BUY: keep the chosen deal --}}
+@if(!empty($groupBuyId))
+    <input type="hidden" name="group_buy_id" value="{{ $groupBuyId }}">
+@endif
+
+                    {{-- ATTENDEE DATA (UNCHANGED) --}}
+                    @foreach($attendees as $index => $attendee)
+
+                        @foreach($attendee as $key => $value)
+
+                            <input
+                                type="hidden"
+                                name="attendees[{{ $index }}][{{ $key }}]"
+                                value="{{ $value }}"
+                            >
+
+                        @endforeach
+
+                    @endforeach
+
+
+                    {{-- CONFIRM + CONTINUE --}}
+                    <div class="rg-confirm">
+
+                        @if($hasGuide)
+
+                            <div class="form-check m-0">
+
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="check-read-guide"
+                                >
+
+                                <label class="form-check-label" for="check-read-guide">
+                                    I have read, understood and agree to follow all instructions in the
+                                    official race guide.
+                                </label>
+
                             </div>
 
-                            <div class="accept-checkbox-card">
+                        @endif
 
-                                <div class="form-check m-0">
+                        <div class="rg-confirm__actions">
 
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        id="check-read-guide"
-                                        onchange="toggleSubmitBtn()">
-
-                                    <label
-                                        class="form-check-label font-weight-bold"
-                                        for="check-read-guide">
-
-                                        I have read, understood, and agree
-                                        to follow all instructions in the
-                                        Official Race Guide.
-
-                                    </label>
-
-                                </div>
-
-                            </div>
+                            <button
+                                type="submit"
+                                class="rg-btn rg-btn--primary accept-btn"
+                                id="btn-proceed"
+                                @if($hasGuide) aria-describedby="rg-hint" disabled @endif
+                            >
+                                <span>Proceed to payment</span>
+                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            </button>
 
                         </div>
 
-
-                        {{-- CTA --}}
-
-                        <button type="submit"
-                                class="btn accept-btn"
-                                id="btn-proceed"
-                                disabled>
-
-                            Proceed to Payment
-
-                            <i class="fas fa-arrow-right ms-2"></i>
-
-                        </button>
+                        @if($hasGuide)
+                            <p class="rg-hint" id="rg-hint">Tick the box above to continue.</p>
+                        @endif
 
                     </div>
 
-                </div>
-
-            </form>
-
-
-            <div class="guide-footer-note">
-
-                <i class="fas fa-shield-alt"></i>
-
-                Please make sure you have reviewed the complete guide
-                before continuing.
+                </form>
 
             </div>
 
-
         </div>
 
-    </div>
+    </main>
 
-</section>
+</div>
+
+@endsection
+
+
+{{-- =========================================================
+STYLES
+========================================================= --}}
+
+@push('styles')
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+
+<style>
+
+/* =========================================================
+   TOKENS (shared with the home, event and waiver pages)
+========================================================= */
+
+.rg {
+    --rg-ink: #17122b;
+    --rg-muted: #6b6580;
+    --rg-pink: #db2777;
+    --rg-pink-dark: #be185d;
+    --rg-violet: #7c3aed;
+    --rg-line: #e6e1f3;
+    --rg-bg: #faf8ff;
+    --rg-display: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    color: var(--rg-ink);
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.rg-hero {
+    padding: clamp(1.5rem, 3.5vw, 2.5rem) 0 clamp(4rem, 8vw, 6rem);
+    background:
+        radial-gradient(55% 90% at 90% 30%, rgba(124, 58, 237, 0.4), transparent 70%),
+        var(--rg-ink);
+    color: #fff;
+}
+
+.rg-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    list-style: none;
+}
+
+.rg-steps li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1rem 0.4rem 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.rg-steps__n {
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.rg-steps .is-done .rg-steps__n {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--rg-ink);
+    font-size: 0.7rem;
+}
+
+.rg-steps .is-current {
+    border-color: transparent;
+    background: #fff;
+    color: var(--rg-ink);
+}
+
+.rg-steps .is-current .rg-steps__n {
+    background: var(--rg-pink);
+    color: #fff;
+}
+
+.rg-title {
+    margin: 0 0 1rem;
+    color: #fff;
+    font-family: var(--rg-display);
+    font-size: clamp(2rem, 4.8vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+}
+
+.rg-lead {
+    max-width: 56ch;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+}
+
+.rg-lead strong {
+    color: #fff;
+}
+
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.rg-main {
+    position: relative;
+    z-index: 3;
+    margin-top: -2rem;
+    padding: clamp(2rem, 5vw, 3rem) 0 clamp(3.5rem, 8vw, 6rem);
+    border-radius: 32px 32px 0 0;
+    background: var(--rg-bg);
+}
+
+.rg-card {
+    max-width: 1000px;
+    margin-inline: auto;
+    padding: clamp(1.25rem, 3.5vw, 2.25rem);
+    border: 1px solid var(--rg-line);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(23, 18, 43, 0.04), 0 12px 28px rgba(23, 18, 43, 0.05);
+}
+
+.rg-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.rg-h {
+    margin: 0;
+    font-family: var(--rg-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+.rg-sub {
+    margin: 0.35rem 0 0;
+    color: var(--rg-muted);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+
+/* ---------- Language tabs ---------- */
+
+.rg-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: #f1edfb;
+}
+
+.rg-tabs .btn-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 2.6rem;
+    padding: 0.6rem 1.2rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #4b4563;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.rg-tabs .btn-tab:hover:not(.active) {
+    color: var(--rg-ink);
+}
+
+.rg-tabs .btn-tab.active {
+    background: var(--rg-ink);
+    color: #fff;
+}
+
+.rg-tabs .btn-tab:focus-visible {
+    outline: 3px solid var(--rg-violet);
+    outline-offset: 2px;
+}
+
+.rg-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    background: #f1edfb;
+    font-weight: 600;
+}
+
+.rg-lang i {
+    color: var(--rg-pink);
+}
+
+
+/* ---------- Toolbar + viewer ---------- */
+
+.rg-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 0.9rem;
+}
+
+.rg-toolbar__now {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.rg-toolbar__now i {
+    color: #e11d48;
+    font-size: 1.15rem;
+}
+
+.rg-viewer {
+    height: clamp(420px, 75vh, 780px);
+    overflow: hidden;
+    border: 1.5px solid var(--rg-line);
+    border-radius: 18px;
+    background: #eeeaf4;
+}
+
+.rg-viewer iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.rg-viewer iframe[hidden] {
+    display: none;
+}
+
+.rg-viewer-note {
+    margin: 0.8rem 0 0;
+    color: var(--rg-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.rg-viewer-note strong {
+    color: var(--rg-ink);
+}
+
+
+/* ---------- Empty state (event has no guide) ---------- */
+
+.rg-empty {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1.5px dashed var(--rg-line);
+    border-radius: 18px;
+    background: var(--rg-bg);
+}
+
+.rg-empty__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 14px;
+    background: #f3edfc;
+    color: var(--rg-pink);
+    font-size: 1.2rem;
+}
+
+
+/* ---------- Confirm + continue ---------- */
+
+.rg-confirm {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border: 1.5px solid var(--rg-line);
+    border-radius: 18px;
+    background: var(--rg-bg);
+}
+
+.rg-confirm .form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 0;
+}
+
+.rg-confirm .form-check-input {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0.1rem 0 0;
+    float: none;
+    border: 2px solid #b8b0cc;
+    border-radius: 7px;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.rg-confirm .form-check-input:checked {
+    border-color: var(--rg-pink);
+    background-color: var(--rg-pink);
+}
+
+.rg-confirm .form-check-input:focus-visible {
+    border-color: var(--rg-violet);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
+    outline: none;
+}
+
+.rg-confirm label {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.55;
+    cursor: pointer;
+}
+
+.rg-confirm__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.rg-confirm .form-check + .rg-confirm__actions {
+    margin-top: 1.25rem;
+}
+
+.rg-hint {
+    margin: 0.75rem 0 0;
+    color: var(--rg-muted);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.rg-hint[hidden] {
+    display: none;
+}
+
+
+/* ---------- Buttons ---------- */
+
+.rg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 3.25rem;
+    padding: 0.8rem 1.7rem;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+}
+
+.rg-btn:focus-visible {
+    outline: 3px solid var(--rg-violet);
+    outline-offset: 3px;
+}
+
+.rg-btn i {
+    font-size: 0.8rem;
+}
+
+.rg-btn--sm {
+    min-height: 2.6rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+}
+
+.rg-btn--primary {
+    background: var(--rg-pink);
+    color: #fff !important;
+    box-shadow: 0 10px 24px rgba(219, 39, 119, 0.3);
+}
+
+.rg-btn--primary:hover:not(:disabled) {
+    background: var(--rg-pink-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(219, 39, 119, 0.4);
+}
+
+.rg-btn--primary:disabled {
+    background: #e4dff0;
+    color: #8a849c !important;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.rg-btn--outline {
+    border-color: var(--rg-ink);
+    color: var(--rg-ink) !important;
+}
+
+.rg-btn--outline:hover {
+    background: var(--rg-ink);
+    color: #fff !important;
+}
+
+
+/* =========================================================
+   SMALL SCREENS
+========================================================= */
+
+@media (max-width: 575px) {
+
+    .rg-tabs {
+        width: 100%;
+    }
+
+    .rg-tabs .btn-tab {
+        flex: 1;
+    }
+
+    .rg-toolbar .rg-btn {
+        width: 100%;
+    }
+
+    .rg-viewer {
+        height: 460px;
+    }
+
+    .rg-confirm__actions .rg-btn {
+        width: 100%;
+    }
+
+    .rg-hint {
+        text-align: center;
+    }
+
+    .rg-empty {
+        flex-direction: column;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .rg *,
+    .rg *::before,
+    .rg *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+}
+
+</style>
+
+@endpush
+
+
+{{-- =========================================================
+JAVASCRIPT
+========================================================= --}}
 
 @push('scripts')
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
 
-function switchGuide(lang) {
+    const frames = {
+        en: document.getElementById('pdf-frame-en'),
+        mm: document.getElementById('pdf-frame-mm')
+    };
 
-    const frameEn = document.getElementById('pdf-frame-en');
-    const frameMm = document.getElementById('pdf-frame-mm');
+    const tabs = {
+        en: document.getElementById('tab-en'),
+        mm: document.getElementById('tab-mm')
+    };
 
-    const tabEn = document.getElementById('tab-en');
-    const tabMm = document.getElementById('tab-mm');
+    const labels = { en: 'English guide', mm: 'Burmese guide' };
 
+    const openLink = document.getElementById('rg-open');
+    const nowLabel = document.getElementById('rg-now');
 
-    if (lang === 'en') {
+    /* Language switch (only used when an event has both guides) */
+    function switchGuide(lang) {
 
-        if (frameEn) {
-            frameEn.style.display = 'block';
-        }
+        ['en', 'mm'].forEach(function (key) {
+            const active = key === lang;
 
-        if (frameMm) {
-            frameMm.style.display = 'none';
-        }
+            if (frames[key]) frames[key].hidden = !active;
 
-        if (tabEn) {
-            tabEn.classList.add('active');
-        }
+            if (tabs[key]) {
+                tabs[key].classList.toggle('active', active);
+                tabs[key].setAttribute('aria-selected', active ? 'true' : 'false');
+                tabs[key].tabIndex = active ? 0 : -1;
+            }
+        });
 
-        if (tabMm) {
-            tabMm.classList.remove('active');
-        }
-
-    } else {
-
-        if (frameEn) {
-            frameEn.style.display = 'none';
-        }
-
-        if (frameMm) {
-            frameMm.style.display = 'block';
-        }
-
-        if (tabEn) {
-            tabEn.classList.remove('active');
-        }
-
-        if (tabMm) {
-            tabMm.classList.add('active');
-        }
-
+        if (frames[lang] && openLink) openLink.href = frames[lang].getAttribute('data-url');
+        if (nowLabel) nowLabel.textContent = labels[lang];
     }
 
-}
+    window.switchGuide = switchGuide;
+
+    ['en', 'mm'].forEach(function (key) {
+        if (!tabs[key]) return;
+
+        tabs[key].addEventListener('click', function () {
+            switchGuide(key);
+        });
+
+        tabs[key].addEventListener('keydown', function (e) {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+
+            e.preventDefault();
+
+            const other = key === 'en' ? 'mm' : 'en';
+            switchGuide(other);
+            if (tabs[other]) tabs[other].focus();
+        });
+    });
 
 
-function toggleSubmitBtn() {
-
+    /* Confirmation checkbox -> continue button */
     const checkbox = document.getElementById('check-read-guide');
-
     const btn = document.getElementById('btn-proceed');
+    const hint = document.getElementById('rg-hint');
 
-    if (checkbox && btn) {
+    if (!btn) return;
+
+    const form = btn.closest('form');
+    const label = btn.querySelector('span');
+    const defaultLabel = label ? label.textContent : '';
+
+    function toggleSubmitBtn() {
+        if (!checkbox) return;
 
         btn.disabled = !checkbox.checked;
-
+        if (hint) hint.hidden = checkbox.checked;
     }
 
-}
+    window.toggleSubmitBtn = toggleSubmitBtn;
 
+    if (checkbox) {
+        checkbox.addEventListener('change', toggleSubmitBtn);
+
+        // Browsers can restore a ticked box after a refresh or back button
+        toggleSubmitBtn();
+    }
+
+    // Stop double submits
+    if (form) {
+        form.addEventListener('submit', function () {
+            btn.disabled = true;
+            if (label) label.textContent = 'Please wait…';
+        });
+    }
+
+    // Coming back via the back button: make the button usable again
+    window.addEventListener('pageshow', function (e) {
+        if (!e.persisted) return;
+
+        if (label) label.textContent = defaultLabel;
+
+        if (checkbox) {
+            toggleSubmitBtn();
+        } else {
+            btn.disabled = false;
+        }
+    });
+
+});
 </script>
 
 @endpush
-
-@endsection

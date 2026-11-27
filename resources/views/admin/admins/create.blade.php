@@ -6,706 +6,548 @@
 
 @section('content')
 
+@php
+    $events       = \App\Models\Event::orderBy('title')->get();
+    $selectedRole = old('role', 'super_admin');
+@endphp
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+
 <style>
-    /* =========================================================
-       EVENT PLUS — ADD ADMIN
-    ========================================================= */
 
-    .ep-create-page {
-        width: 100%;
-        animation: epPageEnter .55s ease both;
+/* =========================================================
+   EVENT PLUS - ADMIN FORMS (create + edit share this look)
+========================================================= */
+
+.ea {
+    --ea-ink: #17122b;
+    --ea-muted: #6b6580;
+    --ea-pink: #db2777;
+    --ea-pink-dark: #be185d;
+    --ea-violet: #7c3aed;
+    --ea-line: #e6e1f3;
+    --ea-field: #d9d3ea;
+    --ea-bg: #faf8ff;
+    --ea-display: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    width: 100%;
+    max-width: 760px;
+    color: var(--ea-ink);
+}
+
+.ea [hidden] {
+    display: none !important;
+}
+
+
+/* ---------- Header ---------- */
+
+.ea-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--ea-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.ea-back:hover {
+    color: var(--ea-ink);
+}
+
+.ea-back i {
+    font-size: 0.75rem;
+}
+
+.ea-title {
+    margin: 0;
+    font-family: var(--ea-display);
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.ea-sub {
+    margin: 0.45rem 0 1.5rem;
+    color: var(--ea-muted);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+
+/* ---------- Notices ---------- */
+
+.ea-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+    padding: 0.95rem 1.1rem;
+    border: 1.5px solid;
+    border-radius: 16px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.ea-notice i {
+    margin-top: 0.2rem;
+}
+
+.ea-notice ul {
+    margin: 0.35rem 0 0;
+    padding-left: 1.1rem;
+}
+
+.ea-notice--error {
+    border-color: #fecdd3;
+    background: #fff1f2;
+    color: #9f1239;
+}
+
+.ea-notice--warn {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #78350f;
+}
+
+
+/* ---------- Card + sections ---------- */
+
+.ea-card {
+    padding: clamp(1.25rem, 3.5vw, 2rem);
+    border: 1px solid var(--ea-line);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(23, 18, 43, 0.04), 0 12px 28px rgba(23, 18, 43, 0.05);
+}
+
+.ea-section + .ea-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--ea-line);
+}
+
+.ea-h {
+    margin: 0 0 1.1rem;
+    font-family: var(--ea-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.ea-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.ea-field--full {
+    grid-column: 1 / -1;
+}
+
+fieldset.ea-field {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+
+/* ---------- Fields ---------- */
+
+.ea-label {
+    display: block;
+    margin: 0 0 0.45rem;
+    padding: 0;
+    color: var(--ea-ink);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.ea-req {
+    color: var(--ea-pink);
+}
+
+.ea-input,
+.ea-select {
+    width: 100%;
+    height: 3rem;
+    padding: 0 1rem;
+    border: 1.5px solid var(--ea-field);
+    border-radius: 12px;
+    background-color: #fff;
+    color: var(--ea-ink);
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ea-select {
+    cursor: pointer;
+}
+
+.ea-input::placeholder {
+    color: #8a849c;
+}
+
+.ea-input:hover,
+.ea-select:hover {
+    border-color: #b9aedd;
+}
+
+.ea-input:focus,
+.ea-select:focus {
+    outline: none;
+    border-color: var(--ea-violet);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
+}
+
+.ea-input[aria-invalid="true"],
+.ea-select[aria-invalid="true"] {
+    border-color: #e11d48;
+}
+
+.ea-help {
+    margin: 0.45rem 0 0;
+    color: var(--ea-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.ea-error {
+    margin: 0.45rem 0 0;
+    color: #be123c;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.ea-pw {
+    position: relative;
+}
+
+.ea-pw .ea-input {
+    padding-right: 5.25rem;
+}
+
+.ea-pw__toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0 0.85rem;
+    border: 0;
+    border-radius: 999px;
+    background: #f1edfb;
+    color: var(--ea-ink);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background-color 0.2s ease;
+}
+
+.ea-pw__toggle:hover {
+    background: #e5defa;
+}
+
+.ea-pw__toggle:focus-visible {
+    outline: 3px solid var(--ea-violet);
+    outline-offset: 2px;
+}
+
+
+/* ---------- Role cards ---------- */
+
+.ea-roles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.ea-role-card {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+
+.ea-role-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ea-role-card__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    height: 100%;
+    padding: 1.1rem;
+    border: 1.5px solid var(--ea-field);
+    border-radius: 16px;
+    background: #fff;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ea-role-card:hover .ea-role-card__body {
+    border-color: #b9aedd;
+}
+
+.ea-role-card input:checked + .ea-role-card__body {
+    border-color: var(--ea-pink);
+    background: #fff7fb;
+    box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.14);
+}
+
+.ea-role-card input:focus-visible + .ea-role-card__body {
+    outline: 3px solid var(--ea-violet);
+    outline-offset: 2px;
+}
+
+.ea-role-card__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: #f3edfc;
+    color: var(--ea-pink);
+}
+
+.ea-role-card input:checked + .ea-role-card__body .ea-role-card__icon {
+    background: var(--ea-pink);
+    color: #fff;
+}
+
+.ea-role-card strong {
+    display: block;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.ea-role-card small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--ea-muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+
+/* ---------- Event assignment (slides open for organisers) ---------- */
+
+.ea-reveal {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition: grid-template-rows 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.ea-reveal.is-open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition: grid-template-rows 0.3s ease;
+}
+
+.ea-reveal__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ea-event-box {
+    margin-top: 1.25rem;
+    padding: 1.1rem;
+    border: 1.5px solid var(--ea-line);
+    border-radius: 16px;
+    background: var(--ea-bg);
+}
+
+.ea-event-box a {
+    color: var(--ea-pink);
+    font-weight: 700;
+    text-underline-offset: 3px;
+}
+
+.ea-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    margin-top: 1.25rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 14px;
+    background: #fff4e0;
+    color: #6b3d06;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.ea-callout i {
+    margin-top: 0.2rem;
+}
+
+
+/* ---------- Actions ---------- */
+
+.ea-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ea-line);
+}
+
+.ea-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 3rem;
+    padding: 0.7rem 1.5rem;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.ea-btn:focus-visible {
+    outline: 3px solid var(--ea-violet);
+    outline-offset: 3px;
+}
+
+.ea-btn--primary {
+    background: var(--ea-pink);
+    color: #fff !important;
+    box-shadow: 0 8px 20px rgba(219, 39, 119, 0.28);
+}
+
+.ea-btn--primary:hover:not(:disabled) {
+    background: var(--ea-pink-dark);
+    transform: translateY(-2px);
+}
+
+.ea-btn--primary:disabled {
+    background: #e4dff0;
+    color: #8a849c !important;
+    box-shadow: none;
+    cursor: wait;
+}
+
+.ea-btn--outline {
+    border-color: var(--ea-ink);
+    color: var(--ea-ink) !important;
+}
+
+.ea-btn--outline:hover {
+    background: var(--ea-ink);
+    color: #fff !important;
+}
+
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 640px) {
+
+    .ea-grid,
+    .ea-roles {
+        grid-template-columns: minmax(0, 1fr);
     }
 
-    /* HERO */
-    .ep-create-hero {
-        position: relative;
-        overflow: hidden;
-        border-radius: 24px;
-        padding: 28px 30px;
-        margin-bottom: 24px;
-        color: #fff;
-        background:
-            radial-gradient(
-                circle at 85% 20%,
-                rgba(236, 72, 153, .30),
-                transparent 30%
-            ),
-            radial-gradient(
-                circle at 10% 100%,
-                rgba(124, 58, 237, .30),
-                transparent 35%
-            ),
-            linear-gradient(
-                135deg,
-                #0f172a 0%,
-                #24104f 55%,
-                #4c1d95 100%
-            );
-        box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
-        animation: epHeroEnter .65s ease both;
+    .ea-field--full {
+        grid-column: auto;
     }
 
-    .ep-create-hero::before {
-        content: "";
-        position: absolute;
-        width: 180px;
-        height: 180px;
-        right: -60px;
-        top: -80px;
-        border-radius: 50%;
-        background: rgba(236, 72, 153, .16);
-        filter: blur(4px);
-        animation: epGlowFloat 5s ease-in-out infinite;
+    .ea-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
     }
 
-    .ep-create-hero::after {
-        content: "";
-        position: absolute;
-        width: 120px;
-        height: 120px;
-        left: 35%;
-        bottom: -80px;
-        border-radius: 50%;
-        background: rgba(99, 102, 241, .16);
-        filter: blur(5px);
-        animation: epGlowFloat 6s ease-in-out infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .ea *,
+    .ea *::before,
+    .ea *::after {
+        transition: none !important;
     }
 
-    .ep-create-hero-content {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 18px;
-    }
+}
 
-    .ep-create-hero-icon {
-        width: 58px;
-        height: 58px;
-        flex: 0 0 58px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 18px;
-        background: linear-gradient(
-            135deg,
-            #ec4899,
-            #7c3aed
-        );
-        box-shadow:
-            0 12px 30px rgba(236, 72, 153, .28),
-            inset 0 1px 0 rgba(255,255,255,.25);
-        animation: epIconFloat 3.5s ease-in-out infinite;
-    }
-
-    .ep-create-hero-icon i {
-        font-size: 24px;
-    }
-
-    .ep-create-hero h2 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 800;
-        letter-spacing: -.5px;
-    }
-
-    .ep-create-hero p {
-        margin: 5px 0 0;
-        color: rgba(255,255,255,.68);
-        font-size: 13px;
-    }
-
-    /* MAIN CARD */
-    .ep-create-card {
-        max-width: 760px;
-        margin: 0 auto;
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 24px;
-        padding: 30px;
-        box-shadow:
-            0 12px 35px rgba(15, 23, 42, .07),
-            0 2px 8px rgba(15, 23, 42, .03);
-        animation: epCardEnter .7s ease .12s both;
-    }
-
-    /* SECTION */
-    .ep-section-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-    .ep-section-title-icon {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 11px;
-        color: #7c3aed;
-        background: #f3e8ff;
-    }
-
-    .ep-section-title-icon i {
-        font-size: 14px;
-    }
-
-    .ep-section-title h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 800;
-        color: #1e293b;
-    }
-
-    .ep-section-title span {
-        display: block;
-        margin-top: 2px;
-        font-size: 11px;
-        color: #94a3b8;
-    }
-
-    /* FORM GRID */
-    .ep-form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 20px;
-    }
-
-    .ep-field-full {
-        grid-column: 1 / -1;
-    }
-
-    .ep-field {
-        position: relative;
-    }
-
-    .ep-field label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 8px;
-        color: #334155;
-        font-size: 12px;
-        font-weight: 800;
-    }
-
-    .ep-field label i {
-        color: #7c3aed;
-        font-size: 11px;
-    }
-
-    .ep-required {
-        color: #ec4899;
-    }
-
-    .ep-input-wrap {
-        position: relative;
-    }
-
-    .ep-input-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-        font-size: 13px;
-        pointer-events: none;
-        transition: .25s ease;
-        z-index: 2;
-    }
-
-    .ep-input,
-    .ep-select {
-        width: 100%;
-        height: 46px;
-        padding: 0 14px 0 40px;
-        border: 1px solid #e2e8f0;
-        border-radius: 13px;
-        background: #f8fafc;
-        color: #1e293b;
-        font-size: 13px;
-        outline: none;
-        transition:
-            border-color .25s ease,
-            box-shadow .25s ease,
-            background .25s ease,
-            transform .25s ease;
-    }
-
-    .ep-select {
-        cursor: pointer;
-        appearance: auto;
-    }
-
-    .ep-input::placeholder {
-        color: #a8b2c1;
-    }
-
-    .ep-input:hover,
-    .ep-select:hover {
-        border-color: #c4b5fd;
-        background: #fff;
-    }
-
-    .ep-input:focus,
-    .ep-select:focus {
-        border-color: #8b5cf6;
-        background: #fff;
-        box-shadow:
-            0 0 0 4px rgba(124, 58, 237, .10),
-            0 5px 15px rgba(124, 58, 237, .05);
-        transform: translateY(-1px);
-    }
-
-    .ep-input:focus + .ep-focus-line {
-        transform: scaleX(1);
-    }
-
-    .ep-input-wrap:focus-within .ep-input-icon {
-        color: #7c3aed;
-    }
-
-    .ep-focus-line {
-        position: absolute;
-        left: 14px;
-        right: 14px;
-        bottom: 0;
-        height: 2px;
-        border-radius: 99px;
-        background: linear-gradient(
-            90deg,
-            #7c3aed,
-            #ec4899
-        );
-        transform: scaleX(0);
-        transform-origin: center;
-        transition: transform .3s ease;
-        pointer-events: none;
-    }
-
-    .ep-help {
-        margin-top: 6px;
-        color: #94a3b8;
-        font-size: 10px;
-    }
-
-    /* EVENT ASSIGNMENT */
-    .ep-event-wrapper {
-        overflow: hidden;
-        max-height: 0;
-        opacity: 0;
-        margin-top: 0;
-        transition:
-            max-height .4s ease,
-            opacity .3s ease,
-            margin-top .4s ease;
-    }
-
-    .ep-event-wrapper.visible-event {
-        max-height: 180px;
-        opacity: 1;
-        margin-top: 20px;
-    }
-
-    .ep-event-box {
-        padding: 18px;
-        border: 1px solid #e9d5ff;
-        border-radius: 16px;
-        background:
-            linear-gradient(
-                135deg,
-                rgba(250,245,255,.95),
-                rgba(253,242,248,.95)
-            );
-        animation: epEventReveal .4s ease both;
-    }
-
-    .ep-event-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 12px;
-    }
-
-    .ep-event-icon {
-        width: 34px;
-        height: 34px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        color: #db2777;
-        background: #fce7f3;
-    }
-
-    .ep-event-header strong {
-        display: block;
-        color: #334155;
-        font-size: 12px;
-        font-weight: 800;
-    }
-
-    .ep-event-header span {
-        display: block;
-        margin-top: 2px;
-        color: #94a3b8;
-        font-size: 10px;
-    }
-
-    /* SECURITY NOTE */
-    .ep-security-note {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        margin-top: 24px;
-        padding: 15px 16px;
-        border: 1px solid #ddd6fe;
-        border-radius: 14px;
-        background: #faf5ff;
-    }
-
-    .ep-security-note-icon {
-        width: 32px;
-        height: 32px;
-        flex: 0 0 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 9px;
-        color: #7c3aed;
-        background: #ede9fe;
-    }
-
-    .ep-security-note strong {
-        display: block;
-        margin-bottom: 3px;
-        color: #4c1d95;
-        font-size: 11px;
-        font-weight: 800;
-    }
-
-    .ep-security-note span {
-        color: #7c6f91;
-        font-size: 10px;
-        line-height: 1.5;
-    }
-
-    /* ACTIONS */
-    .ep-form-actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 10px;
-        margin-top: 28px;
-        padding-top: 22px;
-        border-top: 1px solid #f1f5f9;
-    }
-
-    .ep-btn {
-        height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 0 19px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 800;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        transition:
-            transform .25s ease,
-            box-shadow .25s ease,
-            background .25s ease;
-    }
-
-    .ep-btn-cancel {
-        color: #64748b;
-        background: #f1f5f9;
-    }
-
-    .ep-btn-cancel:hover {
-        color: #334155;
-        background: #e2e8f0;
-        transform: translateY(-2px);
-    }
-
-    .ep-btn-save {
-        position: relative;
-        overflow: hidden;
-        color: #fff;
-        background:
-            linear-gradient(
-                135deg,
-                #7c3aed,
-                #ec4899
-            );
-        box-shadow:
-            0 8px 20px rgba(124, 58, 237, .22);
-    }
-
-    .ep-btn-save::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 60%;
-        height: 100%;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255,255,255,.22),
-            transparent
-        );
-        transform: skewX(-20deg);
-        transition: left .6s ease;
-    }
-
-    .ep-btn-save:hover::before {
-        left: 140%;
-    }
-
-    .ep-btn-save:hover {
-        transform: translateY(-2px);
-        box-shadow:
-            0 12px 28px rgba(236, 72, 153, .25);
-    }
-
-    .ep-btn-save i {
-        transition: transform .25s ease;
-    }
-
-    .ep-btn-save:hover i {
-        transform: scale(1.12) rotate(-4deg);
-    }
-
-    /* ANIMATIONS */
-    @keyframes epPageEnter {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes epHeroEnter {
-        from {
-            opacity: 0;
-            transform: translateY(-16px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes epCardEnter {
-        from {
-            opacity: 0;
-            transform: translateY(22px) scale(.985);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    @keyframes epIconFloat {
-        0%, 100% {
-            transform: translateY(0) rotate(0deg);
-        }
-        50% {
-            transform: translateY(-4px) rotate(2deg);
-        }
-    }
-
-    @keyframes epGlowFloat {
-        0%, 100% {
-            transform: translate(0, 0) scale(1);
-        }
-        50% {
-            transform: translate(-10px, 12px) scale(1.08);
-        }
-    }
-
-    @keyframes epEventReveal {
-        from {
-            opacity: 0;
-            transform: translateY(-8px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-
-        .ep-create-hero {
-            padding: 22px;
-            border-radius: 20px;
-        }
-
-        .ep-create-hero-content {
-            gap: 13px;
-        }
-
-        .ep-create-hero-icon {
-            width: 48px;
-            height: 48px;
-            flex-basis: 48px;
-            border-radius: 14px;
-        }
-
-        .ep-create-hero-icon i {
-            font-size: 20px;
-        }
-
-        .ep-create-hero h2 {
-            font-size: 20px;
-        }
-
-        .ep-create-hero p {
-            font-size: 11px;
-        }
-
-        .ep-create-card {
-            padding: 22px;
-            border-radius: 20px;
-        }
-
-        .ep-form-grid {
-            grid-template-columns: 1fr;
-            gap: 18px;
-        }
-
-        .ep-field-full {
-            grid-column: auto;
-        }
-    }
-
-    @media (max-width: 480px) {
-
-        .ep-create-hero {
-            padding: 18px;
-        }
-
-        .ep-create-hero-icon {
-            width: 44px;
-            height: 44px;
-            flex-basis: 44px;
-        }
-
-        .ep-create-hero h2 {
-            font-size: 18px;
-        }
-
-        .ep-create-card {
-            padding: 18px;
-        }
-
-        .ep-form-actions {
-            flex-direction: column-reverse;
-            align-items: stretch;
-        }
-
-        .ep-btn {
-            width: 100%;
-        }
-    }
-
-    /* ACCESSIBILITY */
-    @media (prefers-reduced-motion: reduce) {
-        .ep-create-page,
-        .ep-create-hero,
-        .ep-create-card,
-        .ep-create-hero-icon,
-        .ep-create-hero::before,
-        .ep-create-hero::after {
-            animation: none !important;
-        }
-
-        .ep-input,
-        .ep-select,
-        .ep-btn,
-        .ep-event-wrapper {
-            transition: none !important;
-        }
-    }
 </style>
 
 
-<div class="ep-create-page">
+<div class="ea">
 
-    {{-- =====================================================
-         HERO
-    ====================================================== --}}
-    <div class="ep-create-hero">
+    <a href="{{ route('admin.admins.index') }}" class="ea-back">
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        <span>Admin accounts</span>
+    </a>
 
-        <div class="ep-create-hero-content">
+    <h1 class="ea-title">Add a new admin</h1>
 
-            <div class="ep-create-hero-icon">
-                <i class="fa-solid fa-user-plus"></i>
-            </div>
-
-            <div>
-                <h2>Create Admin Account</h2>
-                <p>
-                    Add a new administrator to the Event Plus management system.
-                </p>
-            </div>
-
-        </div>
-
-    </div>
+    <p class="ea-sub">Create a sign-in for the Event Plus dashboard and choose what they can access.</p>
 
 
     {{-- =====================================================
-         CREATE FORM
+         VALIDATION SUMMARY
     ====================================================== --}}
-    <div class="ep-create-card">
 
-        <div class="ep-section-title">
-
-            <div class="ep-section-title-icon">
-                <i class="fa-solid fa-user-gear"></i>
-            </div>
-
+    @if($errors->any())
+        <div class="ea-notice ea-notice--error" role="alert">
+            <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
             <div>
-                <h3>Administrator Information</h3>
-                <span>Enter the account details below</span>
+                <strong>Please fix the following:</strong>
+                <ul>
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
-
         </div>
+    @endif
 
 
-        <form
-            action="{{ route('admin.admins.store') }}"
-            method="POST"
-        >
+    <form action="{{ route('admin.admins.store') }}" method="POST" id="ea-form">
 
-            @csrf
+        @csrf
 
+        <div class="ea-card">
 
-            <div class="ep-form-grid">
+            {{-- =================================================
+                 ACCOUNT DETAILS
+            ================================================== --}}
 
-                {{-- FULL NAME --}}
-                <div class="ep-field">
+            <section class="ea-section">
 
-                    <label for="name">
-                        <i class="fa-solid fa-user"></i>
-                        Full Name
-                        <span class="ep-required">*</span>
-                    </label>
+                <h2 class="ea-h">Account details</h2>
 
-                    <div class="ep-input-wrap">
+                <div class="ea-grid">
 
-                        <i class="ep-input-icon fa-solid fa-user"></i>
+                    {{-- FULL NAME --}}
+                    <div class="ea-field">
+
+                        <label for="name" class="ea-label">
+                            Full name <span class="ea-req" aria-hidden="true">*</span>
+                        </label>
 
                         <input
                             type="text"
@@ -714,29 +556,24 @@
                             value="{{ old('name') }}"
                             required
                             autocomplete="name"
-                            placeholder="Enter full name"
-                            class="ep-input"
+                            placeholder="e.g. Aung Aung"
+                            class="ea-input"
+                            @error('name') aria-invalid="true" aria-describedby="name-error" @enderror
                         >
 
-                        <span class="ep-focus-line"></span>
+                        @error('name')
+                            <p class="ea-error" id="name-error">{{ $message }}</p>
+                        @enderror
 
                     </div>
 
-                </div>
 
+                    {{-- EMAIL --}}
+                    <div class="ea-field">
 
-                {{-- EMAIL --}}
-                <div class="ep-field">
-
-                    <label for="email">
-                        <i class="fa-solid fa-envelope"></i>
-                        Email Address
-                        <span class="ep-required">*</span>
-                    </label>
-
-                    <div class="ep-input-wrap">
-
-                        <i class="ep-input-icon fa-solid fa-envelope"></i>
+                        <label for="email" class="ea-label">
+                            Email address <span class="ea-req" aria-hidden="true">*</span>
+                        </label>
 
                         <input
                             type="email"
@@ -745,250 +582,311 @@
                             value="{{ old('email') }}"
                             required
                             autocomplete="email"
-                            placeholder="admin@example.com"
-                            class="ep-input"
+                            placeholder="name@example.com"
+                            class="ea-input"
+                            @error('email') aria-invalid="true" aria-describedby="email-error" @enderror
                         >
 
-                        <span class="ep-focus-line"></span>
+                        @error('email')
+                            <p class="ea-error" id="email-error">{{ $message }}</p>
+                        @else
+                            <p class="ea-help">They'll use this to sign in.</p>
+                        @enderror
+
+                    </div>
+
+
+                    {{-- PASSWORD --}}
+                    <div class="ea-field ea-field--full">
+
+                        <label for="password" class="ea-label">
+                            Password <span class="ea-req" aria-hidden="true">*</span>
+                        </label>
+
+                        <div class="ea-pw">
+
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                required
+                                autocomplete="new-password"
+                                placeholder="Create a strong password"
+                                class="ea-input"
+                                @error('password') aria-invalid="true" aria-describedby="password-error" @else aria-describedby="password-help" @enderror
+                            >
+
+                            <button type="button" class="ea-pw__toggle" id="ea-pw-toggle" aria-pressed="false" aria-controls="password">
+                                Show
+                            </button>
+
+                        </div>
+
+                        @error('password')
+                            <p class="ea-error" id="password-error">{{ $message }}</p>
+                        @else
+                            <p class="ea-help" id="password-help">
+                                Use a mix of letters, numbers and symbols. Share it with them through a private channel.
+                            </p>
+                        @enderror
 
                     </div>
 
                 </div>
 
-
-                {{-- PASSWORD --}}
-                <div class="ep-field ep-field-full">
-
-                    <label for="password">
-                        <i class="fa-solid fa-lock"></i>
-                        Password
-                        <span class="ep-required">*</span>
-                    </label>
-
-                    <div class="ep-input-wrap">
-
-                        <i class="ep-input-icon fa-solid fa-key"></i>
-
-                        <input
-                            type="password"
-                            name="password"
-                            id="password"
-                            required
-                            autocomplete="new-password"
-                            placeholder="Create a secure password"
-                            class="ep-input"
-                        >
-
-                        <span class="ep-focus-line"></span>
-
-                    </div>
-
-                    <div class="ep-help">
-                        Use a strong password containing a combination of letters,
-                        numbers and special characters.
-                    </div>
-
-                </div>
+            </section>
 
 
-                {{-- ROLE --}}
-                <div class="ep-field ep-field-full">
+            {{-- =================================================
+                 ROLE + EVENT
+            ================================================== --}}
 
-                    <label for="role">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        Admin Type
-                        <span class="ep-required">*</span>
-                    </label>
+            <section class="ea-section">
 
-                    <div class="ep-input-wrap">
+                <h2 class="ea-h">Access</h2>
 
-                        <i class="ep-input-icon fa-solid fa-user-shield"></i>
+                <fieldset class="ea-field">
 
-                        <select
-                            name="role"
-                            id="role"
-                            required
-                            class="ep-select"
-                            onchange="toggleEventDropdown(this.value)"
-                        >
+                    <legend class="ea-label">
+                        Role <span class="ea-req" aria-hidden="true">*</span>
+                    </legend>
 
-                            <option
+                    <div class="ea-roles">
+
+                        <label class="ea-role-card">
+
+                            <input
+                                type="radio"
+                                name="role"
                                 value="super_admin"
-                                {{ old('role', 'super_admin') === 'super_admin' ? 'selected' : '' }}
+                                required
+                                {{ $selectedRole === 'super_admin' ? 'checked' : '' }}
                             >
-                                Super Admin
-                            </option>
 
-                            <option
-                                value="event_admin"
-                                {{ old('role') === 'event_admin' ? 'selected' : '' }}
-                            >
-                                Event Organizer
-                            </option>
+                            <span class="ea-role-card__body">
 
-                        </select>
+                                <span class="ea-role-card__icon" aria-hidden="true">
+                                    <i class="fas fa-crown"></i>
+                                </span>
 
-                    </div>
+                                <span>
+                                    <strong>Super admin</strong>
+                                    <small>Full access to everything, including other admins.</small>
+                                </span>
 
-                    <div class="ep-help">
-                        Super Admins have full system access. Event Organizers
-                        are assigned to a specific event.
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- =================================================
-                 EVENT ASSIGNMENT
-            ================================================== --}}
-            <div
-                id="eventSelectWrapper"
-                class="ep-event-wrapper {{ old('role') === 'event_admin' ? 'visible-event' : '' }}"
-            >
-
-                <div class="ep-event-box">
-
-                    <div class="ep-event-header">
-
-                        <div class="ep-event-icon">
-                            <i class="fa-solid fa-calendar-check"></i>
-                        </div>
-
-                        <div>
-                            <strong>Event Assignment</strong>
-                            <span>
-                                Select the event this organizer will manage.
                             </span>
+
+                        </label>
+
+                        <label class="ea-role-card">
+
+                            <input
+                                type="radio"
+                                name="role"
+                                value="event_admin"
+                                {{ $selectedRole === 'event_admin' ? 'checked' : '' }}
+                            >
+
+                            <span class="ea-role-card__body">
+
+                                <span class="ea-role-card__icon" aria-hidden="true">
+                                    <i class="fas fa-calendar-check"></i>
+                                </span>
+
+                                <span>
+                                    <strong>Event organiser</strong>
+                                    <small>Manages a single event you assign to them.</small>
+                                </span>
+
+                            </span>
+
+                        </label>
+
+                    </div>
+
+                    @error('role')
+                        <p class="ea-error">{{ $message }}</p>
+                    @enderror
+
+                </fieldset>
+
+
+                {{-- Shown for super admins --}}
+                <div class="ea-callout" id="ea-super-note" @if($selectedRole !== 'super_admin') hidden @endif>
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <span>Super admins can change anything in Event Plus. Only give this role to people you trust.</span>
+                </div>
+
+
+                {{-- Shown for event organisers --}}
+                <div
+                    class="ea-reveal {{ $selectedRole === 'event_admin' ? 'is-open' : '' }}"
+                    id="eventSelectWrapper"
+                >
+
+                    <div class="ea-reveal__inner">
+
+                        <div class="ea-event-box">
+
+                            <label for="event_id" class="ea-label">Assigned event</label>
+
+                            <select
+                                name="event_id"
+                                id="event_id"
+                                class="ea-select"
+                                @error('event_id') aria-invalid="true" aria-describedby="event-error" @else aria-describedby="event-help" @enderror
+                            >
+
+                                <option value="">Select an event</option>
+
+                                @foreach($events as $event)
+                                    <option
+                                        value="{{ $event->id }}"
+                                        {{ old('event_id') == $event->id ? 'selected' : '' }}
+                                    >
+                                        {{ $event->title }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+
+                            @error('event_id')
+                                <p class="ea-error" id="event-error">{{ $message }}</p>
+                            @else
+                                <p class="ea-help" id="event-help">
+                                    @if($events->isEmpty())
+                                        There are no events yet.
+                                        <a href="{{ route('admin.events.create') }}">Create an event</a>
+                                        first, then assign it here.
+                                    @else
+                                        You can leave this empty and assign an event later, but they won't have anything to manage until you do.
+                                    @endif
+                                </p>
+                            @enderror
+
                         </div>
 
                     </div>
 
-
-                    <div class="ep-input-wrap">
-
-                        <i class="ep-input-icon fa-solid fa-ticket"></i>
-
-                        <select
-                            name="event_id"
-                            id="event_id"
-                            class="ep-select"
-                        >
-
-                            <option value="">
-                                -- Select Event --
-                            </option>
-
-                            @foreach(\App\Models\Event::all() as $event)
-
-                                <option
-                                    value="{{ $event->id }}"
-                                    {{ old('event_id') == $event->id ? 'selected' : '' }}
-                                >
-                                    {{ $event->title }}
-                                </option>
-
-                            @endforeach
-
-                        </select>
-
-                    </div>
-
                 </div>
 
-            </div>
-
-
-            {{-- =================================================
-                 SECURITY NOTE
-            ================================================== --}}
-            <div class="ep-security-note">
-
-                <div class="ep-security-note-icon">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-
-                <div>
-
-                    <strong>Account Security</strong>
-
-                    <span>
-                        This account will be able to access the Event Plus
-                        administration system according to the selected role.
-                        Make sure the credentials are kept secure.
-                    </span>
-
-                </div>
-
-            </div>
+            </section>
 
 
             {{-- =================================================
                  ACTIONS
             ================================================== --}}
-            <div class="ep-form-actions">
 
-                <a
-                    href="{{ route('admin.admins.index') }}"
-                    class="ep-btn ep-btn-cancel"
-                >
-                    <i class="fa-solid fa-arrow-left"></i>
-                    Cancel
+            <div class="ea-actions">
+
+                <a href="{{ route('admin.admins.index') }}" class="ea-btn ea-btn--outline">
+                    <span>Cancel</span>
                 </a>
 
-                <button
-                    type="submit"
-                    class="ep-btn ep-btn-save"
-                >
-                    <i class="fa-solid fa-user-plus"></i>
-                    Save Admin
+                <button type="submit" class="ea-btn ea-btn--primary" id="ea-submit">
+                    <i class="fas fa-user-plus" aria-hidden="true"></i>
+                    <span>Create admin</span>
                 </button>
 
             </div>
 
-        </form>
+        </div>
 
-    </div>
+    </form>
 
 </div>
 
 
 <script>
-    function toggleEventDropdown(role) {
+document.addEventListener('DOMContentLoaded', function () {
 
-        const wrapper = document.getElementById('eventSelectWrapper');
-        const eventSelect = document.getElementById('event_id');
+    const form = document.getElementById('ea-form');
+    if (!form) return;
 
-        if (!wrapper || !eventSelect) {
-            return;
+    const radios = Array.prototype.slice.call(form.querySelectorAll('input[name="role"]'));
+    const reveal = document.getElementById('eventSelectWrapper');
+    const eventSelect = document.getElementById('event_id');
+    const superNote = document.getElementById('ea-super-note');
+
+
+    /* ---------- Role: show the event picker for organisers only ---------- */
+
+    function setRole(role) {
+
+        const organiser = role === 'event_admin';
+
+        if (reveal) {
+            reveal.classList.toggle('is-open', organiser);
+
+            if (organiser) {
+                reveal.removeAttribute('inert');
+            } else {
+                reveal.setAttribute('inert', '');
+            }
         }
 
-        if (role === 'event_admin') {
+        // Only organisers have an assigned event
+        if (!organiser && eventSelect) eventSelect.value = '';
 
-            wrapper.classList.add('visible-event');
+        if (superNote) superNote.hidden = role !== 'super_admin';
+    }
 
-        } else {
+    radios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            setRole(radio.value);
+        });
+    });
 
-            wrapper.classList.remove('visible-event');
+    const checked = radios.filter(function (r) { return r.checked; })[0];
+    setRole(checked ? checked.value : '');
 
-            eventSelect.value = '';
 
-        }
+    /* ---------- Password show / hide ---------- */
+
+    const pw = document.getElementById('password');
+    const pwToggle = document.getElementById('ea-pw-toggle');
+
+    if (pw && pwToggle) {
+        pwToggle.addEventListener('click', function () {
+            const show = pw.type === 'password';
+
+            pw.type = show ? 'text' : 'password';
+            pwToggle.textContent = show ? 'Hide' : 'Show';
+            pwToggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+        });
     }
 
 
-    document.addEventListener('DOMContentLoaded', function () {
+    /* ---------- Browser validation + double-submit protection ---------- */
 
-        const roleSelect = document.getElementById('role');
+    const submitBtn = document.getElementById('ea-submit');
+    const label = submitBtn ? submitBtn.querySelector('span') : null;
+    const defaultLabel = label ? label.textContent : '';
 
-        if (roleSelect) {
+    form.addEventListener('submit', function (e) {
 
-            toggleEventDropdown(roleSelect.value);
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            form.reportValidity();
+            return;
+        }
 
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            if (label) label.textContent = 'Saving…';
         }
 
     });
+
+    // Back button restores the page from cache: make the button usable again
+    window.addEventListener('pageshow', function (e) {
+        if (!e.persisted || !submitBtn) return;
+
+        submitBtn.disabled = false;
+        if (label) label.textContent = defaultLabel;
+    });
+
+});
 </script>
 
 @endsection

@@ -1,4319 +1,666 @@
 @extends('layouts.admin')
 
-
-
 @section('title', 'Manage Events')
 
-
-
-@section('page-title', 'Events Directory')
-
-
+@section('page-title', 'Events')
 
 @section('content')
 
-
-
 <style>
-
-
-
     /* =========================================================
-
-
-
-       EVENT PLUS — EVENTS DIRECTORY
-
-
-
+       EVENT PLUS — EVENTS DIRECTORY (redesigned)
        ========================================================= */
-
-
-
     .ep-events {
-
-
-
-        *--ep-navy*: #0f172a;
-
-
-
-        *--ep-navy-2*: #1e1b4b;
-
-
-
-        *--ep-purple*: #7c3aed;
-
-
-
-        *--ep-violet*: #8b5cf6;
-
-
-
-        *--ep-pink*: #ec4899;
-
-
-
-        *--ep-rose*: #f43f5e;
-
-
-
-        *--ep-indigo*: #4f46e5;
-
-
-
-        *--ep-text*: #172033;
-
-
-
-        *--ep-muted*: #718096;
-
-
-
-        *--ep-border*: #e8eaf0;
-
-
-
-        *--ep-bg*: #f7f7fb;
-
-
-
-        *--ep-white*: #ffffff;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       PAGE BACKGROUND
-
-
-
-       ========================================================= */
-
-
-
-    .ep-events {
-
-
-
-        position: relative;
-
-
-
-        min-height: 100%;
-
-
-
+        --ep-purple: #7c3aed;
+        --ep-purple-soft: #f5f3ff;
+        --ep-pink: #ec4899;
+        --ep-text: #1e293b;
+        --ep-muted: #64748b;
+        --ep-faint: #94a3b8;
+        --ep-border: #e8eaf0;
+        --ep-bg: #f8f9fc;
         padding-bottom: 30px;
-
-
-
-        color: var(*--ep-text*);
-
-
-
+        color: var(--ep-text);
+        font-size: 14px;
     }
+    .ep-events * { box-sizing: border-box; }
 
-
-
-    /* =========================================================
-
-
-
-       HERO / HEADER
-
-
-
-       ========================================================= */
-
-
-
-    .ep-events-hero {
-
-
-
-        position: relative;
-
-
-
-        overflow: hidden;
-
-
-
-        margin-bottom: 24px;
-
-
-
-        padding: 28px 30px;
-
-
-
-        border-radius: 24px;
-
-
-
-        background:
-
-
-
-            radial-gradient(circle at 88% 15%, rgba(236, 72, 153, .25), transparent 25%),
-
-
-
-            radial-gradient(circle at 70% 100%, rgba(139, 92, 246, .30), transparent 30%),
-
-
-
-            linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%);
-
-
-
-        box-shadow: 0 18px 45px rgba(30, 27, 75, .18);
-
-
-
-    }
-
-
-
-    .ep-events-hero::before {
-
-
-
-        content: "";
-
-
-
-        position: absolute;
-
-
-
-        width: 210px;
-
-
-
-        height: 210px;
-
-
-
-        right: -75px;
-
-
-
-        top: -105px;
-
-
-
-        border: 1px solid rgba(255,255,255,.12);
-
-
-
-        border-radius: 50%;
-
-
-
-    }
-
-
-
-    .ep-events-hero::after {
-
-
-
-        content: "";
-
-
-
-        position: absolute;
-
-
-
-        width: 130px;
-
-
-
-        height: 130px;
-
-
-
-        right: 90px;
-
-
-
-        bottom: -80px;
-
-
-
-        border: 1px solid rgba(255,255,255,.10);
-
-
-
-        border-radius: 50%;
-
-
-
-    }
-
-
-
-    .ep-events-hero-inner {
-
-
-
-        position: relative;
-
-
-
-        z-index: 2;
-
-
-
+    /* ---------- Top bar ---------- */
+    .ep-top {
         display: flex;
-
-
-
         align-items: center;
-
-
-
         justify-content: space-between;
-
-
-
-        gap: 25px;
-
-
-
-    }
-
-
-
-    .ep-events-hero-left {
-
-
-
-        min-width: 0;
-
-
-
-    }
-
-
-
-    .ep-events-eyebrow {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 7px;
-
-
-
-        margin-bottom: 10px;
-
-
-
-        padding: 6px 10px;
-
-
-
-        border: 1px solid rgba(255,255,255,.13);
-
-
-
-        border-radius: 999px;
-
-
-
-        background: rgba(255,255,255,.08);
-
-
-
-        color: #f5d0fe;
-
-
-
-        font-size: .61rem;
-
-
-
-        font-weight: 850;
-
-
-
-        letter-spacing: .12em;
-
-
-
-        text-transform: uppercase;
-
-
-
-        backdrop-filter: blur(10px);
-
-
-
-    }
-
-
-
-    .ep-events-eyebrow i {
-
-
-
-        color: #f9a8d4;
-
-
-
-    }
-
-
-
-    .ep-events-hero h2 {
-
-
-
-        margin: 0;
-
-
-
-        color: #ffffff;
-
-
-
-        font-size: clamp(1.35rem, 2vw, 1.75rem);
-
-
-
-        font-weight: 900;
-
-
-
-        letter-spacing: -.035em;
-
-
-
-        line-height: 1.15;
-
-
-
-    }
-
-
-
-    .ep-events-hero p {
-
-
-
-        max-width: 650px;
-
-
-
-        margin: 9px 0 0;
-
-
-
-        color: rgba(255,255,255,.68);
-
-
-
-        font-size: .78rem;
-
-
-
-        line-height: 1.65;
-
-
-
-    }
-
-
-
-    .ep-events-hero-right {
-
-
-
-        flex-shrink: 0;
-
-
-
-    }
-
-
-
-    .ep-create-event {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        gap: 9px;
-
-
-
-        min-height: 43px;
-
-
-
-        padding: 11px 17px;
-
-
-
-        border: 1px solid rgba(255,255,255,.15);
-
-
-
-        border-radius: 12px;
-
-
-
-        background: linear-gradient(135deg, #ec4899, #8b5cf6);
-
-
-
-        color: #ffffff !important;
-
-
-
-        font-size: .72rem;
-
-
-
-        font-weight: 850;
-
-
-
-        text-decoration: none;
-
-
-
-        box-shadow: 0 10px 25px rgba(236,72,153,.25);
-
-
-
-        transition: all .2s ease;
-
-
-
-    }
-
-
-
-    .ep-create-event:hover {
-
-
-
-        transform: translateY(-2px);
-
-
-
-        color: #ffffff !important;
-
-
-
-        box-shadow: 0 14px 32px rgba(236,72,153,.35);
-
-
-
-    }
-
-
-
-    .ep-create-event i {
-
-
-
-        font-size: .72rem;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       QUICK STRIP
-
-
-
-       ========================================================= */
-
-
-
-    .ep-event-strip {
-
-
-
-        display: grid;
-
-
-
-        grid-template-columns: repeat(3, 1fr);
-
-
-
-        gap: 14px;
-
-
-
-        margin-bottom: 22px;
-
-
-
-    }
-
-
-
-    .ep-event-strip-card {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 12px;
-
-
-
-        min-width: 0;
-
-
-
-        padding: 15px 17px;
-
-
-
-        border: 1px solid var(*--ep-border*);
-
-
-
-        border-radius: 16px;
-
-
-
-        background: #ffffff;
-
-
-
-        box-shadow: 0 8px 25px rgba(15,23,42,.045);
-
-
-
-    }
-
-
-
-    .ep-strip-icon {
-
-
-
-        width: 38px;
-
-
-
-        height: 38px;
-
-
-
-        min-width: 38px;
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        border-radius: 11px;
-
-
-
-        background: #f3e8ff;
-
-
-
-        color: #7c3aed;
-
-
-
-        font-size: .85rem;
-
-
-
-    }
-
-
-
-    .ep-strip-icon.pink {
-
-
-
-        background: #fce7f3;
-
-
-
-        color: #db2777;
-
-
-
-    }
-
-
-
-    .ep-strip-icon.blue {
-
-
-
-        background: #e0e7ff;
-
-
-
-        color: #4f46e5;
-
-
-
-    }
-
-
-
-    .ep-strip-content {
-
-
-
-        min-width: 0;
-
-
-
-    }
-
-
-
-    .ep-strip-label {
-
-
-
-        margin: 0 0 2px;
-
-
-
-        color: #94a3b8;
-
-
-
-        font-size: .6rem;
-
-
-
-        font-weight: 800;
-
-
-
-        letter-spacing: .06em;
-
-
-
-        text-transform: uppercase;
-
-
-
-    }
-
-
-
-    .ep-strip-value {
-
-
-
-        margin: 0;
-
-
-
-        color: #1e293b;
-
-
-
-        font-size: .82rem;
-
-
-
-        font-weight: 850;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       SUCCESS MESSAGE
-
-
-
-       ========================================================= */
-
-
-
-    .ep-success {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 11px;
-
-
-
+        gap: 16px;
+        flex-wrap: wrap;
         margin-bottom: 20px;
+    }
+    .ep-top h2 { margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; }
+    .ep-top p  { margin: 4px 0 0; color: var(--ep-muted); font-size: .85rem; }
+    .ep-btn-primary {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 11px 18px; border-radius: 12px; border: 0;
+        background: linear-gradient(135deg, var(--ep-pink), var(--ep-purple));
+        color: #fff !important; font-size: .85rem; font-weight: 700; text-decoration: none;
+        box-shadow: 0 8px 20px rgba(124,58,237,.25);
+        transition: transform .15s, box-shadow .15s;
+    }
+    .ep-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(124,58,237,.32); }
 
+    /* ---------- Stats ---------- */
+    .ep-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    .ep-stat {
+        display: flex; align-items: center; gap: 14px;
+        padding: 16px 18px;
+        background: #fff; border: 1px solid var(--ep-border); border-radius: 16px;
+    }
+    .ep-stat-icon {
+        width: 42px; height: 42px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--ep-purple-soft); color: var(--ep-purple); font-size: 1rem;
+    }
+    .ep-stat-icon.live  { background: #fff1f2; color: #e11d48; }
+    .ep-stat-icon.soon  { background: #ecfdf5; color: #059669; }
+    .ep-stat-icon.sold  { background: #fce7f3; color: #db2777; }
+    .ep-stat-num   { font-size: 1.35rem; font-weight: 800; line-height: 1.1; }
+    .ep-stat-label { color: var(--ep-muted); font-size: .75rem; margin-top: 2px; }
 
+    /* ---------- Alerts ---------- */
+    .ep-alert {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 16px; padding: 13px 16px; border-radius: 12px;
+        font-size: .85rem; font-weight: 600;
+    }
+    .ep-alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .ep-alert.error   { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; }
 
-        padding: 13px 16px;
-
-
-
-        border: 1px solid #bbf7d0;
-
-
-
-        border-radius: 14px;
-
-
-
-        background: linear-gradient(135deg, #f0fdf4, #f7fee7);
-
-
-
-        color: #166534;
-
-
-
-        font-size: .75rem;
-
-
-
-        font-weight: 700;
-
-
-
-        box-shadow: 0 7px 20px rgba(22,101,52,.045);
-
-
-
+    /* ---------- Panel + toolbar ---------- */
+    .ep-panel {
+        background: #fff; border: 1px solid var(--ep-border);
+        border-radius: 18px; overflow: hidden;
+        box-shadow: 0 10px 35px rgba(15,23,42,.045);
+    }
+    .ep-toolbar {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 12px;
+        padding: 16px 18px; border-bottom: 1px solid var(--ep-border);
+    }
+    .ep-search { position: relative; flex: 1 1 280px; max-width: 380px; }
+    .ep-search i {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        color: var(--ep-faint); font-size: .85rem;
+    }
+    .ep-search input {
+        width: 100%; padding: 10px 14px 10px 38px;
+        border: 1px solid var(--ep-border); border-radius: 11px;
+        background: var(--ep-bg); font-size: .85rem; color: var(--ep-text);
+        outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .ep-search input:focus {
+        border-color: #c4b5fd; background: #fff; box-shadow: 0 0 0 3px rgba(139,92,246,.12);
+    }
+    .ep-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ep-tab {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 8px 13px; border: 1px solid var(--ep-border); border-radius: 999px;
+        background: #fff; color: var(--ep-muted);
+        font-size: .8rem; font-weight: 600; cursor: pointer; transition: all .15s;
+    }
+    .ep-tab:hover { border-color: #c4b5fd; color: var(--ep-purple); }
+    .ep-tab.active { background: var(--ep-purple); border-color: var(--ep-purple); color: #fff; }
+    .ep-tab .n {
+        min-width: 20px; padding: 1px 6px; border-radius: 999px;
+        background: rgba(100,116,139,.12); font-size: .7rem; text-align: center;
+    }
+    .ep-tab.active .n { background: rgba(255,255,255,.25); }
+    .ep-sort {
+        padding: 9px 12px; border: 1px solid var(--ep-border); border-radius: 11px;
+        background: #fff; font-size: .8rem; color: var(--ep-muted); cursor: pointer;
     }
 
-
-
-    .ep-success-icon {
-
-
-
-        width: 32px;
-
-
-
-        height: 32px;
-
-
-
-        min-width: 32px;
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        border-radius: 10px;
-
-
-
-        background: #dcfce7;
-
-
-
-        color: #16a34a;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       DIRECTORY CARD
-
-
-
-       ========================================================= */
-
-
-
-    .ep-directory {
-
-
-
-        overflow: hidden;
-
-
-
-        border: 1px solid var(*--ep-border*);
-
-
-
-        border-radius: 22px;
-
-
-
-        background: #ffffff;
-
-
-
-        box-shadow: 0 14px 45px rgba(15,23,42,.055);
-
-
-
-    }
-
-
-
-    .ep-directory-header {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: space-between;
-
-
-
-        gap: 15px;
-
-
-
-        padding: 20px 22px;
-
-
-
-        border-bottom: 1px solid var(*--ep-border*);
-
-
-
-        background:
-
-
-
-            linear-gradient(135deg, #ffffff 0%, #faf8ff 100%);
-
-
-
-    }
-
-
-
-    .ep-directory-heading {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 12px;
-
-
-
-    }
-
-
-
-    .ep-directory-heading-icon {
-
-
-
-        width: 40px;
-
-
-
-        height: 40px;
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        border-radius: 12px;
-
-
-
-        background: linear-gradient(135deg, #ede9fe, #fce7f3);
-
-
-
-        color: #7c3aed;
-
-
-
-        font-size: .88rem;
-
-
-
-    }
-
-
-
-    .ep-directory-heading h3 {
-
-
-
-        margin: 0;
-
-
-
-        color: #1e293b;
-
-
-
-        font-size: .88rem;
-
-
-
-        font-weight: 900;
-
-
-
-        letter-spacing: -.015em;
-
-
-
-    }
-
-
-
-    .ep-directory-heading p {
-
-
-
-        margin: 3px 0 0;
-
-
-
-        color: #94a3b8;
-
-
-
-        font-size: .65rem;
-
-
-
-    }
-
-
-
-    .ep-event-count {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 6px;
-
-
-
-        padding: 7px 11px;
-
-
-
-        border: 1px solid #ddd6fe;
-
-
-
-        border-radius: 999px;
-
-
-
-        background: #f5f3ff;
-
-
-
-        color: #6d28d9;
-
-
-
-        font-size: .62rem;
-
-
-
-        font-weight: 850;
-
-
-
-        white-space: nowrap;
-
-
-
-    }
-
-
-
-    .ep-event-count i {
-
-
-
-        font-size: .58rem;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       TABLE
-
-
-
-       ========================================================= */
-
-
-
-    .ep-table-scroll {
-
-
-
-        width: 100%;
-
-
-
-        overflow-x: auto;
-
-
-
-    }
-
-
-
-    .ep-table {
-
-
-
-        width: 100%;
-
-
-
-        min-width: 1250px;
-
-
-
-        border-collapse: collapse;
-
-
-
-    }
-
-
-
-    .ep-table thead {
-
-
-
-        background: #fafafa;
-
-
-
-    }
-
-
-
-    .ep-table thead tr {
-
-
-
-        border-bottom: 1px solid var(*--ep-border*);
-
-
-
-    }
-
-
-
+    /* ---------- Table ---------- */
+    .ep-table-scroll { width: 100%; overflow-x: auto; }
+    .ep-table { width: 100%; min-width: 980px; border-collapse: collapse; }
     .ep-table th {
-
-
-
-        padding: 13px 18px;
-
-
-
-        color: #94a3b8;
-
-
-
-        font-size: .59rem;
-
-
-
-        font-weight: 900;
-
-
-
-        letter-spacing: .095em;
-
-
-
-        text-align: left;
-
-
-
-        text-transform: uppercase;
-
-
-
-        white-space: nowrap;
-
-
-
+        padding: 12px 18px; background: #fafbfd; border-bottom: 1px solid var(--ep-border);
+        color: var(--ep-faint); font-size: .7rem; font-weight: 800;
+        letter-spacing: .07em; text-align: left; text-transform: uppercase; white-space: nowrap;
     }
-
-
-
     .ep-table td {
-
-
-
-        padding: 17px 18px;
-
-
-
-        border-bottom: 1px solid #f0f1f5;
-
-
-
-        color: #64748b;
-
-
-
-        font-size: .74rem;
-
-
-
-        vertical-align: middle;
-
-
-
+        padding: 16px 18px; border-bottom: 1px solid #f0f1f5; vertical-align: middle;
     }
+    .ep-table tbody tr { transition: background .15s; }
+    .ep-table tbody tr:hover { background: #fbfaff; }
+    .ep-table tbody tr:last-child td { border-bottom: 0; }
 
-
-
-    .ep-table tbody tr {
-
-
-
-        transition: all .18s ease;
-
-
-
+    /* Event cell */
+    .ep-event { display: flex; align-items: center; gap: 14px; min-width: 260px; }
+    .ep-event img {
+        width: 56px; height: 56px; object-fit: cover; flex-shrink: 0;
+        border-radius: 14px; border: 1px solid var(--ep-border);
     }
-
-
-
-    .ep-table tbody tr:hover {
-
-
-
-        background: linear-gradient(
-
-
-
-            90deg,
-
-
-
-            #faf8ff 0%,
-
-
-
-            #ffffff 70%
-
-
-
-        );
-
-
-
-    }
-
-
-
-    .ep-table tbody tr:last-child td {
-
-
-
-        border-bottom: 0;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       EVENT INFO
-
-
-
-       ========================================================= */
-
-
-
-    .ep-event-info {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 12px;
-
-
-
-        min-width: 265px;
-
-
-
-    }
-
-
-
-    .ep-event-image-wrap {
-
-
-
-        position: relative;
-
-
-
-        width: 56px;
-
-
-
-        height: 56px;
-
-
-
-        min-width: 56px;
-
-
-
-    }
-
-
-
-    .ep-event-image {
-
-
-
-        width: 56px;
-
-
-
-        height: 56px;
-
-
-
-        object-fit: cover;
-
-
-
-        border: 1px solid #e5e7eb;
-
-
-
-        border-radius: 14px;
-
-
-
-        box-shadow: 0 6px 15px rgba(15,23,42,.09);
-
-
-
-    }
-
-
-
-    .ep-event-image-status {
-
-
-
-        position: absolute;
-
-
-
-        right: -2px;
-
-
-
-        bottom: -2px;
-
-
-
-        width: 12px;
-
-
-
-        height: 12px;
-
-
-
-        border: 2px solid #ffffff;
-
-
-
-        border-radius: 50%;
-
-
-
-        background: #10b981;
-
-
-
-    }
-
-
-
-    .ep-event-copy {
-
-
-
-        min-width: 0;
-
-
-
-    }
-
-
-
     .ep-event-title {
-
-
-
-        overflow: hidden;
-
-
-
-        margin: 0 0 4px;
-
-
-
-        color: #1e293b;
-
-
-
-        font-size: .78rem;
-
-
-
-        font-weight: 850;
-
-
-
-        line-height: 1.35;
-
-
-
-        text-overflow: ellipsis;
-
-
-
-        white-space: nowrap;
-
-
-
+        margin: 0 0 3px; font-weight: 700; font-size: .92rem; line-height: 1.3;
+        display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
     }
+    .ep-event-desc { margin: 0; color: var(--ep-faint); font-size: .78rem; max-width: 260px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    /* When / where */
+    .ep-when { font-weight: 700; font-size: .85rem; white-space: nowrap; }
+    .ep-when-time { color: var(--ep-muted); font-weight: 500; font-size: .78rem; margin-top: 2px; }
+    .ep-where { display: flex; gap: 6px; align-items: flex-start; margin-top: 6px;
+        color: var(--ep-muted); font-size: .78rem; max-width: 220px; }
+    .ep-where i { color: var(--ep-pink); margin-top: 3px; font-size: .72rem; }
 
-
-    .ep-event-description {
-
-
-
-        max-width: 235px;
-
-
-
-        margin: 0;
-
-
-
-        overflow: hidden;
-
-
-
-        color: #94a3b8;
-
-
-
-        font-size: .64rem;
-
-
-
-        line-height: 1.45;
-
-
-
-        text-overflow: ellipsis;
-
-
-
-        white-space: nowrap;
-
-
-
+    /* Tickets */
+    .ep-tickets { min-width: 190px; }
+    .ep-tickets-row { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: 6px; }
+    .ep-tickets-row strong { font-weight: 800; }
+    .ep-tickets-row span { color: var(--ep-faint); }
+    .ep-bar { height: 6px; border-radius: 999px; background: #eef0f6; overflow: hidden; }
+    .ep-bar > div { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--ep-purple), var(--ep-pink)); }
+    .ep-bar > div.full { background: #f43f5e; }
+    .ep-cat-list { display: flex; flex-direction: column; gap: 9px; }
+    .ep-cat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+    .ep-cat-name { font-size: .8rem; font-weight: 700; color: var(--ep-text);
+        max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ep-cat-count { font-size: .75rem; color: var(--ep-faint); white-space: nowrap; }
+    .ep-cat-count strong { color: var(--ep-text); font-weight: 800; }
+    .ep-bar.sm { height: 4px; }
+    .ep-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .ep-chip {
+        padding: 3px 8px; border-radius: 7px; background: var(--ep-purple-soft);
+        color: #6b21a8; font-size: .7rem; font-weight: 700; white-space: nowrap;
     }
+    .ep-chip.more { background: #fce7f3; color: #be185d; }
 
-
-
-    /* =========================================================
-
-
-
-       LOCATION / DATE
-
-
-
-       ========================================================= */
-
-
-
-    .ep-location {
-
-
-
-        display: flex;
-
-
-
-        align-items: flex-start;
-
-
-
-        gap: 8px;
-
-
-
-        max-width: 220px;
-
-
-
-        color: #334155;
-
-
-
-        font-size: .7rem;
-
-
-
-        font-weight: 750;
-
-
-
-        line-height: 1.4;
-
-
-
+    /* Items */
+    .ep-avatars { display: flex; align-items: center; min-width: 120px; }
+    .ep-avatar {
+        width: 34px; height: 34px; margin-left: -8px; border-radius: 50%;
+        border: 2px solid #fff; object-fit: cover; background: #f3e8ff; color: #8b5cf6;
+        display: flex; align-items: center; justify-content: center; font-size: .72rem;
     }
-
-
-
-    .ep-location i {
-
-
-
-        margin-top: 2px;
-
-
-
-        color: #ec4899;
-
-
-
-        font-size: .68rem;
-
-
-
-    }
-
-
-
-    .ep-date {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 6px;
-
-
-
-        margin-top: 7px;
-
-
-
-        color: #94a3b8;
-
-
-
-        font-size: .62rem;
-
-
-
-        white-space: nowrap;
-
-
-
-    }
-
-
-
-    .ep-date i {
-
-
-
-        color: #8b5cf6;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       CATEGORIES
-
-
-
-       ========================================================= */
-
-
-
-    .ep-categories {
-
-
-
-        display: flex;
-
-
-
-        flex-wrap: wrap;
-
-
-
-        gap: 5px;
-
-
-
-        min-width: 190px;
-
-
-
-        max-width: 275px;
-
-
-
-    }
-
-
-
-    .ep-category {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 5px;
-
-
-
-        padding: 6px 8px;
-
-
-
-        border: 1px solid #e9d5ff;
-
-
-
-        border-radius: 8px;
-
-
-
-        background: #faf5ff;
-
-
-
-        color: #6b21a8;
-
-
-
-        font-size: .6rem;
-
-
-
-        font-weight: 800;
-
-
-
-        white-space: nowrap;
-
-
-
-    }
-
-
-
-    .ep-category i {
-
-
-
-        color: #8b5cf6;
-
-
-
-        font-size: .52rem;
-
-
-
-    }
-
-
-
-    .ep-no-data {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 5px;
-
-
-
-        color: #a1a1aa;
-
-
-
-        font-size: .65rem;
-
-
-
-        font-style: italic;
-
-
-
-    }
-
-
-
-    .ep-no-data i {
-
-
-
-        color: #c4b5fd;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       EVENT ITEMS
-
-
-
-       ========================================================= */
-
-
-
-    .ep-items {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        flex-wrap: wrap;
-
-
-
-        gap: 6px;
-
-
-
-        min-width: 250px;
-
-
-
-        max-width: 370px;
-
-
-
-    }
-
-
-
-    .ep-item {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 6px;
-
-
-
-        padding: 5px 8px 5px 5px;
-
-
-
-        border: 1px solid #e5e7eb;
-
-
-
-        border-radius: 10px;
-
-
-
-        background: #ffffff;
-
-
-
-        box-shadow: 0 3px 9px rgba(15,23,42,.035);
-
-
-
-        white-space: nowrap;
-
-
-
-    }
-
-
-
-    .ep-item-image {
-
-
-
-        width: 30px;
-
-
-
-        height: 30px;
-
-
-
-        object-fit: cover;
-
-
-
-        border: 1px solid #e5e7eb;
-
-
-
-        border-radius: 7px;
-
-
-
-    }
-
-
-
-    .ep-item-placeholder {
-
-
-
-        width: 30px;
-
-
-
-        height: 30px;
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        border-radius: 7px;
-
-
-
-        background: #f3e8ff;
-
-
-
-        color: #8b5cf6;
-
-
-
-        font-size: .62rem;
-
-
-
-    }
-
-
-
-    .ep-item-title {
-
-
-
-        color: #475569;
-
-
-
-        font-size: .61rem;
-
-
-
-        font-weight: 800;
-
-
-
-    }
-
-
-
-    .ep-items-more {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 4px;
-
-
-
-        padding: 7px 9px;
-
-
-
-        border-radius: 8px;
-
-
-
-        background: #fce7f3;
-
-
-
-        color: #be185d;
-
-
-
-        font-size: .59rem;
-
-
-
-        font-weight: 850;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       STATUS
-
-
-
-       ========================================================= */
-
-
-
+    .ep-avatar:first-child { margin-left: 0; }
+    .ep-avatar.more { background: #fce7f3; color: #be185d; font-weight: 800; font-size: .7rem; }
+    .ep-none { color: #a1a1aa; font-size: .78rem; font-style: italic; }
+
+    /* Status */
     .ep-status {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        gap: 7px;
-
-
-
-        padding: 7px 10px;
-
-
-
-        border-radius: 999px;
-
-
-
-        font-size: .59rem;
-
-
-
-        font-weight: 900;
-
-
-
-        letter-spacing: .035em;
-
-
-
-        text-transform: uppercase;
-
-
-
-        white-space: nowrap;
-
-
-
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 6px 11px; border-radius: 999px;
+        font-size: .72rem; font-weight: 800; white-space: nowrap;
+    }
+    .ep-status i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+    .ep-status.live     { background: #fff1f2; color: #e11d48; }
+    .ep-status.live i   { background: #f43f5e; animation: ep-pulse 1.6s infinite; }
+    .ep-status.upcoming { background: #ecfdf5; color: #059669; }
+    .ep-status.upcoming i { background: #10b981; }
+    .ep-status.past     { background: #f1f5f9; color: #64748b; }
+    .ep-status.past i   { background: #94a3b8; }
+    @keyframes ep-pulse {
+        0%   { box-shadow: 0 0 0 0 rgba(244,63,94,.5); }
+        70%  { box-shadow: 0 0 0 6px rgba(244,63,94,0); }
+        100% { box-shadow: 0 0 0 0 rgba(244,63,94,0); }
     }
 
-
-
-    .ep-status-dot {
-
-
-
-        width: 6px;
-
-
-
-        height: 6px;
-
-
-
-        border-radius: 50%;
-
-
-
+    /* Actions: two primary buttons + icon buttons with tooltips */
+    .ep-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 270px; }
+    .ep-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 12px; border-radius: 10px; border: 1px solid var(--ep-border);
+        background: #fff; color: var(--ep-text); font-size: .78rem; font-weight: 700;
+        text-decoration: none; cursor: pointer; transition: all .15s; white-space: nowrap;
     }
-
-
-
-    .ep-status-live {
-
-
-
-        background: #fff1f2;
-
-
-
-        color: #e11d48;
-
-
-
+    .ep-btn:hover { border-color: #c4b5fd; color: var(--ep-purple); background: var(--ep-purple-soft); }
+    .ep-btn.edit { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .ep-btn.edit:hover { background: #fef3c7; color: #92400e; }
+    .ep-icon-btn {
+        position: relative; width: 36px; height: 36px; padding: 0; justify-content: center;
+        color: var(--ep-muted);
     }
-
-
-
-    .ep-status-live .ep-status-dot {
-
-
-
-        background: #f43f5e;
-
-
-
-        box-shadow: 0 0 0 3px rgba(244,63,94,.13);
-
-
-
+    .ep-icon-btn.danger { color: #e11d48; }
+    .ep-icon-btn.danger:hover { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+    .ep-icon-btn::after {
+        content: attr(data-tip);
+        position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+        padding: 5px 9px; border-radius: 7px; background: #0f172a; color: #fff;
+        font-size: .7rem; font-weight: 600; white-space: nowrap;
+        opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 5;
     }
+    .ep-icon-btn:hover::after, .ep-icon-btn:focus-visible::after { opacity: 1; }
 
-
-
-    .ep-status-upcoming {
-
-
-
-        background: #ecfdf5;
-
-
-
-        color: #059669;
-
-
-
-    }
-
-
-
-    .ep-status-upcoming .ep-status-dot {
-
-
-
-        background: #10b981;
-
-
-
-        box-shadow: 0 0 0 3px rgba(16,185,129,.12);
-
-
-
-    }
-
-
-
-    .ep-status-past {
-
-
-
-        background: #f1f5f9;
-
-
-
-        color: #64748b;
-
-
-
-    }
-
-
-
-    .ep-status-past .ep-status-dot {
-
-
-
-        background: #94a3b8;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       ACTIONS
-
-
-
-       ========================================================= */
-
-
-
-    .ep-actions {
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: flex-end;
-
-
-
-        gap: 5px;
-
-
-
-        min-width: 325px;
-
-
-
-    }
-
-
-
-    .ep-action {
-
-
-
-        display: inline-flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        gap: 6px;
-
-
-
-        min-height: 34px;
-
-
-
-        padding: 7px 10px;
-
-
-
-        border: 1px solid transparent;
-
-
-
-        border-radius: 9px;
-
-
-
-        font-size: .59rem;
-
-
-
-        font-weight: 850;
-
-
-
-        text-decoration: none;
-
-
-
-        transition: all .18s ease;
-
-
-
-    }
-
-
-
-    .ep-action:hover {
-
-
-
-        transform: translateY(-1px);
-
-
-
-    }
-
-
-
-    .ep-action-promo {
-
-
-
-        border-color: #e9d5ff;
-
-
-
-        background: #faf5ff;
-
-
-
-        color: #7e22ce;
-
-
-
-    }
-
-
-
-    .ep-action-promo:hover {
-
-
-
-        background: #f3e8ff;
-
-
-
-        color: #6b21a8;
-
-
-
-    }
-
-
-
-    .ep-action-attendees {
-
-
-
-        border-color: #dbeafe;
-
-
-
-        background: #eff6ff;
-
-
-
-        color: #2563eb;
-
-
-
-    }
-
-
-
-    .ep-action-attendees:hover {
-
-
-
-        background: #dbeafe;
-
-
-
-        color: #1d4ed8;
-
-
-
-    }
-
-    .ep-action-ticket-design {
-
-        border-color: #ddd6fe;
-
-        background: #f5f3ff;
-
-        color: #6d28d9;
-
-    }
-
-    .ep-action-ticket-design:hover {
-
-        background: #ede9fe;
-
-        color: #5b21b6;
-
-    }
-
-
-
-
-    .ep-action-edit {
-
-
-
-        border-color: #fde68a;
-
-
-
-        background: #fffbeb;
-
-
-
-        color: #b45309;
-
-
-
-    }
-
-
-
-    .ep-action-edit:hover {
-
-
-
-        background: #fef3c7;
-
-
-
-        color: #92400e;
-
-
-
-    }
-
-
-
-    .ep-action-delete {
-
-
-
-        border-color: #fecdd3;
-
-
-
-        background: #fff1f2;
-
-
-
-        color: #e11d48;
-
-
-
-        cursor: pointer;
-
-
-
-    }
-
-
-
-    .ep-action-delete:hover {
-
-
-
-        background: #ffe4e6;
-
-
-
-        color: #be123c;
-
-
-
-    }
-
-
-
-    /* =========================================================
-
-
-
-       EMPTY STATE
-
-
-
-       ========================================================= */
-
-
-
-    .ep-empty {
-
-
-
-        padding: 70px 20px !important;
-
-
-
-        text-align: center;
-
-
-
-    }
-
-
-
+    /* Empty */
+    .ep-empty { padding: 64px 20px !important; text-align: center; }
     .ep-empty-icon {
+        width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 18px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #ede9fe, #fce7f3); color: var(--ep-purple); font-size: 1.4rem;
+    }
+    .ep-empty h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 800; }
+    .ep-empty p { margin: 0; color: var(--ep-faint); font-size: .85rem; }
+    .ep-empty a { color: var(--ep-purple); font-weight: 700; text-decoration: none; }
+    #ep-no-results { display: none; }
 
-
-
-        width: 68px;
-
-
-
-        height: 68px;
-
-
-
-        margin: 0 auto 16px;
-
-
-
-        display: flex;
-
-
-
-        align-items: center;
-
-
-
-        justify-content: center;
-
-
-
-        border-radius: 20px;
-
-
-
-        background:
-
-
-
-            linear-gradient(135deg, #ede9fe, #fce7f3);
-
-
-
-        color: #7c3aed;
-
-
-
-        font-size: 1.35rem;
-
-
-
-        box-shadow: 0 10px 25px rgba(124,58,237,.10);
-
-
-
+    .ep-footer {
+        padding: 12px 18px; border-top: 1px solid var(--ep-border);
+        color: var(--ep-faint); font-size: .78rem; background: #fafbfd;
     }
 
-
-
-    .ep-empty h3 {
-
-
-
-        margin: 0 0 6px;
-
-
-
-        color: #1e293b;
-
-
-
-        font-size: .92rem;
-
-
-
-        font-weight: 900;
-
-
-
+    /* ---------- Delete modal ---------- */
+    .ep-modal {
+        position: fixed; inset: 0; z-index: 1000; display: none;
+        align-items: center; justify-content: center; padding: 20px;
+        background: rgba(15,23,42,.55); backdrop-filter: blur(3px);
     }
-
-
-
-    .ep-empty p {
-
-
-
-        margin: 0;
-
-
-
-        color: #94a3b8;
-
-
-
-        font-size: .7rem;
-
-
-
+    .ep-modal.open { display: flex; }
+    .ep-modal-box {
+        width: 100%; max-width: 440px; padding: 26px; border-radius: 20px;
+        background: #fff; box-shadow: 0 30px 70px rgba(15,23,42,.3);
     }
-
-
-
-    .ep-empty a {
-
-
-
-        color: #7c3aed;
-
-
-
-        font-weight: 850;
-
-
-
-        text-decoration: none;
-
-
-
+    .ep-modal-icon {
+        width: 50px; height: 50px; margin-bottom: 14px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        background: #fff1f2; color: #e11d48; font-size: 1.15rem;
     }
-
-
-
-    .ep-empty a:hover {
-
-
-
-        color: #db2777;
-
-
-
-        text-decoration: underline;
-
-
-
+    .ep-modal h3 { margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; }
+    .ep-modal p  { margin: 0 0 16px; color: var(--ep-muted); font-size: .85rem; line-height: 1.55; }
+    .ep-modal label { display: block; margin-bottom: 6px; font-size: .8rem; font-weight: 700; }
+    .ep-modal input[type=password] {
+        width: 100%; padding: 11px 13px; border: 1px solid var(--ep-border); border-radius: 10px;
+        font-size: .9rem; outline: none;
     }
-
-
-
-    /* =========================================================
-
-
-
-       RESPONSIVE
-
-
-
-       ========================================================= */
-
-
-
-    **@media** (max-width: 900px) {
-
-
-
-        .ep-events-hero-inner {
-
-
-
-            align-items: flex-start;
-
-
-
-            flex-direction: column;
-
-
-
-        }
-
-
-
-        .ep-events-hero-right {
-
-
-
-            width: 100%;
-
-
-
-        }
-
-
-
-        .ep-create-event {
-
-
-
-            width: 100%;
-
-
-
-        }
-
-
-
-        .ep-event-strip {
-
-
-
-            grid-template-columns: 1fr;
-
-
-
-        }
-
-
-
+    .ep-modal input[type=password]:focus { border-color: #fda4af; box-shadow: 0 0 0 3px rgba(244,63,94,.12); }
+    .ep-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .ep-btn-danger {
+        padding: 10px 16px; border: 0; border-radius: 10px; background: #e11d48; color: #fff;
+        font-size: .82rem; font-weight: 700; cursor: pointer;
     }
+    .ep-btn-danger:hover { background: #be123c; }
 
-
-
-    **@media** (max-width: 767px) {
-
-
-
-        .ep-events-hero {
-
-
-
-            padding: 23px 20px;
-
-
-
-            border-radius: 20px;
-
-
-
+    /* ---------- Responsive: table becomes cards ---------- */
+    @media (max-width: 1000px) { .ep-stats { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 820px) {
+        .ep-table-scroll { overflow: visible; }
+        .ep-table, .ep-table tbody, .ep-table tr, .ep-table td { display: block; width: 100%; min-width: 0; }
+        .ep-table thead { display: none; }
+        .ep-table tr.ep-row { padding: 14px 16px; border-bottom: 1px solid var(--ep-border); }
+        .ep-table td { padding: 8px 0; border: 0; }
+        .ep-table td[data-label]::before {
+            content: attr(data-label); display: block; margin-bottom: 5px;
+            color: var(--ep-faint); font-size: .65rem; font-weight: 800;
+            letter-spacing: .07em; text-transform: uppercase;
         }
-
-
-
-        .ep-directory-header {
-
-
-
-            align-items: flex-start;
-
-
-
-            flex-direction: column;
-
-
-
-            padding: 17px;
-
-
-
-        }
-
-
-
-        .ep-event-count {
-
-
-
-            align-self: flex-start;
-
-
-
-        }
-
-
-
-        .ep-table th,
-
-
-
-        .ep-table td {
-
-
-
-            padding: 13px 14px;
-
-
-
-        }
-
-
-
-        .ep-actions {
-
-
-
-            min-width: 250px;
-
-
-
-        }
-
-
-
+        .ep-actions { justify-content: flex-start; flex-wrap: wrap; min-width: 0; }
+        .ep-event-desc { max-width: none; }
+        .ep-search { max-width: none; }
     }
-
-
-
+    @media (max-width: 480px) {
+        .ep-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ep-stat { padding: 12px; gap: 10px; }
+        .ep-btn-primary { width: 100%; justify-content: center; }
+    }
 </style>
 
-
+@php
+    $liveCount     = $events->where('status', 'live')->count();
+    $upcomingCount = $events->where('status', 'upcoming')->count();
+    $pastCount     = $events->count() - $liveCount - $upcomingCount;
+    $totalSold     = $events->sum(fn ($e) => $e->ticketCategories->sum('tickets_sold'));
+@endphp
 
 <div class="ep-events">
 
+    {{-- ===== Top bar ===== --}}
+    <div class="ep-top">
+        <div>
+            <h2>Manage Events</h2>
+            <p>Create, edit and run all your events from one place.</p>
+        </div>
+        <a href="{{ route('admin.events.create') }}" class="ep-btn-primary">
+            <i class="fa-solid fa-plus"></i> Create New Event
+        </a>
+    </div>
 
+    {{-- ===== Stats ===== --}}
+    <div class="ep-stats">
+        <div class="ep-stat">
+            <div class="ep-stat-icon"><i class="fa-solid fa-calendar-days"></i></div>
+            <div><div class="ep-stat-num">{{ $events->count() }}</div><div class="ep-stat-label">Total events</div></div>
+        </div>
+        <div class="ep-stat">
+            <div class="ep-stat-icon live"><i class="fa-solid fa-tower-broadcast"></i></div>
+            <div><div class="ep-stat-num">{{ $liveCount }}</div><div class="ep-stat-label">Live now</div></div>
+        </div>
+        <div class="ep-stat">
+            <div class="ep-stat-icon soon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div><div class="ep-stat-num">{{ $upcomingCount }}</div><div class="ep-stat-label">Upcoming</div></div>
+        </div>
+        <div class="ep-stat">
+            <div class="ep-stat-icon sold"><i class="fa-solid fa-ticket"></i></div>
+            <div><div class="ep-stat-num">{{ number_format($totalSold) }}</div><div class="ep-stat-label">Tickets sold</div></div>
+        </div>
+    </div>
 
-{{-- =========================================================
+    {{-- ===== Alerts ===== --}}
+    @if(session('success'))
+        <div class="ep-alert success">
+            <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+        </div>
+    @endif
 
+    @if($errors->has('admin_password'))
+        <div class="ep-alert error">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ $errors->first('admin_password') }}
+        </div>
+    @endif
 
+    {{-- ===== Directory ===== --}}
+    <div class="ep-panel">
 
-     EVENT PLUS HERO
-
-
-
-     ========================================================= --}}
-
-
-
-<div class="ep-events-hero">
-
-
-
-    <div class="ep-events-hero-inner">
-
-
-
-        <div class="ep-events-hero-left">
-
-
-
-            <div class="ep-events-eyebrow">
-
-
-
-                <i class="fa-solid fa-bolt"></i>
-
-
-
-                Event Plus Operations
-
-
-
+        <div class="ep-toolbar">
+            <div class="ep-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" id="ep-search" placeholder="Search by name or location…" autocomplete="off">
             </div>
 
-
-
-            <h2>Manage Your Events</h2>
-
-
-
-            <p>
-
-
-
-                Keep your events, ticket categories, merchandise,
-
-
-
-                attendees and event details organized in one place.
-
-
-
-            </p>
-
-
-
-        </div>
-
-
-
-        <div class="ep-events-hero-right">
-
-
-
-            <a
-
-
-
-                href="{{ route('admin.events.create') }}"
-
-
-
-                class="ep-create-event"
-
-
-
-            >
-
-
-
-                <i class="fa-solid fa-plus"></i>
-
-
-
-                Create New Event
-
-
-
-            </a>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-</div>
-
-
-
-{{-- =========================================================
-
-
-
-     QUICK INFORMATION
-
-
-
-     ========================================================= --}}
-
-
-
-<div class="ep-event-strip">
-
-
-
-    <div class="ep-event-strip-card">
-
-
-
-        <div class="ep-strip-icon">
-
-
-
-            <i class="fa-solid fa-calendar-days"></i>
-
-
-
-        </div>
-
-
-
-        <div class="ep-strip-content">
-
-
-
-            <p class="ep-strip-label">
-
-
-
-                Event Directory
-
-
-
-            </p>
-
-
-
-            <p class="ep-strip-value">
-
-
-
-                {{ $events->count() }} Events
-
-
-
-            </p>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-    <div class="ep-event-strip-card">
-
-
-
-        <div class="ep-strip-icon pink">
-
-
-
-            <i class="fa-solid fa-ticket"></i>
-
-
-
-        </div>
-
-
-
-        <div class="ep-strip-content">
-
-
-
-            <p class="ep-strip-label">
-
-
-
-                Ticket Management
-
-
-
-            </p>
-
-
-
-            <p class="ep-strip-value">
-
-
-
-                Categories & Capacity
-
-
-
-            </p>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-    <div class="ep-event-strip-card">
-
-
-
-        <div class="ep-strip-icon blue">
-
-
-
-            <i class="fa-solid fa-users"></i>
-
-
-
-        </div>
-
-
-
-        <div class="ep-strip-content">
-
-
-
-            <p class="ep-strip-label">
-
-
-
-                Event Operations
-
-
-
-            </p>
-
-
-
-            <p class="ep-strip-value">
-
-
-
-                Attendees & Promo Codes
-
-
-
-            </p>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-</div>
-
-
-
-{{-- =========================================================
-
-
-
-     SUCCESS MESSAGE
-
-
-
-     ========================================================= --}}
-
-
-
-@if(session('success'))
-
-
-
-    <div class="ep-success">
-
-
-
-        <div class="ep-success-icon">
-
-
-
-            <i class="fa-solid fa-check"></i>
-
-
-
-        </div>
-
-
-
-        <span>
-
-
-
-            {{ session('success') }}
-
-
-
-        </span>
-
-
-
-    </div>
-
-
-
-@endif
-
-
-
-@if($errors->has('admin_password'))
-
-    <div class="alert alert-danger">
-
-        <i class="fa-solid fa-circle-exclamation"></i>
-
-        {{ $errors->first('admin_password') }}
-
-    </div>
-
-@endif
-
-
-
-{{-- =========================================================
-
-
-
-     EVENT DIRECTORY
-
-
-
-     ========================================================= --}}
-
-
-
-<div class="ep-directory">
-
-
-
-    <div class="ep-directory-header">
-
-
-
-        <div class="ep-directory-heading">
-
-
-
-            <div class="ep-directory-heading-icon">
-
-
-
-                <i class="fa-solid fa-layer-group"></i>
-
-
-
+            <div class="ep-tabs" id="ep-tabs">
+                <button type="button" class="ep-tab active" data-filter="all">All <span class="n">{{ $events->count() }}</span></button>
+                <button type="button" class="ep-tab" data-filter="live">Live <span class="n">{{ $liveCount }}</span></button>
+                <button type="button" class="ep-tab" data-filter="upcoming">Upcoming <span class="n">{{ $upcomingCount }}</span></button>
+                <button type="button" class="ep-tab" data-filter="past">Past <span class="n">{{ $pastCount }}</span></button>
             </div>
 
-
-
-            <div>
-
-
-
-                <h3>
-
-
-
-                    Event Directory
-
-
-
-                </h3>
-
-
-
-                <p>
-
-
-
-                    View and manage all registered events
-
-
-
-                </p>
-
-
-
-            </div>
-
-
-
+            <select class="ep-sort" id="ep-sort" aria-label="Sort events">
+                <option value="default">Default order</option>
+                <option value="date-asc">Date: soonest first</option>
+                <option value="date-desc">Date: latest first</option>
+                <option value="name">Name: A–Z</option>
+            </select>
         </div>
 
-
-
-        <span class="ep-event-count">
-
-
-
-            <i class="fa-solid fa-calendar-check"></i>
-
-
-
-            {{ $events->count() }} Events
-
-
-
-        </span>
-
-
-
-    </div>
-
-
-
-    <div class="ep-table-scroll">
-
-
-
-        <table class="ep-table">
-
-
-
-            <thead>
-
-
-
-                <tr>
-
-
-
-                    <th>
-
-
-
-                        Event
-
-
-
-                    </th>
-
-
-
-                    <th>
-
-
-
-                        Location & Date
-
-
-
-                    </th>
-
-
-
-                    <th>
-
-
-
-                        Categories
-
-
-
-                    </th>
-
-
-
-                    <th>
-
-
-
-                        Event Items
-
-
-
-                    </th>
-
-
-
-                    <th>
-
-
-
-                        Status
-
-
-
-                    </th>
-
-
-
-                    <th class="text-right">
-
-
-
-                        Actions
-
-
-
-                    </th>
-
-
-
-                </tr>
-
-
-
-            </thead>
-
-
-
-            <tbody>
-
-
-
-                @forelse($events as $event)
-
-
-
+        <div class="ep-table-scroll">
+            <table class="ep-table">
+                <thead>
                     <tr>
+                        <th>Event</th>
+                        <th>Date &amp; Location</th>
+                        <th>Tickets</th>
+                        <th>Items</th>
+                        <th>Status</th>
+                        <th style="text-align:right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ep-body">
+                    @forelse($events as $event)
+                        @php
+                            $date       = \Carbon\Carbon::parse($event->event_date);
+                            $cats       = $event->ticketCategories;
+                            $sold       = $cats->sum('tickets_sold');
+                            $unlimited  = $cats->contains(fn ($c) => is_null($c->capacity));
+                            $capacity   = $cats->sum('capacity');
+                            $pct        = (! $unlimited && $capacity > 0) ? min(100, round($sold / $capacity * 100)) : 0;
+                            $status     = in_array($event->status, ['live', 'upcoming']) ? $event->status : 'past';
+                        @endphp
 
+                        <tr class="ep-row"
+                            data-status="{{ $status }}"
+                            data-name="{{ strtolower($event->title) }}"
+                            data-search="{{ strtolower($event->title . ' ' . $event->location) }}"
+                            data-date="{{ $date->timestamp }}"
+                            data-index="{{ $loop->index }}">
 
-
-                        {{-- =================================================
-
-
-
-                             EVENT
-
-
-
-                             ================================================= --}}
-
-
-
-                        <td>
-
-
-
-                            <div class="ep-event-info">
-
-
-
-                                <div class="ep-event-image-wrap">
-
-
-
-                                    <img
-
-
-
-                                        src="{{ $event->image
-
-
-
-                                            ? asset('storage/' . $event->image)
-
-
-
-                                            : asset('assets/img/about/img06.jpg') }}"
-
-
-
-                                        alt="{{ $event->title }}"
-
-
-
-                                        class="ep-event-image"
-
-
-
-                                    >
-
-
-
-                                    <span class="ep-event-image-status"></span>
-
-
-
+                            {{-- Event --}}
+                            <td data-label="Event">
+                                <div class="ep-event">
+                                    <img src="{{ $event->image ? asset('storage/' . $event->image) : asset('assets/img/about/img06.jpg') }}"
+                                         alt="{{ $event->title }}">
+                                    <div style="min-width:0">
+                                        <p class="ep-event-title">{{ $event->title }}</p>
+                                        <p class="ep-event-desc">{{ Str::limit($event->description, 60) }}</p>
+                                    </div>
                                 </div>
+                            </td>
 
-
-
-                                <div class="ep-event-copy">
-
-
-
-                                    <p class="ep-event-title">
-
-
-
-                                        {{ $event->title }}
-
-
-
-                                    </p>
-
-
-
-                                    <p class="ep-event-description">
-
-
-
-                                        {{ Str::limit($event->description, 40) }}
-
-
-
-                                    </p>
-
-
-
+                            {{-- Date & location --}}
+                            <td data-label="Date & Location">
+                                <div class="ep-when">{{ $date->format('M d, Y') }}</div>
+                                <div class="ep-when-time">{{ $date->format('h:i A') }}</div>
+                                <div class="ep-where">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    <span>{{ $event->location }}</span>
                                 </div>
-
-
-
-                            </div>
-
-
-
-                        </td>
-
-
-
-                        {{-- =================================================
-
-
-
-                             LOCATION & DATE
-
-
-
-                             ================================================= --}}
-
-
-
-                        <td>
-
-
-
-                            <div class="ep-location">
-
-
-
-                                <i class="fa-solid fa-location-dot"></i>
-
-
-
-                                <span>
-
-
-
-                                    {{ $event->location }}
-
-
-
-                                </span>
-
-
-
-                            </div>
-
-
-
-                            <div class="ep-date">
-
-
-
-                                <i class="fa-regular fa-calendar"></i>
-
-
-
-                                <span>
-
-
-
-                                    {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y - h\\\\\\\\:i A') }}
-
-
-
-                                </span>
-
-
-
-                            </div>
-
-
-
-                        </td>
-
-
-
-                        {{-- =================================================
-
-
-
-                             TICKET CATEGORIES
-
-
-
-                             ================================================= --}}
-
-
-
-                        <td>
-
-
-
-                            <div class="ep-categories">
-
-
-
-                                @if($event->ticketCategories->count() > 0)
-
-
-
-                                    @foreach($event->ticketCategories as $category)
-
-
-
-                                        <span class="ep-category">
-
-
-
-                                            <i class="fa-solid fa-ticket"></i>
-
-
-
-                                            {{ $category->name }}
-
-
-
-                                            ({{ $category->tickets_sold }}/{{ $category->capacity ?? '∞' }})
-
-
-
-                                        </span>
-
-
-
-                                    @endforeach
-
-
-
-                                @else
-
-
-
-                                    <span class="ep-no-data">
-
-
-
-                                        <i class="fa-solid fa-circle-info"></i>
-
-
-
-                                        No categories
-
-
-
-                                    </span>
-
-
-
-                                @endif
-
-
-
-                            </div>
-
-
-
-                        </td>
-
-
-
-                        {{-- =================================================
-
-
-
-                             EVENT ITEMS
-
-
-
-                             ================================================= --}}
-
-
-
-                        <td>
-
-
-
-                            <div class="ep-items">
-
-
-
-                                @if($event->items->count() > 0)
-
-
-
-                                    @foreach($event->items->take(4) as $item)
-
-
-
-                                        <div
-
-
-
-                                            class="ep-item"
-
-
-
-                                            title="{{ $item->title }}"
-
-
-
-                                        >
-
-
-
-                                            @if($item->image)
-
-
-
-                                                <img
-
-
-
-                                                    src="{{ asset('storage/' . $item->image) }}"
-
-
-
-                                                    alt="{{ $item->title }}"
-
-
-
-                                                    class="ep-item-image"
-
-
-
-                                                >
-
-
-
-                                            @else
-
-
-
-                                                <div class="ep-item-placeholder">
-
-
-
-                                                    <i class="fa-solid fa-gift"></i>
-
-
-
+                            </td>
+
+                            {{-- Tickets --}}
+                            <td data-label="Tickets">
+                                <div class="ep-tickets">
+                                    @if($cats->count() > 0)
+                                        <div class="ep-cat-list">
+                                            @foreach($cats as $category)
+                                                @php
+                                                    $catPct = $category->capacity
+                                                        ? min(100, round($category->tickets_sold / $category->capacity * 100))
+                                                        : 0;
+                                                @endphp
+                                                <div class="ep-cat">
+                                                    <div class="ep-cat-row">
+                                                        <span class="ep-cat-name" title="{{ $category->name }}">{{ $category->name }}</span>
+                                                        <span class="ep-cat-count">
+                                                            <strong>{{ number_format($category->tickets_sold) }}</strong>
+                                                            / {{ $category->capacity ? number_format($category->capacity) : '∞' }}
+                                                        </span>
+                                                    </div>
+                                                    @if($category->capacity)
+                                                        <div class="ep-bar sm"><div class="{{ $catPct >= 100 ? 'full' : '' }}" style="width: {{ $catPct }}%"></div></div>
+                                                    @endif
                                                 </div>
-
-
-
-                                            @endif
-
-
-
-                                            <span class="ep-item-title">
-
-
-
-                                                {{ Str::limit($item->title, 18) }}
-
-
-
-                                            </span>
-
-
-
+                                            @endforeach
                                         </div>
-
-
-
-                                    @endforeach
-
-
-
-                                    @if($event->items->count() > 4)
-
-
-
-                                        <span class="ep-items-more">
-
-
-
-                                            <i class="fa-solid fa-plus"></i>
-
-
-
-                                            {{ $event->items->count() - 4 }} more
-
-
-
-                                        </span>
-
-
-
+                                    @else
+                                        <span class="ep-none">No ticket categories</span>
                                     @endif
+                                </div>
+                            </td>
 
-
-
+                            {{-- Items --}}
+                            <td data-label="Items">
+                                @if($event->items->count() > 0)
+                                    <div class="ep-avatars" title="{{ $event->items->pluck('title')->implode(', ') }}">
+                                        @foreach($event->items->take(4) as $item)
+                                            @if($item->image)
+                                                <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}" class="ep-avatar">
+                                            @else
+                                                <span class="ep-avatar"><i class="fa-solid fa-gift"></i></span>
+                                            @endif
+                                        @endforeach
+                                        @if($event->items->count() > 4)
+                                            <span class="ep-avatar more">+{{ $event->items->count() - 4 }}</span>
+                                        @endif
+                                    </div>
                                 @else
-
-
-
-                                    <span class="ep-no-data">
-
-
-
-                                        <i class="fa-solid fa-circle-info"></i>
-
-
-
-                                        No items
-
-
-
-                                    </span>
-
-
-
+                                    <span class="ep-none">No items</span>
                                 @endif
+                            </td>
 
-
-
-                            </div>
-
-
-
-                        </td>
-
-
-
-                        {{-- =================================================
-
-
-
-                             STATUS
-
-
-
-                             ================================================= --}}
-
-
-
-                        <td>
-
-
-
-                            @if($event->status === 'live')
-
-
-
-                                <span class="ep-status ep-status-live">
-
-
-
-                                    <span class="ep-status-dot"></span>
-
-
-
-                                    Live Now
-
-
-
+                            {{-- Status --}}
+                            <td data-label="Status">
+                                <span class="ep-status {{ $status }}">
+                                    <i></i>
+                                    {{ $status === 'live' ? 'Live Now' : ucfirst($status) }}
                                 </span>
-
-
-
-                            @elseif($event->status === 'upcoming')
-
-
-
-                                <span class="ep-status ep-status-upcoming">
-
-
-
-                                    <span class="ep-status-dot"></span>
-
-
-
-                                    Upcoming
-
-
-
-                                </span>
-
-
-
-                            @else
-
-
-
-                                <span class="ep-status ep-status-past">
-
-
-
-                                    <span class="ep-status-dot"></span>
-
-
-
-                                    Past
-
-
-
-                                </span>
-
-
-
-                            @endif
-
-
-
-                        </td>
-
-
-
-                        {{-- =================================================
-
-
-
-                             ACTIONS
-
-
-
-                             ================================================= --}}
-
-
-
-                        <td>
-
-
-
-                            <div class="ep-actions">
-
-
-
-                                {{-- Promo Codes --}}
-
-
-
-                                <a
-
-
-
-                                    href="{{ route('admin.events.promo_codes', $event) }}"
-
-
-
-                                    class="ep-action ep-action-promo"
-
-
-
-                                >
-
-
-
-                                    <i class="fa-solid fa-tags"></i>
-
-
-
-                                    Promo Codes
-
-
-
-                                </a>
-
-
-
-                                {{-- Attendees --}}
-
-
-
-                                <a
-
-
-
-                                    href="{{ route('admin.events.attendees', $event) }}"
-
-
-
-                                    class="ep-action ep-action-attendees"
-
-
-
-                                >
-
-
-
-                                    <i class="fa-solid fa-users"></i>
-
-
-
-                                    Attendees
-
-
-
-                                </a>
-
-
-
-                                {{-- Ticket Design --}}
-                                <a
-                                    href="{{ route('admin.events.ticket-design', $event) }}"
-                                    class="ep-action ep-action-ticket-design"
-                                >
-                                    <i class="fa-solid fa-palette"></i>
-                                    Ticket Design
-                                </a>
-
-                                {{-- Edit --}}
-
-
-
-                                <a
-
-
-
-                                    href="{{ route('admin.events.edit', $event) }}"
-
-
-
-                                    class="ep-action ep-action-edit"
-
-
-
-                                >
-
-
-
-                                    <i class="fa-solid fa-pen-to-square"></i>
-
-
-
-                                    Edit
-
-
-
-                                </a>
-
-
-
-                                {{-- Delete --}}
-
-
-
-                                <form
-
-
-
-                                    action="{{ route('admin.events.destroy', $event) }}"
-
-
-
-                                    method="POST"
-
-
-
-                                    class="inline-block"
-
-
-
-                                    onsubmit="return confirmEventDeletion(event, this);"
-
-
-
-                                >
-
-
-
-                                    @csrf
-
-
-
-                                    @method('DELETE')
-
-
-
-                                    <button
-
-
-
-                                        type="submit"
-
-
-
-                                        class="ep-action ep-action-delete"
-
-
-
-                                    >
-
-
-
+                            </td>
+
+                            {{-- Actions --}}
+                            <td data-label="Actions">
+                                <div class="ep-actions">
+                                    <a href="{{ route('admin.events.attendees', $event) }}" class="ep-btn">
+                                        <i class="fa-solid fa-users"></i> Attendees
+                                    </a>
+                                    <a href="{{ route('admin.events.edit', $event) }}" class="ep-btn edit">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </a>
+                                    <a href="{{ route('admin.events.promo_codes', $event) }}" class="ep-btn ep-icon-btn" data-tip="Promo codes" aria-label="Promo codes">
+                                        <i class="fa-solid fa-tags"></i>
+                                    </a>
+                                    <a href="{{ route('admin.events.ticket-design', $event) }}" class="ep-btn ep-icon-btn" data-tip="Ticket design" aria-label="Ticket design">
+                                        <i class="fa-solid fa-palette"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="ep-btn ep-icon-btn danger"
+                                            data-tip="Delete event"
+                                            aria-label="Delete event"
+                                            data-action="{{ route('admin.events.destroy', $event) }}"
+                                            data-title="{{ $event->title }}"
+                                            onclick="openDeleteModal(this)">
                                         <i class="fa-solid fa-trash"></i>
-
-
-
-                                        Delete
-
-
-
                                     </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="ep-empty">
+                                <div class="ep-empty-icon"><i class="fa-solid fa-calendar-xmark"></i></div>
+                                <h3>No events yet</h3>
+                                <p>Get started by <a href="{{ route('admin.events.create') }}">creating your first event</a>.</p>
+                            </td>
+                        </tr>
+                    @endforelse
 
-
-
-                                </form>
-
-
-
-                            </div>
-
-
-
+                    {{-- Shown by JS when search/filter matches nothing --}}
+                    <tr id="ep-no-results">
+                        <td colspan="6" class="ep-empty">
+                            <div class="ep-empty-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                            <h3>No matching events</h3>
+                            <p>Try a different search or <a href="#" id="ep-reset">clear the filters</a>.</p>
                         </td>
-
-
-
                     </tr>
-
-
-
-                @empty
-
-
-
-                    {{-- =================================================
-
-
-
-                         EMPTY STATE
-
-
-
-                         ================================================= --}}
-
-
-
-                    <tr>
-
-
-
-                        <td
-
-
-
-                            colspan="6"
-
-
-
-                            class="ep-empty"
-
-
-
-                        >
-
-
-
-                            <div class="ep-empty-icon">
-
-
-
-                                <i class="fa-solid fa-calendar-xmark"></i>
-
-
-
-                            </div>
-
-
-
-                            <h3>
-
-
-
-                                No Events Created Yet
-
-
-
-                            </h3>
-
-
-
-                            <p>
-
-
-
-                                Get started by
-
-
-
-                                <a href="{{ route('admin.events.create') }}">
-
-
-
-                                    creating your first event
-
-
-
-                                </a>.
-
-
-
-                            </p>
-
-
-
-                        </td>
-
-
-
-                    </tr>
-
-
-
-                @endforelse
-
-
-
-            </tbody>
-
-
-
-        </table>
-
-
-
+                </tbody>
+            </table>
+        </div>
+
+        @if($events->count() > 0)
+            <div class="ep-footer">
+                Showing <strong id="ep-shown">{{ $events->count() }}</strong> of {{ $events->count() }} events
+            </div>
+        @endif
     </div>
-
-
-
 </div>
 
+{{-- ===== Delete confirmation modal ===== --}}
+<div class="ep-modal" id="ep-delete-modal" role="dialog" aria-modal="true" aria-labelledby="ep-delete-title">
+    <div class="ep-modal-box">
+        <div class="ep-modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3 id="ep-delete-title">Delete this event?</h3>
+        <p>
+            You are about to delete <strong id="ep-delete-name"></strong>.
+            This may permanently remove its tickets, items and related data and cannot be undone.
+        </p>
 
+        <form method="POST" id="ep-delete-form" action="">
+            @csrf
+            @method('DELETE')
 
+            <label for="ep-delete-password">Enter your admin password to confirm</label>
+            <input type="password" id="ep-delete-password" name="admin_password" required autocomplete="current-password">
+
+            <div class="ep-modal-actions">
+                <button type="button" class="ep-btn" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="ep-btn-danger">
+                    <i class="fa-solid fa-trash"></i> Delete event
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-
-
 
 <script>
+(function () {
+    /* ---------- Search, filter, sort ---------- */
+    var body     = document.getElementById('ep-body');
+    var rows     = Array.prototype.slice.call(body.querySelectorAll('tr.ep-row'));
+    var search   = document.getElementById('ep-search');
+    var sort     = document.getElementById('ep-sort');
+    var tabs     = document.querySelectorAll('#ep-tabs .ep-tab');
+    var noResult = document.getElementById('ep-no-results');
+    var shown    = document.getElementById('ep-shown');
+    var filter   = 'all';
 
+    function apply() {
+        var q = (search.value || '').trim().toLowerCase();
+        var visible = 0;
 
+        rows.forEach(function (row) {
+            var okStatus = filter === 'all' || row.dataset.status === filter;
+            var okSearch = !q || row.dataset.search.indexOf(q) !== -1;
+            var show = okStatus && okSearch;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
 
-function confirmEventDeletion(event, form) {
-
-
-
-    event.preventDefault();
-
-
-
-    if (!window.confirm(
-
-
-
-        'Are you sure you want to delete this event? This action may permanently remove its related data and cannot be undone.'
-
-
-
-    )) {
-
-
-
-        return false;
-
-
-
+        if (shown) shown.textContent = visible;
+        noResult.style.display = (rows.length && visible === 0) ? 'table-row' : 'none';
     }
 
-
-
-    const adminPassword = window.prompt(
-
-
-
-        'Admin password verification required.\n\nEnter your password to confirm event deletion:'
-
-
-
-    );
-
-
-
-    if (adminPassword === null || adminPassword.trim() === '') {
-
-
-
-        window.alert('Password verification was cancelled. The event was not deleted.');
-
-
-
-        return false;
-
-
-
+    function applySort() {
+        var mode = sort.value;
+        var sorted = rows.slice().sort(function (a, b) {
+            if (mode === 'date-asc')  return a.dataset.date - b.dataset.date;
+            if (mode === 'date-desc') return b.dataset.date - a.dataset.date;
+            if (mode === 'name')      return a.dataset.name.localeCompare(b.dataset.name);
+            return a.dataset.index - b.dataset.index;
+        });
+        sorted.forEach(function (row) { body.insertBefore(row, noResult); });
     }
 
-
-
-    let passwordInput = form.querySelector('input[name="admin_password"]');
-
-
-
-    if (!passwordInput) {
-
-
-
-        passwordInput = document.createElement('input');
-
-
-
-        passwordInput.type = 'hidden';
-
-
-
-        passwordInput.name = 'admin_password';
-
-
-
-        form.appendChild(passwordInput);
-
-
-
+    if (rows.length) {
+        search.addEventListener('input', apply);
+        sort.addEventListener('change', applySort);
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                filter = tab.dataset.filter;
+                apply();
+            });
+        });
+        document.getElementById('ep-reset').addEventListener('click', function (e) {
+            e.preventDefault();
+            search.value = '';
+            filter = 'all';
+            tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.filter === 'all'); });
+            apply();
+        });
     }
 
+    /* ---------- Delete modal ---------- */
+    var modal = document.getElementById('ep-delete-modal');
+    var form  = document.getElementById('ep-delete-form');
+    var pwd   = document.getElementById('ep-delete-password');
+    var name  = document.getElementById('ep-delete-name');
 
+    window.openDeleteModal = function (btn) {
+        form.action = btn.dataset.action;
+        name.textContent = btn.dataset.title;
+        pwd.value = '';
+        modal.classList.add('open');
+        setTimeout(function () { pwd.focus(); }, 50);
+    };
 
-    passwordInput.value = adminPassword;
+    window.closeDeleteModal = function () {
+        modal.classList.remove('open');
+        pwd.value = '';
+    };
 
-
-
-    form.submit();
-
-
-
-    return false;
-
-
-
-}
-
-
-
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeDeleteModal(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDeleteModal(); });
+})();
 </script>
-
-
 
 @endsection

@@ -2,46 +2,52 @@
 EVENT PLUS HEADER
 ========================================================= --}}
 
-<header class="main_header_area position-absolute w-100">
+@php
+    $isHome = request()->is('/');
+@endphp
 
-    <div class="header_menu" id="header_menu">
+<header class="eh">
+
+    <div class="eh__bar" id="header_menu">
 
         <div class="container">
 
-            <nav class="navbar navbar-expand-lg py-2">
+            <nav class="eh__nav" aria-label="Main">
 
-                <div class="d-flex align-items-center justify-content-between w-100">
+                {{-- LOGO --}}
+                <a href="{{ url('/') }}" class="eh__brand" aria-label="Event Plus home">
 
-                    {{-- LEFT SIDE: LOGO + HOME BUTTON --}}
+                    <img
+                        src="{{ asset('assets/img/logo/Eventplus.png') }}"
+                        alt="Event Plus"
+                        class="header-logo-img"
+                        decoding="async"
+                    >
 
-                    <div class="d-flex align-items-center gap-3">
+                </a>
 
-                        <a href="{{ url('/') }}"
-                           class="navbar-brand m-0 d-flex align-items-center">
+                {{-- LINKS --}}
+                <ul class="eh__links">
 
-                            <img
-                                src="{{ asset('assets/img/logo/Eventplus.png') }}"
-                                alt="Event Plus"
-                                class="header-logo-img"
-                            >
-
+                    <li>
+                        <a
+                            href="{{ url('/') }}"
+                            class="eh__link eventplus-home-link {{ $isHome ? 'is-active' : '' }}"
+                            @if($isHome) aria-current="page" @endif
+                        >
+                            <i class="fas fa-home" aria-hidden="true"></i>
+                            <span>Home</span>
                         </a>
+                    </li>
 
-                        <a class="nav-link eventplus-home-link"
-                           href="{{ url('/') }}">
-
-                            <i class="fa-solid fa-house me-2"></i>
-                            Home
-
+                    <li>
+                        <a href="{{ url('/') }}#events-section" class="eh__link">
+                            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                            <span>Events</span>
                         </a>
+                    </li>
 
-                    </div>
-
-                    {{-- RIGHT SIDE (Optional placeholder for future nav items) --}}
-
-                    <div></div>
-
-                </div>
+                </ul>
 
             </nav>
 
@@ -58,92 +64,171 @@ EVENT PLUS HEADER STYLE
 
 <style>
 
-    .main_header_area {
-        z-index: 9999;
-        top: 0;
-        left: 0;
-        right: 0;
+    :root {
+        --eh-height: 72px;
     }
 
-    .header_menu {
+    /* The header sits on top of each page's dark hero */
+    .eh {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        z-index: 9999;
         width: 100%;
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(14px);
+    }
+
+    .eh__bar {
+        background: rgba(23, 18, 43, 0.72);
         -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    /* LOGO */
+    .eh__nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: var(--eh-height);
+    }
+
+    /* ---------- Logo ---------- */
+
+    .eh__brand {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 8px;
+    }
 
     .header-logo-img {
-        height: 70px;
+        display: block;
         width: auto;
+        height: 52px;
         object-fit: contain;
         border-radius: 6px;
 
-        /* Hides white background of logo image over dark header */
+        /* Hides the white background of the logo image over the dark header.
+           A transparent PNG would make this line unnecessary. */
         mix-blend-mode: lighten;
     }
 
-    /* HOME BUTTON */
+    /* ---------- Links ---------- */
 
-    .eventplus-home-link {
-        position: relative;
-        display: inline-flex !important;
+    .eh__links {
+        display: flex;
         align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
 
-        color: #ffffff !important;
-
-        font-size: 15px;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-
-        padding: 8px 18px !important;
-
+    .eh__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 2.75rem;
+        padding: 0.55rem 1.1rem;
+        border: 1px solid transparent;
         border-radius: 999px;
-
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-
-        transition: all 0.3s ease;
+        color: rgba(255, 255, 255, 0.88) !important;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1;
+        text-decoration: none !important;
+        transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease,
+            color 0.2s ease;
     }
 
-    .eventplus-home-link i {
-        font-size: 14px;
-        transition: transform 0.3s ease;
+    .eh__link i {
+        font-size: 0.85rem;
+        opacity: 0.85;
     }
 
-    .eventplus-home-link:hover {
-        color: #ffffff !important;
+    .eh__link:hover {
+        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff !important;
+    }
 
-        background: linear-gradient(
-            135deg,
-            #ec4899,
-            #8b5cf6
-        );
-
+    .eh__link.is-active {
         border-color: transparent;
-
-        box-shadow: 0 6px 20px rgba(236, 72, 153, 0.3);
-
-        transform: translateY(-1px);
+        background: #fff;
+        color: #17122b !important;
     }
 
-    .eventplus-home-link:hover i {
-        transform: translateY(-1px);
+    .eh__link.is-active i {
+        color: #db2777;
+        opacity: 1;
     }
 
-    @media (max-width: 767px) {
+    .eh__link:focus-visible,
+    .eh__brand:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+    }
+
+    /* ---------- Small screens ---------- */
+
+    @media (max-width: 575px) {
+
+        :root {
+            --eh-height: 64px;
+        }
 
         .header-logo-img {
-            height: 77px;
+            height: 44px;
         }
 
-        .eventplus-home-link {
-            font-size: 14px;
-            padding: 7px 14px !important;
+        .eh__link {
+            padding: 0.5rem 0.85rem;
+            font-size: 0.9rem;
         }
 
+    }
+
+    @media (max-width: 360px) {
+
+        /* Icons only on very narrow phones */
+        .eh__link span {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+        }
+
+        .eh__link {
+            padding: 0.6rem 0.8rem;
+        }
+
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+        .eh__link {
+            transition: none;
+        }
+
+    }
+
+
+    /* =========================================================
+       HERO OFFSET
+       The header floats over the page, so heroes that start at
+       the very top need room underneath it.
+    ========================================================= */
+
+    body .ev-hero,
+    body .ww-hero,
+    body .rg-hero,
+    body .pay-hero,
+    body .suc-hero {
+        padding-top: calc(var(--eh-height) + clamp(1.25rem, 3vw, 2rem));
     }
 
 </style>

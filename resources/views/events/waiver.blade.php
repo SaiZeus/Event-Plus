@@ -4,1184 +4,267 @@
 
 @section('content')
 
-{{-- Fallback link to ensure Font Awesome 6 loads if missing from layouts.master --}}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+@php
+    $date    = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+    $hasTime = $date && $date->format('His') !== '000000';
 
-<style>
-    /* =========================================================
-       PREMIUM EVENTEN-INSPIRED WAIVER PAGE
-       Frontend styling only — Laravel logic unchanged
-    ========================================================= */
+    $participants = collect($attendees ?? [])->pluck('full_name')->filter()->values();
 
-    .event-waiver-page {
-        --ew-navy: #100b2e;
-        --ew-navy-2: #17113f;
-        --ew-purple: #241452;
-        --ew-pink: #ff2f92;
-        --ew-pink-dark: #e51d7d;
-        --ew-pink-soft: #fff0f8;
-        --ew-lavender: #f7f3ff;
-        --ew-lavender-2: #eee8ff;
-        --ew-text: #17132f;
-        --ew-muted: #716c82;
-        --ew-border: rgba(34, 24, 76, .10);
+    $documents = array_filter([
+        ['file' => $event->english_waiver,  'title' => 'English waiver'],
+        ['file' => $event->burmese_waiver,  'title' => 'Burmese waiver'],
+        ['file' => $event->english_consent, 'title' => 'English consent form'],
+        ['file' => $event->burmese_consent, 'title' => 'Burmese consent form'],
+    ], fn ($doc) => ! empty($doc['file']));
+@endphp
 
-        position: relative;
-        overflow: hidden;
-        min-height: 100vh;
-        background:
-            radial-gradient(circle at 5% 10%, rgba(255, 47, 146, .08), transparent 24%),
-            radial-gradient(circle at 95% 15%, rgba(125, 79, 255, .10), transparent 26%),
-            linear-gradient(180deg, #fbfaff 0%, #f4f0ff 100%);
-        color: var(--ew-text);
-    }
+<div class="ww">
 
-    /* =========================================================
-       DECORATIVE BACKGROUND
-    ========================================================= */
+    {{-- =========================================================
+    HERO
+    ========================================================= --}}
 
-    .event-waiver-page::before {
-        content: "";
-        position: absolute;
-        width: 520px;
-        height: 520px;
-        border-radius: 50%;
-        background: rgba(255, 47, 146, .055);
-        top: -250px;
-        right: -180px;
-        filter: blur(2px);
-        pointer-events: none;
-    }
+    <header class="ww-hero">
 
-    .event-waiver-page::after {
-        content: "";
-        position: absolute;
-        width: 420px;
-        height: 420px;
-        border-radius: 50%;
-        background: rgba(98, 62, 220, .06);
-        bottom: -220px;
-        left: -180px;
-        pointer-events: none;
-    }
+        <div class="container">
 
-    .event-waiver-page .container {
-        position: relative;
-        z-index: 2;
-        max-width: 1180px;
-    }
+            <a href="{{ route('events.show', $event) }}" class="ww-back">
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                <span>Back to event</span>
+            </a>
 
-    /* =========================================================
-       TOP EVENT HEADER
-    ========================================================= */
+            <ol class="ww-steps" aria-label="Registration progress">
 
-    .waiver-hero {
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 34px;
-        min-height: 330px;
-        border-radius: 0 0 42px 42px;
-        background:
-            radial-gradient(circle at 85% 20%, rgba(255, 47, 146, .30), transparent 28%),
-            radial-gradient(circle at 20% 100%, rgba(112, 74, 255, .24), transparent 34%),
-            linear-gradient(125deg, #0d0927 0%, #18103e 48%, #291054 100%);
-        box-shadow: 0 25px 65px rgba(16, 11, 46, .18);
-    }
+                <li class="is-done">
+                    <span class="ww-steps__n" aria-hidden="true"><i class="fas fa-check"></i></span>
+                    Tickets
+                </li>
 
-    .waiver-hero::before {
-        content: "";
-        position: absolute;
-        width: 480px;
-        height: 480px;
-        right: -140px;
-        top: -260px;
-        border: 1px solid rgba(255, 255, 255, .12);
-        border-radius: 50%;
-    }
+                <li class="is-done">
+                    <span class="ww-steps__n" aria-hidden="true"><i class="fas fa-check"></i></span>
+                    Participant details
+                </li>
 
-    .waiver-hero::after {
-        content: "";
-        position: absolute;
-        width: 700px;
-        height: 180px;
-        left: -100px;
-        bottom: -130px;
-        background: rgba(255, 255, 255, .045);
-        border-radius: 50%;
-        transform: rotate(-8deg);
-    }
+                <li class="is-current" aria-current="step">
+                    <span class="ww-steps__n" aria-hidden="true">3</span>
+                    Waiver
+                </li>
 
-    .waiver-hero-inner {
-        position: relative;
-        z-index: 2;
-        max-width: 1180px;
-        min-height: 330px;
-        margin: 0 auto;
-        padding: 60px 30px 75px;
-        display: flex;
-        align-items: center;
-    }
+            </ol>
 
-    .waiver-hero-content {
-        max-width: 850px;
-    }
+            <h1 class="ww-title">Review and accept the waiver</h1>
 
-    .event-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: 9px;
-        margin-bottom: 17px;
-        padding: 8px 14px;
-        border: 1px solid rgba(255, 255, 255, .14);
-        border-radius: 50px;
-        background: rgba(255, 255, 255, .07);
-        color: #fff;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: .16em;
-        text-transform: uppercase;
-        backdrop-filter: blur(10px);
-    }
-
-    .event-kicker i {
-        color: #ff5fae;
-    }
-
-    .waiver-hero h1 {
-        margin: 0 0 15px;
-        color: #fff;
-        font-size: clamp(2.2rem, 5vw, 4.4rem);
-        line-height: .98;
-        font-weight: 900;
-        letter-spacing: -.045em;
-    }
-
-    .waiver-hero h1 span {
-        color: #ff4da4;
-    }
-
-    .waiver-hero-description {
-        max-width: 700px;
-        margin: 0;
-        color: rgba(255, 255, 255, .72);
-        font-size: 15px;
-        line-height: 1.7;
-    }
-
-    /* =========================================================
-       MAIN CONTENT
-    ========================================================= */
-
-    .waiver-content {
-        padding: 0 0 80px;
-    }
-
-    .waiver-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
-        gap: 28px;
-        align-items: start;
-    }
-
-    /* =========================================================
-       MAIN CARD
-    ========================================================= */
-
-    .waiver-card {
-        position: relative;
-        overflow: hidden;
-        background: rgba(255, 255, 255, .96);
-        border: 1px solid rgba(38, 25, 82, .08);
-        border-radius: 28px !important;
-        padding: 36px;
-        box-shadow:
-            0 25px 70px rgba(35, 20, 82, .08),
-            0 3px 12px rgba(35, 20, 82, .035);
-    }
-
-    .waiver-card::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(90deg, var(--ew-pink), #9c5cff);
-    }
-
-    .section-eyebrow {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        margin-bottom: 10px;
-        color: var(--ew-pink-dark);
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-    }
-
-    .section-eyebrow::before {
-        content: "";
-        width: 28px;
-        height: 3px;
-        border-radius: 5px;
-        background: var(--ew-pink);
-    }
-
-    .waiver-card h2 {
-        margin-bottom: 8px;
-        color: var(--ew-navy);
-        font-size: clamp(1.65rem, 3vw, 2.35rem);
-        line-height: 1.1;
-        font-weight: 900;
-        letter-spacing: -.035em;
-    }
-
-    .event-name {
-        margin-bottom: 28px;
-        color: var(--ew-muted);
-        font-size: 14px;
-    }
-
-    .event-name strong {
-        color: var(--ew-navy);
-        font-weight: 800;
-    }
-
-    /* =========================================================
-       ALERT
-    ========================================================= */
-
-    .waiver-card .alert {
-        border: 0 !important;
-        border-radius: 17px !important;
-        box-shadow: none;
-    }
-
-    /* =========================================================
-       DOCUMENT DOWNLOADS
-    ========================================================= */
-
-    .documents-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        margin-bottom: 14px;
-    }
-
-    .documents-title h6 {
-        margin: 0;
-        color: var(--ew-navy);
-        font-size: 14px;
-        font-weight: 850;
-    }
-
-    .documents-title span {
-        color: var(--ew-muted);
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .document-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 30px;
-    }
-
-    .pdf-btn {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 13px;
-        min-height: 68px;
-        padding: 12px 15px;
-        border: 1px solid var(--ew-border);
-        border-radius: 17px;
-        background: #fff;
-        color: var(--ew-navy);
-        text-decoration: none;
-        box-shadow: 0 7px 20px rgba(35, 20, 82, .035);
-        transition:
-            transform .25s ease,
-            box-shadow .25s ease,
-            border-color .25s ease,
-            background .25s ease;
-    }
-
-    .pdf-btn:hover {
-        transform: translateY(-3px);
-        border-color: rgba(255, 47, 146, .35);
-        background: #fff7fb;
-        color: var(--ew-navy);
-        box-shadow: 0 14px 30px rgba(255, 47, 146, .10);
-    }
-
-    .pdf-icon {
-        width: 40px;
-        height: 40px;
-        flex: 0 0 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: #fff0f4;
-        color: #ef315f;
-        font-size: 17px;
-    }
-
-    .pdf-btn-content {
-        min-width: 0;
-    }
-
-    .pdf-btn-title {
-        display: block;
-        color: var(--ew-navy);
-        font-size: 12px;
-        font-weight: 850;
-        line-height: 1.35;
-    }
-
-    .pdf-btn-subtitle {
-        display: block;
-        margin-top: 2px;
-        color: var(--ew-muted);
-        font-size: 10px;
-        font-weight: 600;
-    }
-
-    .pdf-arrow {
-        margin-left: auto;
-        color: #b4adbf;
-        transition: transform .2s ease, color .2s ease;
-    }
-
-    .pdf-btn:hover .pdf-arrow {
-        color: var(--ew-pink);
-        transform: translateX(3px);
-    }
-
-    /* =========================================================
-       TERMS BOX
-    ========================================================= */
-
-    .terms-section {
-        margin-top: 5px;
-    }
-
-    .terms-heading {
-        margin-bottom: 12px;
-        color: var(--ew-navy);
-        font-size: 14px;
-        font-weight: 850;
-    }
-
-    .rules-box {
-        position: relative;
-        padding: 21px 23px;
-        border: 1px solid rgba(113, 88, 183, .12);
-        border-radius: 20px;
-        background:
-            linear-gradient(135deg, #faf8ff 0%, #f4efff 100%);
-        max-height: 245px;
-        overflow-y: auto;
-    }
-
-    .rules-box::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 20px;
-        bottom: 20px;
-        width: 3px;
-        border-radius: 10px;
-        background: linear-gradient(180deg, var(--ew-pink), #8d5cff);
-    }
-
-    .rules-box ol {
-        color: #696277;
-        font-size: 13px;
-        line-height: 1.85;
-    }
-
-    .rules-box li {
-        padding-left: 5px;
-        margin-bottom: 6px;
-    }
-
-    .rules-box li:last-child {
-        margin-bottom: 0;
-    }
-
-    /* =========================================================
-       AGREEMENT
-    ========================================================= */
-
-    .agreement-area {
-        margin-top: 26px;
-        padding: 20px;
-        border: 1px solid rgba(255, 47, 146, .13);
-        border-radius: 21px;
-        background: linear-gradient(135deg, #fff8fc 0%, #f8f3ff 100%);
-    }
-
-    .waiver-checkbox-box {
-        padding: 0;
-        border: 0;
-        background: transparent;
-    }
-
-    .waiver-checkbox-box .form-check {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .waiver-checkbox-box .form-check-input {
-        width: 21px;
-        height: 21px;
-        flex: 0 0 21px;
-        margin-top: 1px;
-        border: 2px solid #d8d0e4;
-        border-radius: 6px;
-        cursor: pointer;
-        box-shadow: none;
-    }
-
-    .waiver-checkbox-box .form-check-input:checked {
-        background-color: var(--ew-pink);
-        border-color: var(--ew-pink);
-        box-shadow: 0 4px 12px rgba(255, 47, 146, .25);
-    }
-
-    .waiver-checkbox-box label {
-        color: #29233b;
-        font-size: 13px;
-        line-height: 1.65;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    /* =========================================================
-       BUTTONS
-    ========================================================= */
-
-    .waiver-actions {
-        display: grid;
-        grid-template-columns: .7fr 1.3fr;
-        gap: 12px;
-        margin-top: 20px;
-    }
-
-    .payment-btn,
-    .btn-back-outline {
-        min-height: 54px;
-        border-radius: 15px !important;
-        font-size: 13px;
-        font-weight: 900;
-        letter-spacing: .01em;
-        transition:
-            transform .25s ease,
-            box-shadow .25s ease,
-            background .25s ease,
-            border-color .25s ease;
-    }
-
-    .payment-btn {
-        border: 0;
-        background:
-            linear-gradient(135deg, #ff3193 0%, #e81d7f 100%);
-        color: #fff !important;
-        box-shadow: 0 12px 28px rgba(255, 47, 146, .27);
-    }
-
-    .payment-btn:hover:not(:disabled) {
-        transform: translateY(-3px);
-        background:
-            linear-gradient(135deg, #ff48a0 0%, #ed207f 100%);
-        box-shadow: 0 17px 34px rgba(255, 47, 146, .34);
-    }
-
-    .payment-btn:active:not(:disabled) {
-        transform: translateY(-1px);
-    }
-
-    .payment-btn:disabled {
-        background: #ded8e8 !important;
-        color: #958ca3 !important;
-        box-shadow: none !important;
-        opacity: .75;
-        cursor: not-allowed;
-        transform: none !important;
-    }
-
-    .btn-back-outline {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #dcd5e8;
-        background: #fff;
-        color: #4e465d;
-        text-decoration: none;
-    }
-
-    .btn-back-outline:hover {
-        transform: translateY(-2px);
-        border-color: #c7bdd8;
-        background: #faf8ff;
-        color: var(--ew-navy);
-        box-shadow: 0 8px 20px rgba(35, 20, 82, .07);
-    }
-
-    /* =========================================================
-       SIDE EVENT CARD
-    ========================================================= */
-
-    .event-side-card {
-        position: sticky;
-        top: 25px;
-        overflow: hidden;
-        border-radius: 28px;
-        background: var(--ew-navy);
-        color: #fff;
-        box-shadow: 0 25px 60px rgba(16, 11, 46, .16);
-    }
-
-    .event-side-top {
-        position: relative;
-        min-height: 205px;
-        padding: 26px;
-        overflow: hidden;
-        background:
-            radial-gradient(circle at 85% 15%, rgba(255, 47, 146, .32), transparent 35%),
-            radial-gradient(circle at 5% 100%, rgba(120, 81, 255, .32), transparent 42%),
-            linear-gradient(145deg, #171039, #291352);
-    }
-
-    .event-side-top::before {
-        content: "";
-        position: absolute;
-        width: 230px;
-        height: 230px;
-        right: -110px;
-        bottom: -130px;
-        border: 1px solid rgba(255, 255, 255, .13);
-        border-radius: 50%;
-    }
-
-    .side-label {
-        position: relative;
-        z-index: 2;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 11px;
-        border-radius: 50px;
-        background: rgba(255, 255, 255, .09);
-        color: rgba(255, 255, 255, .8);
-        font-size: 9px;
-        font-weight: 900;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-    }
-
-    .side-label i {
-        color: #ff4da4;
-    }
-
-    .event-side-top h3 {
-        position: relative;
-        z-index: 2;
-        margin: 19px 0 0;
-        color: #fff;
-        font-size: 25px;
-        line-height: 1.15;
-        font-weight: 900;
-        letter-spacing: -.025em;
-    }
-
-    .event-side-body {
-        padding: 23px;
-        background: #fff;
-        color: var(--ew-text);
-    }
-
-    .event-info-item {
-        display: flex;
-        align-items: center;
-        gap: 13px;
-        padding: 13px 0;
-        border-bottom: 1px solid #eeeaf4;
-    }
-
-    .event-info-item:first-child {
-        padding-top: 0;
-    }
-
-    .event-info-item:last-child {
-        padding-bottom: 0;
-        border-bottom: 0;
-    }
-
-    .event-info-icon {
-        width: 39px;
-        height: 39px;
-        flex: 0 0 39px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: #fff0f8;
-        color: var(--ew-pink);
-        font-size: 14px;
-    }
-
-    .event-info-label {
-        display: block;
-        margin-bottom: 2px;
-        color: #9a93a4;
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-    }
-
-    .event-info-value {
-        display: block;
-        color: var(--ew-navy);
-        font-size: 12px;
-        font-weight: 800;
-        line-height: 1.35;
-    }
-
-    .side-note {
-        margin-top: 20px;
-        padding: 14px;
-        border-radius: 15px;
-        background: #f7f4ff;
-        color: #70687e;
-        font-size: 11px;
-        line-height: 1.6;
-    }
-
-    .side-note i {
-        margin-right: 5px;
-        color: var(--ew-pink);
-    }
-
-    /* =========================================================
-       WAVE
-    ========================================================= */
-
-    .waiver-wave {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: -1px;
-        height: 70px;
-        z-index: 3;
-        pointer-events: none;
-    }
-
-    .waiver-wave svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
-
-    /* =========================================================
-       MOBILE
-    ========================================================= */
-
-    @media (max-width: 991.98px) {
-        .waiver-layout {
-            grid-template-columns: 1fr;
-        }
-
-        .event-side-card {
-            position: relative;
-            top: auto;
-            order: -1;
-        }
-
-        .event-side-top {
-            min-height: 180px;
-        }
-    }
-
-    @media (max-width: 767.98px) {
-        .waiver-hero {
-            margin-bottom: 22px;
-            border-radius: 0 0 28px 28px;
-        }
-
-        .waiver-hero-inner {
-            min-height: 290px;
-            padding: 45px 20px 70px;
-        }
-
-        .waiver-hero h1 {
-            font-size: 2.45rem;
-        }
-
-        .waiver-hero-description {
-            font-size: 13px;
-        }
-
-        .waiver-content {
-            padding-bottom: 45px;
-        }
-
-        .waiver-card {
-            padding: 23px 18px;
-            border-radius: 22px !important;
-        }
-
-        .document-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .waiver-actions {
-            grid-template-columns: 1fr;
-        }
-
-        .event-side-card {
-            border-radius: 22px;
-        }
-
-        .event-side-top {
-            min-height: 155px;
-            padding: 22px;
-        }
-
-        .event-side-top h3 {
-            font-size: 21px;
-        }
-
-        .event-side-body {
-            padding: 19px;
-        }
-
-        .rules-box {
-            padding: 18px;
-            max-height: 220px;
-        }
-    }
-
-    @media (max-width: 420px) {
-        .waiver-hero h1 {
-            font-size: 2.1rem;
-        }
-
-        .waiver-card h2 {
-            font-size: 1.55rem;
-        }
-
-        .pdf-btn {
-            min-height: 62px;
-        }
-    }
-
-    /* =========================================================
-       SUBTLE MOTION
-    ========================================================= */
-
-    @media (prefers-reduced-motion: no-preference) {
-        .waiver-card,
-        .event-side-card {
-            animation: waiverFadeUp .55s ease both;
-        }
-
-        .event-side-card {
-            animation-delay: .08s;
-        }
-
-        @keyframes waiverFadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(14px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    }
-</style>
-
-{{-- =========================================================
-PREMIUM EVENT HERO
-========================================================= --}}
-
-<section class="waiver-hero">
-
-    <div class="waiver-hero-inner">
-
-        <div class="waiver-hero-content">
-
-            <div class="event-kicker">
-                <i class="fa-solid fa-ticket"></i>
-                Registration Agreement
-            </div>
-
-            <h1>
-                One final step<br>
-                <span>before your event.</span>
-            </h1>
-
-            <p class="waiver-hero-description">
-                Please review the event terms, waiver and consent information
-                before completing your registration.
+            <p class="ww-lead">
+                Read the event documents and terms below, then confirm to continue
+                your registration for <strong>{{ $event->title }}</strong>.
             </p>
 
         </div>
 
-    </div>
+    </header>
 
-    <div class="waiver-wave">
-        <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
-            <path
-                d="M0,65 C180,115 340,15 540,48 C750,82 860,105 1080,48 C1240,8 1340,25 1440,50 L1440,100 L0,100 Z"
-                fill="#fbfaff">
-            </path>
-        </svg>
-    </div>
 
-</section>
+    {{-- =========================================================
+    MAIN
+    ========================================================= --}}
 
-{{-- =========================================================
-MAIN CONTENT
-========================================================= --}}
+    <main class="ww-main">
 
-<section class="event-waiver-page waiver-content">
+        <div class="container">
 
-    <div class="container">
+            <div class="ww-layout">
 
-        <div class="waiver-layout">
+                {{-- =================================================
+                     WAIVER CARD
+                ================================================== --}}
 
-            {{-- =================================================
-                 MAIN WAIVER CONTENT
-            ================================================== --}}
+                <div class="ww-card">
 
-            <div class="waiver-card">
+                    {{-- ERRORS --}}
+                    @if ($errors->any())
+                        <div class="ww-callout" role="alert">
 
-                {{-- ERROR MESSAGE --}}
+                            <span class="ww-callout__icon" aria-hidden="true">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </span>
 
-                @if ($errors->any())
-                    <div class="alert alert-danger mb-4 p-3 rounded-3">
+                            <div>
+                                <h2>Please fix the following</h2>
 
-                        <h6 class="font-weight-bold mb-2">
-                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                            Please fix the following issues:
-                        </h6>
+                                <ul>
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
 
-                        <ul class="mb-0 ps-3 text-sm">
+                        </div>
+                    @endif
 
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
+
+                    {{-- DOCUMENTS --}}
+                    <section aria-labelledby="ww-docs-title">
+
+                        <h2 class="ww-h" id="ww-docs-title">Event documents</h2>
+
+                        @if(count($documents))
+
+                            <p class="ww-sub">Each one opens as a PDF in a new tab.</p>
+
+                            <div class="ww-docs">
+
+                                @foreach($documents as $doc)
+                                    <a
+                                        href="{{ asset('storage/' . $doc['file']) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="ww-doc"
+                                    >
+                                        <span class="ww-doc__icon" aria-hidden="true">
+                                            <i class="far fa-file-pdf"></i>
+                                        </span>
+
+                                        <span class="ww-doc__text">
+                                            <span class="ww-doc__title">{{ $doc['title'] }}</span>
+                                            <span class="ww-doc__meta">PDF, opens in a new tab</span>
+                                        </span>
+
+                                        <i class="fas fa-chevron-right ww-doc__go" aria-hidden="true"></i>
+                                    </a>
+                                @endforeach
+
+                            </div>
+
+                        @else
+
+                            <p class="ww-sub">
+                                The organiser hasn't uploaded any documents for this event.
+                                The terms below apply.
+                            </p>
+
+                        @endif
+
+                    </section>
+
+
+                    {{-- TERMS --}}
+                    <section aria-labelledby="ww-terms-title" class="ww-terms">
+
+                        <h2 class="ww-h" id="ww-terms-title">Terms in short</h2>
+
+                        <ul class="ww-rules">
+
+                            <li>
+                                <i class="fas fa-check" aria-hidden="true"></i>
+                                <span>
+                                    Follow the event guidelines and the marshals' instructions at all times.
+                                </span>
+                            </li>
+
+                            <li>
+                                <i class="fas fa-check" aria-hidden="true"></i>
+                                <span>
+                                    Registrations are non-refundable and non-transferable under any circumstances.
+                                </span>
+                            </li>
+
+                            <li>
+                                <i class="fas fa-check" aria-hidden="true"></i>
+                                <span>
+                                    By agreeing below, you release the event organisers from liability for injury
+                                    or loss of property during participation, and you consent to media and data
+                                    processing terms where they apply.
+                                </span>
+                            </li>
 
                         </ul>
 
-                    </div>
-                @endif
-
-
-                {{-- HEADER --}}
-
-                <div class="section-eyebrow">
-                    Participant agreement
-                </div>
-
-                <h2>
-                    Terms, Waiver & Consent
-                </h2>
-
-                <p class="event-name">
-                    You're registering for
-                    <strong>{{ $event->title }}</strong>
-                </p>
-
-
-                {{-- =================================================
-                     DOWNLOADABLE DOCUMENTS
-                ================================================== --}}
-
-                @if($event->english_waiver || $event->burmese_waiver || $event->english_consent || $event->burmese_consent)
-
-                    <div class="documents-title">
-
-                        <h6>
-                            <i class="fa-regular fa-file-pdf me-2"></i>
-                            Official event documents
-                        </h6>
-
-                        <span>
-                            PDF documents
-                        </span>
-
-                    </div>
-
-
-                    <div class="document-grid">
-
-                        @if($event->english_waiver)
-
-                            <a href="{{ asset('storage/' . $event->english_waiver) }}"
-                               target="_blank"
-                               class="pdf-btn">
-
-                                <span class="pdf-icon">
-                                    <i class="fa-regular fa-file-pdf"></i>
-                                </span>
-
-                                <span class="pdf-btn-content">
-
-                                    <span class="pdf-btn-title">
-                                        English Waiver
-                                    </span>
-
-                                    <span class="pdf-btn-subtitle">
-                                        Open PDF document
-                                    </span>
-
-                                </span>
-
-                                <i class="fa-solid fa-arrow-right pdf-arrow"></i>
-
-                            </a>
-
-                        @endif
-
-
-                        @if($event->burmese_waiver)
-
-                            <a href="{{ asset('storage/' . $event->burmese_waiver) }}"
-                               target="_blank"
-                               class="pdf-btn">
-
-                                <span class="pdf-icon">
-                                    <i class="fa-regular fa-file-pdf"></i>
-                                </span>
-
-                                <span class="pdf-btn-content">
-
-                                    <span class="pdf-btn-title">
-                                        Burmese Waiver
-                                    </span>
-
-                                    <span class="pdf-btn-subtitle">
-                                        Open PDF document
-                                    </span>
-
-                                </span>
-
-                                <i class="fa-solid fa-arrow-right pdf-arrow"></i>
-
-                            </a>
-
-                        @endif
-
-
-                        @if($event->english_consent)
-
-                            <a href="{{ asset('storage/' . $event->english_consent) }}"
-                               target="_blank"
-                               class="pdf-btn">
-
-                                <span class="pdf-icon">
-                                    <i class="fa-regular fa-file-pdf"></i>
-                                </span>
-
-                                <span class="pdf-btn-content">
-
-                                    <span class="pdf-btn-title">
-                                        English Consent Form
-                                    </span>
-
-                                    <span class="pdf-btn-subtitle">
-                                        Open PDF document
-                                    </span>
-
-                                </span>
-
-                                <i class="fa-solid fa-arrow-right pdf-arrow"></i>
-
-                            </a>
-
-                        @endif
-
-
-                        @if($event->burmese_consent)
-
-                            <a href="{{ asset('storage/' . $event->burmese_consent) }}"
-                               target="_blank"
-                               class="pdf-btn">
-
-                                <span class="pdf-icon">
-                                    <i class="fa-regular fa-file-pdf"></i>
-                                </span>
-
-                                <span class="pdf-btn-content">
-
-                                    <span class="pdf-btn-title">
-                                        Burmese Consent Form
-                                    </span>
-
-                                    <span class="pdf-btn-subtitle">
-                                        Open PDF document
-                                    </span>
-
-                                </span>
-
-                                <i class="fa-solid fa-arrow-right pdf-arrow"></i>
-
-                            </a>
-
-                        @endif
-
-                    </div>
-
-                @endif
-
-
-                {{-- =================================================
-                     TERMS
-                ================================================== --}}
-
-                <div class="terms-section">
-
-                    <div class="terms-heading">
-                        <i class="fa-solid fa-shield-halved me-2"></i>
-                        Terms & Conditions Summary
-                    </div>
-
-                    <div class="rules-box">
-
-                        <ol class="mb-0 ps-3">
-
-                            <li>
-                                Participants must comply with event guidelines
-                                and follow marshal instructions at all times.
-                            </li>
-
-                            <li>
-                                Registrations are non-refundable and
-                                non-transferable under any circumstances.
-                            </li>
-
-                            <li>
-                                By agreeing below, you release event organizers
-                                from liability regarding injury or property loss
-                                during participation, and grant consent for media
-                                and data processing terms where applicable.
-                            </li>
-
-                        </ol>
-
-                    </div>
-
-                </div>
-
-
-                {{-- =================================================
-                     FORM
-                ================================================== --}}
-
-                <form action="{{ route('events.waiver.accept', $event) }}"
-                      method="POST">
-
-                    @csrf
-
-                    <input type="hidden"
-                           name="event_id"
-                           value="{{ $event->id }}">
-
-                    <input type="hidden"
-                           name="promo_code"
-                           value="{{ $promoCode }}">
+                    </section>
 
 
                     {{-- =================================================
-                         ATTENDEE HIDDEN DATA
-                         UNCHANGED
+                         FORM
                     ================================================== --}}
 
-                    @foreach($attendees as $index => $attendee)
+                    <form action="{{ route('events.waiver.accept', $event) }}" method="POST">
 
-                        <input type="hidden" name="attendees[{{ $index }}][ticket_category_id]" value="{{ $attendee['ticket_category_id'] ?? '' }}">
+                        @csrf
 
-                        <input type="hidden" name="attendees[{{ $index }}][full_name]" value="{{ $attendee['full_name'] ?? '' }}">
+                        <input type="hidden" name="event_id" value="{{ $event->id }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][promo_code_id]" value="{{ $attendee['promo_code_id'] ?? '' }}">
+                        <input type="hidden" name="promo_code" value="{{ $promoCode }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][father_name]" value="{{ $attendee['father_name'] ?? '' }}">
+                        {{-- GROUP BUY: keep the chosen deal --}}
+@if(!empty($groupBuyId))
+    <input type="hidden" name="group_buy_id" value="{{ $groupBuyId }}">
+@endif
 
-                        <input type="hidden" name="attendees[{{ $index }}][email]" value="{{ $attendee['email'] ?? '' }}">
+                        {{-- ATTENDEE HIDDEN DATA (UNCHANGED) --}}
+                        @foreach($attendees as $index => $attendee)
 
-                        <input type="hidden" name="attendees[{{ $index }}][phone]" value="{{ $attendee['phone'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][ticket_category_id]" value="{{ $attendee['ticket_category_id'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][viber]" value="{{ $attendee['viber'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][full_name]" value="{{ $attendee['full_name'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][emergency_contact]" value="{{ $attendee['emergency_contact'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][promo_code_id]" value="{{ $attendee['promo_code_id'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][nrc_passport]" value="{{ $attendee['nrc_passport'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][father_name]" value="{{ $attendee['father_name'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][nationality]" value="{{ $attendee['nationality'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][email]" value="{{ $attendee['email'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][country]" value="{{ $attendee['country'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][phone]" value="{{ $attendee['phone'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][gender]" value="{{ $attendee['gender'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][viber]" value="{{ $attendee['viber'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][date_of_birth]" value="{{ $attendee['date_of_birth'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][emergency_contact]" value="{{ $attendee['emergency_contact'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][bib_name]" value="{{ $attendee['bib_name'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][nrc_passport]" value="{{ $attendee['nrc_passport'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][tshirt_size]" value="{{ $attendee['tshirt_size'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][nationality]" value="{{ $attendee['nationality'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][blood_type]" value="{{ $attendee['blood_type'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][country]" value="{{ $attendee['country'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][has_medical_condition]" value="{{ !empty($attendee['has_medical_condition']) ? $attendee['has_medical_condition'] : 'no' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][gender]" value="{{ $attendee['gender'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][medical_details]" value="{{ $attendee['medical_details'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][date_of_birth]" value="{{ $attendee['date_of_birth'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][itra]" value="{{ !empty($attendee['itra']) ? $attendee['itra'] : 'no' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][bib_name]" value="{{ $attendee['bib_name'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][itra_details]" value="{{ $attendee['itra_details'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][tshirt_size]" value="{{ $attendee['tshirt_size'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][address]" value="{{ $attendee['address'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][blood_type]" value="{{ $attendee['blood_type'] ?? '' }}">
 
-                        <input type="hidden" name="attendees[{{ $index }}][experience]" value="{{ $attendee['experience'] ?? '' }}">
+                            <input type="hidden" name="attendees[{{ $index }}][has_medical_condition]" value="{{ !empty($attendee['has_medical_condition']) ? $attendee['has_medical_condition'] : 'no' }}">
 
-                    @endforeach
+                            <input type="hidden" name="attendees[{{ $index }}][medical_details]" value="{{ $attendee['medical_details'] ?? '' }}">
+
+                            <input type="hidden" name="attendees[{{ $index }}][itra]" value="{{ !empty($attendee['itra']) ? $attendee['itra'] : 'no' }}">
+
+                            <input type="hidden" name="attendees[{{ $index }}][itra_details]" value="{{ $attendee['itra_details'] ?? '' }}">
+
+                            <input type="hidden" name="attendees[{{ $index }}][address]" value="{{ $attendee['address'] ?? '' }}">
+
+                            <input type="hidden" name="attendees[{{ $index }}][experience]" value="{{ $attendee['experience'] ?? '' }}">
+
+                        @endforeach
 
 
-                    {{-- =================================================
-                         AGREEMENT CHECKBOX
-                    ================================================== --}}
-
-                    <div class="agreement-area">
-
-                        <div class="waiver-checkbox-box">
+                        {{-- AGREEMENT --}}
+                        <div class="ww-agree">
 
                             <div class="form-check m-0">
 
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       name="agree_waiver"
-                                       id="agree_waiver"
-                                       required>
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="agree_waiver"
+                                    id="agree_waiver"
+                                    required
+                                >
 
-                                <label class="form-check-label font-weight-bold"
-                                       for="agree_waiver">
-
-                                    I have read, understood, and agree to all
-                                    event rules, safety terms, waivers, and
-                                    optional consent forms in English / Burmese.
-
+                                <label class="form-check-label" for="agree_waiver">
+                                    I have read, understood and agree to the event rules, safety terms, waivers and
+                                    any consent forms, in English or Burmese.
                                 </label>
 
                             </div>
@@ -1189,149 +272,792 @@ MAIN CONTENT
                         </div>
 
 
-                        {{-- =================================================
-                             ACTION BUTTONS
-                        ================================================== --}}
+                        {{-- ACTIONS --}}
+                        <div class="ww-actions">
 
-                        <div class="waiver-actions">
-
-                            <a href="{{ route('events.show', $event) }}"
-                               class="btn btn-back-outline w-100">
-
-                                <i class="fa-solid fa-arrow-left me-2"></i>
-                                Back to Event
-
+                            <a href="{{ route('events.show', $event) }}" class="ww-btn ww-btn--outline">
+                                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                                <span>Back to event</span>
                             </a>
 
-
-                            <button type="submit"
-                                    class="btn payment-btn w-100"
-                                    id="btn-proceed"
-                                    disabled>
-
-                                Continue to Registration
-
-                                <i class="fa-solid fa-arrow-right ms-2"></i>
-
+                            <button
+                                type="submit"
+                                class="ww-btn ww-btn--primary payment-btn"
+                                id="btn-proceed"
+                                aria-describedby="waiver-hint"
+                                disabled
+                            >
+                                <span>Continue to registration</span>
+                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
                             </button>
 
                         </div>
 
+                        <p class="ww-hint" id="waiver-hint">Tick the box above to continue.</p>
+
+                    </form>
+
+                </div>
+
+
+                {{-- =================================================
+                     SUMMARY TICKET
+                ================================================== --}}
+
+                <aside class="ww-ticket" aria-label="Your registration">
+
+                    <div class="ww-ticket__top">
+
+                        <p class="ww-ticket__label">You're registering for</p>
+
+                        <h2 class="ww-ticket__title">{{ $event->title }}</h2>
+
+                        <dl class="ww-facts">
+
+                            @if($date)
+                                <div class="ww-fact">
+                                    <span class="ww-fact__icon" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
+                                    <div>
+                                        <dt>Date</dt>
+                                        <dd>{{ $date->format('D, d M Y') }}@if($hasTime), {{ $date->format('g:i A') }}@endif</dd>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if(filled($event->location))
+                                <div class="ww-fact">
+                                    <span class="ww-fact__icon" aria-hidden="true"><i class="fas fa-map-marker-alt"></i></span>
+                                    <div>
+                                        <dt>Location</dt>
+                                        <dd>{{ $event->location }}</dd>
+                                    </div>
+                                </div>
+                            @endif
+
+                        </dl>
+
                     </div>
 
-                </form>
+                    <div class="ww-ticket__perf" aria-hidden="true"></div>
+
+                    <div class="ww-ticket__bottom">
+
+                        <p class="ww-ticket__label">
+                            {{ $participants->count() === 1 ? '1 participant' : $participants->count() . ' participants' }}
+                        </p>
+
+                        @if($participants->isNotEmpty())
+                            <ul class="ww-people">
+                                @foreach($participants as $name)
+                                    <li>
+                                        <i class="fas fa-user" aria-hidden="true"></i>
+                                        <span>{{ $name }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <p class="ww-note">
+                            <i class="fas fa-lock" aria-hidden="true"></i>
+                            <span>Your details are passed securely to the next step once you accept.</span>
+                        </p>
+
+                    </div>
+
+                </aside>
 
             </div>
 
-
-            {{-- =================================================
-                 EVENT INFORMATION CARD
-            ================================================== --}}
-
-            <aside class="event-side-card">
-
-                <div class="event-side-top">
-
-                    <span class="side-label">
-                        <i class="fa-solid fa-star"></i>
-                        Your Event
-                    </span>
-
-                    <h3>
-                        {{ $event->title }}
-                    </h3>
-
-                </div>
-
-
-                <div class="event-side-body">
-
-                    <div class="event-info-item">
-
-                        <span class="event-info-icon">
-                            <i class="fa-regular fa-calendar-days"></i>
-                        </span>
-
-                        <span>
-
-                            <span class="event-info-label">
-                                Event date
-                            </span>
-
-                            <span class="event-info-value">
-                                {{ \Carbon\Carbon::parse($event->event_date)->format('d M Y') }}
-                            </span>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="event-info-item">
-
-                        <span class="event-info-icon">
-                            <i class="fa-solid fa-location-dot"></i>
-                        </span>
-
-                        <span>
-
-                            <span class="event-info-label">
-                                Location
-                            </span>
-
-                            <span class="event-info-value">
-                                {{ $event->location ?? 'Event venue' }}
-                            </span>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="event-info-item">
-
-                        <span class="event-info-icon">
-                            <i class="fa-solid fa-ticket"></i>
-                        </span>
-
-                        <span>
-
-                            <span class="event-info-label">
-                                Registration
-                            </span>
-
-                            <span class="event-info-value">
-                                Complete your agreement
-                            </span>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="side-note">
-
-                        <i class="fa-solid fa-lock"></i>
-
-                        Your registration information is securely
-                        transferred to the next stage after you accept
-                        the agreement.
-
-                    </div>
-
-                </div>
-
-            </aside>
-
         </div>
 
-    </div>
+    </main>
 
-</section>
+</div>
+
+@endsection
+
+
+{{-- =========================================================
+STYLES
+========================================================= --}}
+
+@push('styles')
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+
+<style>
+
+/* =========================================================
+   TOKENS (shared with the home and event pages)
+========================================================= */
+
+.ww {
+    --ww-ink: #17122b;
+    --ww-muted: #6b6580;
+    --ww-pink: #db2777;
+    --ww-pink-dark: #be185d;
+    --ww-violet: #7c3aed;
+    --ww-line: #e6e1f3;
+    --ww-field: #d9d3ea;
+    --ww-bg: #faf8ff;
+    --ww-display: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    color: var(--ww-ink);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.ww-hero {
+    padding: clamp(1.25rem, 3vw, 2rem) 0 clamp(4rem, 8vw, 6rem);
+    background:
+        radial-gradient(55% 90% at 90% 30%, rgba(124, 58, 237, 0.4), transparent 70%),
+        var(--ww-ink);
+    color: #fff;
+}
+
+.ww-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.ww-back:hover {
+    color: #fff;
+}
+
+.ww-back i {
+    font-size: 0.75rem;
+}
+
+.ww-back:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+}
+
+.ww-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    list-style: none;
+}
+
+.ww-steps li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 1rem 0.4rem 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ww-steps__n {
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.ww-steps .is-done .ww-steps__n {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--ww-ink);
+    font-size: 0.7rem;
+}
+
+.ww-steps .is-current {
+    border-color: transparent;
+    background: #fff;
+    color: var(--ww-ink);
+}
+
+.ww-steps .is-current .ww-steps__n {
+    background: var(--ww-pink);
+    color: #fff;
+}
+
+.ww-title {
+    margin: 0 0 1rem;
+    color: #fff;
+    font-family: var(--ww-display);
+    font-size: clamp(2rem, 4.8vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+}
+
+.ww-lead {
+    max-width: 56ch;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+}
+
+.ww-lead strong {
+    color: #fff;
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.ww-main {
+    position: relative;
+    z-index: 3;
+    margin-top: -2rem;
+    padding: clamp(2rem, 5vw, 3rem) 0 clamp(3.5rem, 8vw, 6rem);
+    border-radius: 32px 32px 0 0;
+    background: var(--ww-bg);
+}
+
+.ww-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 350px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.ww-card {
+    padding: clamp(1.25rem, 3.5vw, 2.25rem);
+    border: 1px solid var(--ww-line);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(23, 18, 43, 0.04), 0 12px 28px rgba(23, 18, 43, 0.05);
+}
+
+.ww-h {
+    margin: 0 0 0.5rem;
+    font-family: var(--ww-display);
+    font-size: 1.4rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+.ww-sub {
+    margin: 0 0 1.25rem;
+    color: var(--ww-muted);
+    line-height: 1.6;
+}
+
+
+/* ---------- Errors ---------- */
+
+.ww-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    padding: 1.25rem;
+    border: 1.5px solid #fecdd3;
+    border-radius: 18px;
+    background: #fff1f2;
+}
+
+.ww-callout__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 12px;
+    background: #ffe4e6;
+    color: #e11d48;
+}
+
+.ww-callout h2 {
+    margin: 0 0 0.3rem;
+    font-family: var(--ww-display);
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.ww-callout ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #7f1d33;
+}
+
+
+/* ---------- Documents ---------- */
+
+.ww-docs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.ww-doc {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    min-height: 4.5rem;
+    padding: 0.8rem 1rem;
+    border: 1.5px solid var(--ww-line);
+    border-radius: 16px;
+    background: #fff;
+    color: var(--ww-ink);
+    text-decoration: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.ww-doc:hover {
+    border-color: var(--ww-pink);
+    background: #fff7fb;
+    color: var(--ww-ink);
+    transform: translateY(-2px);
+}
+
+.ww-doc:focus-visible {
+    outline: 3px solid var(--ww-violet);
+    outline-offset: 3px;
+}
+
+.ww-doc__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: #fff0f4;
+    color: #e11d48;
+    font-size: 1.1rem;
+}
+
+.ww-doc__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ww-doc__title {
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.ww-doc__meta {
+    color: var(--ww-muted);
+    font-size: 0.85rem;
+}
+
+.ww-doc__go {
+    margin-left: auto;
+    color: #a39cb5;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.ww-doc:hover .ww-doc__go {
+    color: var(--ww-pink);
+    transform: translateX(3px);
+}
+
+
+/* ---------- Terms ---------- */
+
+.ww-terms {
+    margin-top: 2rem;
+}
+
+.ww-rules {
+    display: grid;
+    gap: 0.9rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ww-rules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    color: #4b4563;
+    line-height: 1.65;
+}
+
+.ww-rules i {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    margin-top: 0.1rem;
+    border-radius: 50%;
+    background: #f3edfc;
+    color: var(--ww-pink);
+    font-size: 0.65rem;
+}
+
+
+/* ---------- Agreement ---------- */
+
+.ww-agree {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    border: 1.5px solid var(--ww-line);
+    border-radius: 18px;
+    background: var(--ww-bg);
+}
+
+.ww-agree .form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 0;
+}
+
+.ww-agree .form-check-input {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0.1rem 0 0;
+    float: none;
+    border: 2px solid #b8b0cc;
+    border-radius: 7px;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.ww-agree .form-check-input:checked {
+    border-color: var(--ww-pink);
+    background-color: var(--ww-pink);
+}
+
+.ww-agree .form-check-input:focus-visible {
+    border-color: var(--ww-violet);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
+    outline: none;
+}
+
+.ww-agree label {
+    color: var(--ww-ink);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.55;
+    cursor: pointer;
+}
+
+
+/* ---------- Buttons ---------- */
+
+.ww-actions {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.ww-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 3.25rem;
+    padding: 0.8rem 1.6rem;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+}
+
+.ww-btn:focus-visible {
+    outline: 3px solid var(--ww-violet);
+    outline-offset: 3px;
+}
+
+.ww-btn i {
+    font-size: 0.8rem;
+}
+
+.ww-btn--primary {
+    background: var(--ww-pink);
+    color: #fff !important;
+    box-shadow: 0 10px 24px rgba(219, 39, 119, 0.3);
+}
+
+.ww-btn--primary:hover:not(:disabled) {
+    background: var(--ww-pink-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(219, 39, 119, 0.4);
+}
+
+.ww-btn--primary:disabled {
+    background: #e4dff0;
+    color: #8a849c !important;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.ww-btn--outline {
+    border-color: var(--ww-ink);
+    color: var(--ww-ink) !important;
+}
+
+.ww-btn--outline:hover {
+    background: var(--ww-ink);
+    color: #fff !important;
+}
+
+.ww-hint {
+    margin: 0.75rem 0 0;
+    color: var(--ww-muted);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.ww-hint[hidden] {
+    display: none;
+}
+
+
+/* =========================================================
+   SUMMARY TICKET
+========================================================= */
+
+.ww-ticket {
+    position: sticky;
+    top: 24px;
+    overflow: hidden;
+    border: 1px solid var(--ww-line);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(23, 18, 43, 0.04), 0 12px 28px rgba(23, 18, 43, 0.06);
+}
+
+.ww-ticket__top,
+.ww-ticket__bottom {
+    padding: 1.5rem;
+}
+
+.ww-ticket__label {
+    margin: 0 0 0.4rem;
+    color: var(--ww-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ww-ticket__title {
+    margin: 0 0 1.25rem;
+    font-family: var(--ww-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+}
+
+.ww-facts {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+}
+
+.ww-fact {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+
+.ww-fact__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 12px;
+    background: #f3edfc;
+    color: var(--ww-pink);
+}
+
+.ww-fact dt {
+    margin: 0;
+    color: var(--ww-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.ww-fact dd {
+    margin: 0.1rem 0 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Perforation with punched notches */
+.ww-ticket__perf {
+    position: relative;
+    height: 0;
+    margin: 0 24px;
+    border-top: 2px dashed rgba(23, 18, 43, 0.2);
+}
+
+.ww-ticket__perf::before,
+.ww-ticket__perf::after {
+    content: "";
+    position: absolute;
+    top: -13px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--ww-bg);
+}
+
+.ww-ticket__perf::before {
+    left: -36px;
+}
+
+.ww-ticket__perf::after {
+    right: -36px;
+}
+
+.ww-people {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ww-people li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.ww-people i {
+    flex: none;
+    width: 1rem;
+    color: var(--ww-pink);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.ww-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 1.25rem 0 0;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: var(--ww-bg);
+    color: #4b4563;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.ww-note i {
+    margin-top: 0.2rem;
+    color: var(--ww-pink);
+}
+
+
+/* =========================================================
+   SMALL SCREENS
+========================================================= */
+
+@media (max-width: 991px) {
+
+    .ww-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .ww-ticket {
+        position: static;
+    }
+
+}
+
+@media (max-width: 575px) {
+
+    .ww-docs {
+        grid-template-columns: 1fr;
+    }
+
+    .ww-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .ww-actions .ww-btn--primary {
+        order: -1;
+    }
+
+    .ww-hint {
+        text-align: center;
+    }
+
+    .ww-callout {
+        flex-direction: column;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    .ww *,
+    .ww *::before,
+    .ww *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+}
+
+</style>
+
+@endpush
+
 
 {{-- =========================================================
 JAVASCRIPT
-FUNCTIONALITY UNCHANGED
 ========================================================= --}}
 
 @push('scripts')
@@ -1341,20 +1067,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const agreeCheckbox = document.getElementById('agree_waiver');
     const proceedBtn = document.getElementById('btn-proceed');
+    const hint = document.getElementById('waiver-hint');
 
-    if (agreeCheckbox && proceedBtn) {
+    if (!agreeCheckbox || !proceedBtn) return;
 
-        agreeCheckbox.addEventListener('change', function () {
+    const form = proceedBtn.closest('form');
+    const label = proceedBtn.querySelector('span');
+    const defaultLabel = label ? label.textContent : '';
 
-            proceedBtn.disabled = !this.checked;
-
-        });
-
+    function sync() {
+        proceedBtn.disabled = !agreeCheckbox.checked;
+        if (hint) hint.hidden = agreeCheckbox.checked;
     }
+
+    agreeCheckbox.addEventListener('change', sync);
+
+    // Browsers can restore a ticked box after a refresh or back button
+    sync();
+
+    // Stop double submits
+    if (form) {
+        form.addEventListener('submit', function () {
+            proceedBtn.disabled = true;
+            if (label) label.textContent = 'Please wait…';
+        });
+    }
+
+    // Coming back via the back button: make the button usable again
+    window.addEventListener('pageshow', function (e) {
+        if (!e.persisted) return;
+
+        if (label) label.textContent = defaultLabel;
+        sync();
+    });
 
 });
 </script>
 
 @endpush
-
-@endsection

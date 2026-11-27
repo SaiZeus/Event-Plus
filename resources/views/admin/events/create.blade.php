@@ -5,3217 +5,1846 @@
 
 @section('content')
 
+@php
+    // True when the page is re-shown after a failed submit.
+    $hasOld = session()->hasOldInput();
+
+    $availableFields = [
+        'viber' => 'Viber number',
+        'father_name' => 'Father name',
+        'blood_type' => 'Blood type',
+        'tshirt_size' => 'T-shirt size',
+        'has_medical_condition' => 'Medical condition',
+        'itra' => 'ITRA details',
+        'experience' => 'Running experience',
+        'address' => 'Address',
+    ];
+
+    $enabledFields = $hasOld
+        ? (array) old('enabled_fields', [])
+        : array_keys($availableFields);
+
+    $standardSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+
+    $selectedTshirtSizes = $hasOld
+        ? (array) old('tshirt_sizes', [])
+        : $standardSizes;
+
+    $customSizes = array_values(array_diff($selectedTshirtSizes, $standardSizes));
+
+    $enableBib = $hasOld ? (bool) old('enable_bib_number') : true;
+    $shareBib = (string) old('share_bib_prefix', '1');
+
+    $oldItemsOpen = is_array(old('items')) && count(old('items')) > 0;
+
+    // GROUP BUY: deals re-shown after a failed submit.
+    $groupBuysData = collect((array) old('group_buys', []))->map(fn ($row) => [
+        'name' => $row['name'] ?? '',
+        'quantity' => $row['quantity'] ?? '',
+        'discount_amount' => $row['discount_amount'] ?? '',
+        'ticket_scope' => $row['ticket_scope'] ?? 'same_category',
+        'allowed' => array_map('strval', (array) ($row['allowed_ticket_category_ids'] ?? [])),
+        'is_active' => (string) ($row['is_active'] ?? '1') === '1',
+    ])->values()->all();
+@endphp
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-    .create-event-page {
-        --event-primary: #4f46e5;
-        --event-primary-dark: #4338ca;
-        --event-border: #e5e7eb;
-        --event-text: #172033;
-        --event-muted: #718096;
-        --event-bg: #f7f8fc;
-    }
-
-    .event-form-wrapper {
-        max-width: 1050px;
-        margin: 0 auto;
-    }
-
-    .event-page-header {
-        margin-bottom: 24px;
-    }
-
-    .event-page-header h1 {
-        margin: 0;
-        color: #172033;
-        font-size: 1.65rem;
-        font-weight: 850;
-        letter-spacing: -0.035em;
-    }
-
-    .event-page-header p {
-        margin-top: 5px;
-        color: #7b8798;
-        font-size: 0.88rem;
-    }
-
-    .event-form-card {
-        overflow: hidden;
-        background: #ffffff;
-        border: 1px solid #e7eaf0;
-        border-radius: 22px;
-        box-shadow: 0 14px 45px rgba(25, 35, 55, 0.065);
-    }
-
-    .event-form-header {
-        position: relative;
-        overflow: hidden;
-        padding: 28px 32px;
-        background:
-            radial-gradient(
-                circle at 95% 0%,
-                rgba(99, 102, 241, 0.15),
-                transparent 30%
-            ),
-            linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-        border-bottom: 1px solid #e9ebf1;
-    }
-
-    .event-form-header::after {
-        content: "";
-        position: absolute;
-        width: 160px;
-        height: 160px;
-        right: -70px;
-        bottom: -100px;
-        border-radius: 50%;
-        background: rgba(79, 70, 229, 0.06);
-    }
-
-    .event-form-header-content {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .event-header-icon {
-        width: 52px;
-        height: 52px;
-        min-width: 52px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 15px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 1.35rem;
-    }
-
-    .event-form-header h2 {
-        margin: 0;
-        color: #172033;
-        font-size: 1.15rem;
-        font-weight: 850;
-    }
-
-    .event-form-header p {
-        margin: 4px 0 0;
-        color: #7b8798;
-        font-size: 0.78rem;
-    }
-
-    .event-form-body {
-        padding: 32px;
-    }
-
-    /* ALERTS */
-
-    .event-alert {
-        position: relative;
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px 16px;
-        margin-bottom: 24px;
-        border-radius: 12px;
-        animation: eventAlertSlide .25s ease-out;
-    }
-
-    .event-alert-success {
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        color: #15803d;
-    }
-
-    .event-alert-danger {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        color: #b91c1c;
-    }
-
-    .event-alert-icon {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 9px;
-        font-size: .85rem;
-    }
-
-    .event-alert-success .event-alert-icon {
-        background: #dcfce7;
-        color: #16a34a;
-    }
-
-    .event-alert-danger .event-alert-icon {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .event-alert-content {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .event-alert-content strong {
-        display: block;
-        margin-bottom: 3px;
-        font-size: .76rem;
-        font-weight: 850;
-    }
-
-    .event-alert-content p {
-        margin: 0;
-        font-size: .69rem;
-        line-height: 1.5;
-    }
-
-    .event-error-list {
-        margin: 7px 0 0;
-        padding-left: 17px;
-    }
-
-    .event-error-list li {
-        margin-bottom: 3px;
-        font-size: .68rem;
-        line-height: 1.45;
-    }
-
-    .event-error-list li:last-child {
-        margin-bottom: 0;
-    }
-
-    .event-alert-close {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 27px;
-        height: 27px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        border-radius: 7px;
-        background: transparent;
-        color: #98a2b3;
-        cursor: pointer;
-        transition: all .15s ease;
-    }
-
-    .event-alert-close:hover {
-        background: rgba(0, 0, 0, .05);
-        color: #475467;
-    }
-
-    @keyframes eventAlertSlide {
-        from {
-            opacity: 0;
-            transform: translateY(-7px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .form-section {
-        margin-bottom: 30px;
-    }
-
-    .form-section-heading {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        margin-bottom: 18px;
-    }
-
-    .section-number {
-        width: 31px;
-        height: 31px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 0.72rem;
-        font-weight: 850;
-    }
-
-    .form-section-heading h3 {
-        margin: 0;
-        color: #202b3d;
-        font-size: 0.98rem;
-        font-weight: 800;
-    }
-
-    .form-section-heading p {
-        margin: 2px 0 0;
-        color: #8a94a5;
-        font-size: 0.72rem;
-    }
-
-    .event-label {
-        display: block;
-        margin-bottom: 7px;
-        color: #354052;
-        font-size: 0.76rem;
-        font-weight: 800;
-    }
-
-    .event-input,
-    .event-select,
-    .event-textarea {
-        width: 100%;
-        border: 1px solid #dfe3ea;
-        border-radius: 11px;
-        background: #ffffff;
-        color: #1f2937;
-        font-size: 0.83rem;
-        outline: none;
-        transition: all 0.18s ease;
-    }
-
-    .event-input,
-    .event-select {
-        height: 44px;
-        padding: 0 13px;
-    }
-
-    .event-textarea {
-        min-height: 115px;
-        padding: 12px 13px;
-        resize: vertical;
-    }
-
-    .event-input:hover,
-    .event-select:hover,
-    .event-textarea:hover {
-        border-color: #c8ced9;
-    }
-
-    .event-input:focus,
-    .event-select:focus,
-    .event-textarea:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.09);
-        background: #fff;
-    }
-
-    .event-input::placeholder,
-    .event-textarea::placeholder {
-        color: #a2aab8;
-    }
-
-    .field-help {
-        margin-top: 6px;
-        color: #929baa;
-        font-size: 0.68rem;
-    }
-
-    .location-picker {
-        margin-top: 10px;
-        padding: 15px;
-        border: 1px solid #e5e8ee;
-        border-radius: 16px;
-        background: #fafbfc;
-    }
-
-    .location-picker-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 12px;
-    }
-
-    .location-picker-icon {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: #eef2ff;
-        color: #4f46e5;
-    }
-
-    .location-picker-header h4 {
-        margin: 0;
-        color: #273245;
-        font-size: 0.82rem;
-        font-weight: 850;
-    }
-
-    .location-picker-header p {
-        margin: 2px 0 0;
-        color: #929baa;
-        font-size: 0.67rem;
-    }
-
-    .location-search-wrapper {
-        position: relative;
-        margin-bottom: 10px;
-    }
-
-    .location-search-wrapper > i {
-        position: absolute;
-        left: 13px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #8b95a5;
-        font-size: 0.8rem;
-        z-index: 2;
-    }
-
-    #location-search {
-        padding-left: 37px;
-        padding-right: 110px;
-    }
-
-    .location-search-button {
-        position: absolute;
-        right: 5px;
-        top: 5px;
-        height: 34px;
-        padding: 0 13px;
-        border: 0;
-        border-radius: 8px;
-        background: #4f46e5;
-        color: #ffffff;
-        font-size: 0.68rem;
-        font-weight: 800;
-        cursor: pointer;
-        transition: all .18s ease;
-        z-index: 3;
-    }
-
-    .location-search-button:hover {
-        background: #4338ca;
-    }
-
-    .location-search-button:disabled {
-        opacity: .65;
-        cursor: not-allowed;
-    }
-
-    #event-location-map {
-        width: 100%;
-        height: 350px;
-        overflow: hidden;
-        border: 1px solid #dfe3ea;
-        border-radius: 13px;
-        background: #eef1f5;
-    }
-
-    .map-instruction {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        margin-top: 9px;
-        color: #7b8493;
-        font-size: 0.67rem;
-    }
-
-    .map-instruction i {
-        color: #6366f1;
-    }
-
-    .selected-location-box {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        margin-top: 10px;
-        padding: 10px 12px;
-        border: 1px solid #dbeafe;
-        border-radius: 10px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        font-size: 0.69rem;
-    }
-
-    .selected-location-box i {
-        font-size: 0.8rem;
-    }
-
-    .selected-location-box span {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .location-search-results {
-        display: none;
-        margin-bottom: 10px;
-        overflow: hidden;
-        border: 1px solid #e1e5eb;
-        border-radius: 11px;
-        background: #ffffff;
-        box-shadow: 0 8px 25px rgba(30, 40, 60, .08);
-    }
-
-    .location-result {
-        padding: 11px 13px;
-        border-bottom: 1px solid #edf0f4;
-        cursor: pointer;
-        transition: background .15s ease;
-    }
-
-    .location-result:last-child {
-        border-bottom: 0;
-    }
-
-    .location-result:hover {
-        background: #f8f9ff;
-    }
-
-    .location-result.selected {
-        background: #eef2ff;
-    }
-
-    .location-result-title {
-        color: #273245;
-        font-size: .73rem;
-        font-weight: 800;
-    }
-
-    .location-result-address {
-        margin-top: 3px;
-        color: #8a94a5;
-        font-size: .64rem;
-        line-height: 1.4;
-    }
-
-    .location-auto-status {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-height: 18px;
-        margin: 5px 2px 8px;
-        color: #8a94a5;
-        font-size: .65rem;
-    }
-
-    .location-auto-status.loading {
-        color: #4f46e5;
-    }
-
-    .location-auto-status.success {
-        color: #059669;
-    }
-
-    .location-auto-status.error {
-        color: #dc2626;
-    }
-
-    .leaflet-popup-content {
-        font-size: 12px;
-        line-height: 1.5;
-    }
-
-    .leaflet-control-attribution {
-        font-size: 9px !important;
-    }
-
-    /* IMAGE UPLOAD */
-
-    .image-upload-box {
-        position: relative;
-        padding: 18px;
-        border: 1px dashed #cfd5df;
-        border-radius: 13px;
-        background: #fafbfc;
-        transition: all 0.2s ease;
-    }
-
-    .image-upload-box:hover {
-        border-color: #818cf8;
-        background: #f8f9ff;
-    }
-
-    .image-upload-content {
-        display: flex;
-        align-items: center;
-        gap: 13px;
-    }
-
-    .image-upload-icon {
-        width: 43px;
-        height: 43px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 11px;
-        background: #eef2ff;
-        color: #6366f1;
-    }
-
-    .image-upload-text {
-        flex: 1;
-    }
-
-    .image-upload-text strong {
-        display: block;
-        margin-bottom: 3px;
-        color: #364152;
-        font-size: 0.78rem;
-        font-weight: 800;
-    }
-
-    .image-upload-text span {
-        color: #929baa;
-        font-size: 0.68rem;
-    }
-
-    .event-file-input {
-        width: 100%;
-        margin-top: 12px;
-        padding: 8px;
-        border: 1px solid #e0e4ea;
-        border-radius: 99px;
-        background: white;
-        color: #7b8493;
-        font-size: 0.73rem;
-    }
-
-    /* CREATOR */
-
-    .creator-box {
-        padding: 20px;
-        border: 1px solid #e5e8ee;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
-    }
-
-    .creator-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 17px;
-    }
-
-    .creator-icon {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: #ecfdf5;
-        color: #059669;
-    }
-
-    .creator-header h3 {
-        margin: 0;
-        color: #273245;
-        font-size: 0.88rem;
-        font-weight: 850;
-    }
-
-    .creator-header p {
-        margin: 2px 0 0;
-        color: #929baa;
-        font-size: 0.68rem;
-    }
-
-    /* TICKET CATEGORIES */
-
-    .ticket-builder {
-        padding: 20px;
-        border: 1px solid #e5e8ee;
-        border-radius: 16px;
-        background: #fafbfc;
-    }
-
-    .ticket-builder-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-
-    .ticket-builder-title {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-    }
-
-    .ticket-builder-title-icon {
-        width: 35px;
-        height: 35px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: #eef2ff;
-        color: #4f46e5;
-    }
-
-    .ticket-builder-title h3 {
-        margin: 0;
-        color: #263143;
-        font-size: 0.86rem;
-        font-weight: 850;
-    }
-
-    .ticket-builder-title p {
-        margin: 2px 0 0;
-        color: #8b95a5;
-        font-size: 0.68rem;
-    }
-
-    .add-category-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 9px 13px;
-        border: 1px solid #cfd5ff;
-        border-radius: 10px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 0.72rem;
-        font-weight: 800;
-        transition: all 0.18s ease;
-        cursor: pointer;
-    }
-
-    .add-category-button:hover {
-        background: #e0e7ff;
-        border-color: #a5b4fc;
-        transform: translateY(-1px);
-    }
-
-    .category-row {
-        position: relative;
-        padding: 15px;
-        border: 1px solid #e3e7ed !important;
-        border-radius: 13px !important;
-        background: #ffffff !important;
-        box-shadow: 0 3px 12px rgba(30, 40, 60, 0.035);
-    }
-
-    .category-row input {
-        height: 42px;
-        width: 100%;
-        padding: 0 11px;
-        border: 1px solid #dfe3e9;
-        border-radius: 99px;
-        outline: none;
-        background: #fff;
-        color: #293445;
-        font-size: 0.76rem;
-    }
-
-    .category-row input:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
-    }
-
-    .remove-category-btn {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #fee2e2;
-        border-radius: 9px;
-        background: #fff5f5;
-        color: #ef4444;
-        cursor: pointer;
-    }
-
-    /* WAIVER & CONSENT */
-
-    .waiver-box {
-        padding: 20px;
-        border: 1px solid #e5e8ee;
-        border-radius: 16px;
-        background: #fafbfc;
-    }
-
-    .waiver-info {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        margin-bottom: 17px;
-        padding: 12px 14px;
-        border-radius: 10px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        font-size: 0.72rem;
-    }
-
-    .waiver-file {
-        padding: 13px;
-        border: 1px solid #e3e7ed;
-        border-radius: 11px;
-        background: white;
-    }
-
-    .waiver-file label {
-        margin-bottom: 7px;
-    }
-
-    /* EVENT ITEMS */
-
-    .items-builder {
-        padding: 20px;
-        border: 1px solid #e5e8ee;
-        border-radius: 16px;
-        background: #fafbfc;
-    }
-
-    .item-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr 45px;
-        gap: 12px;
-        align-items: end;
-        padding: 15px;
-        margin-bottom: 12px;
-        border: 1px solid #e3e7ed;
-        border-radius: 13px;
-        background: #fff;
-    }
-
-    .item-row.removing {
-        opacity: 0;
-        transform: scale(.98);
-        transition: all .15s ease;
-    }
-
-    .add-item-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 9px 13px;
-        border: 1px solid #d1fae5;
-        border-radius: 10px;
-        background: #ecfdf5;
-        color: #059669;
-        font-size: 0.72rem;
-        font-weight: 800;
-        cursor: pointer;
-    }
-
-    .remove-item-btn {
-        width: 38px;
-        height: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #fee2e2;
-        border-radius: 99px;
-        background: #fff5f5;
-        color: #ef4444;
-        cursor: pointer;
-    }
-
-    .remove-item-btn:hover {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .empty-items-message {
-        display: none;
-        padding: 18px;
-        margin-bottom: 12px;
-        border: 1px dashed #dfe3ea;
-        border-radius: 12px;
-        background: #fff;
-        color: #929baa;
-        text-align: center;
-        font-size: .72rem;
-    }
-
-    .event-divider {
-        height: 1px;
-        margin: 30px 0;
-        border: 0;
-        background: #eaedf2;
-    }
-
-    .publish-button {
-        position: relative;
-        width: 100%;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        border: 0;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-        color: white;
-        font-size: 0.84rem;
-        font-weight: 850;
-        box-shadow: 0 9px 22px rgba(79, 70, 229, 0.22);
-        transition: all 0.18s ease;
-        cursor: pointer;
-    }
-
-    .publish-button:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.03);
-        box-shadow: 0 13px 28px rgba(79, 70, 229, 0.3);
-    }
-
-    /* FIELD TOGGLE BOX */
-
-    .fields-toggle-box {
-        padding: 20px;
-        border: 1px solid #e5e8ee;
-        border-radius: 16px;
-        background: #fafbfc;
-    }
-
-    .toggle-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 12px;
-        margin-top: 12px;
-    }
-
-    .toggle-card {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        background: #ffffff;
-        cursor: pointer;
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #374151;
-    }
-
-    .toggle-card input[type="checkbox"] {
-        accent-color: #4f46e5;
-        width: 16px;
-        height: 16px;
-    }
-
-    /* T-Shirt Sizes Section - aligned with Edit Event */
-    .tshirt-sizes-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-top: 12px;
-    }
-
-    .tshirt-sizes-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 10px;
-    }
-
-    .tshirt-size-card {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: #ffffff;
-        cursor: pointer;
-        font-size: 0.76rem;
-        font-weight: 700;
-        color: #374151;
-    }
-
-    .tshirt-size-card input[type="checkbox"] {
-        accent-color: #4f46e5;
-        width: 15px;
-        height: 15px;
-    }
-
-    .custom-tshirt-input-group {
-        display: flex;
-        gap: 8px;
-        margin-top: 6px;
-        align-items: center;
-    }
-
-    .custom-tshirt-input-group input {
-        max-width: 250px;
-    }
-
-    @media (max-width: 767px) {
-        .event-form-body {
-            padding: 20px;
-        }
-
-        .event-form-header {
-            padding: 22px 20px;
-        }
-
-        .ticket-builder,
-        .items-builder,
-        .waiver-box,
-        .creator-box,
-        .fields-toggle-box {
-            padding: 15px;
-        }
-
-        .ticket-builder-header {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .add-category-button {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .item-row {
-            grid-template-columns: 1fr;
-        }
-
-        #event-location-map {
-            height: 280px;
-        }
-
-        #location-search {
-            padding-right: 95px;
-        }
-
-        .location-search-button {
-            padding: 0 10px;
-        }
-    }
+.ce {
+    --ce-accent: #4f46e5;
+    --ce-accent-dark: #4338ca;
+    --ce-accent-soft: #eef0ff;
+    --ce-ink: #1b2133;
+    --ce-muted: #667085;
+    --ce-line: #e3e6ee;
+    --ce-bg: #f6f7fb;
+    --ce-red: #b42318;
+    --ce-red-soft: #fdeceb;
+    --ce-green: #067647;
+    --ce-green-soft: #e8f7ef;
+    color: var(--ce-ink);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 1180px;
+    margin: 0 auto;
+    /* no extra blank space under the page, and nothing sticking out sideways */
+    padding-bottom: 0;
+    overflow-x: clip;
+}
+.ce *, .ce *::before, .ce *::after { box-sizing: border-box; }
+.ce [hidden] { display: none !important; }
+.ce form { margin: 0; padding: 0; }
+
+/* ---------- Page header ---------- */
+.ce-head { margin-bottom: 22px; }
+.ce-back {
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    color: var(--ce-muted); font-weight: 600; text-decoration: none;
+}
+.ce-back:hover { color: var(--ce-accent); }
+.ce-head h1 { margin: 0 0 4px; font-size: 26px; font-weight: 750; letter-spacing: -.4px; }
+.ce-head p { margin: 0; color: var(--ce-muted); }
+
+/* ---------- Alerts ---------- */
+.ce-alert {
+    position: relative; display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 18px; padding: 14px 44px 14px 16px; border-radius: 12px; border: 1px solid;
+}
+.ce-alert i.ce-alert-icon { margin-top: 3px; }
+.ce-alert-success { background: var(--ce-green-soft); border-color: #b7e4cb; color: #0b5a3a; }
+.ce-alert-danger { background: var(--ce-red-soft); border-color: #f5c6c2; color: #8f1d14; }
+.ce-alert strong { display: block; margin-bottom: 2px; }
+.ce-alert p { margin: 0; }
+.ce-alert ul { margin: 6px 0 0; padding-left: 18px; }
+.ce-alert-close {
+    position: absolute; top: 10px; right: 10px; display: grid; place-items: center;
+    width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent;
+    color: inherit; opacity: .7; cursor: pointer;
+}
+.ce-alert-close:hover { opacity: 1; background: rgba(0, 0, 0, .06); }
+
+/* ---------- Layout ---------- */
+.ce-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 26px; align-items: start; }
+.ce-nav { position: sticky; top: 16px; }
+.ce-nav ul { margin: 0; padding: 0; list-style: none; }
+.ce-nav a {
+    display: block; padding: 9px 12px; border-left: 3px solid var(--ce-line);
+    color: var(--ce-muted); font-weight: 600; text-decoration: none;
+}
+.ce-nav a:hover { color: var(--ce-ink); background: var(--ce-bg); }
+.ce-nav a.is-active { border-left-color: var(--ce-accent); color: var(--ce-accent-dark); background: var(--ce-accent-soft); }
+.ce-nav small { display: block; margin-top: 12px; padding-left: 15px; color: var(--ce-muted); }
+.ce-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.ce-main > :last-child { margin-bottom: 0; }
+
+/* ---------- Cards ---------- */
+.ce-card { scroll-margin-top: 16px; overflow: hidden; border: 1px solid var(--ce-line); border-radius: 14px; background: #fff; }
+.ce-card-head { padding: 18px 22px; border-bottom: 1px solid var(--ce-line); }
+.ce-card-head h2 { margin: 0 0 2px; font-size: 18px; font-weight: 700; }
+.ce-card-head p { margin: 0; color: var(--ce-muted); }
+.ce-card-body { padding: 22px; }
+.ce-sub { margin: 24px 0 12px; padding-top: 22px; border-top: 1px solid var(--ce-line); font-size: 15.5px; font-weight: 700; }
+.ce-sub:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.ce-sub-note { margin: -6px 0 12px; color: var(--ce-muted); }
+
+/* optional (collapsible) sections */
+.ce-card > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; cursor: pointer; }
+.ce-card > summary::-webkit-details-marker { display: none; }
+.ce-card > summary .ce-card-head-text { min-width: 0; }
+.ce-card > summary .ce-opt-tag {
+    flex-shrink: 0; padding: 3px 10px; border-radius: 999px; background: var(--ce-bg);
+    color: var(--ce-muted); font-size: 12.5px; font-weight: 650;
+}
+.ce-card > summary .ce-chevron { flex-shrink: 0; color: var(--ce-muted); transition: transform .2s; }
+.ce-card[open] > summary .ce-chevron { transform: rotate(180deg); }
+.ce-card[open] > summary { border-bottom: 1px solid var(--ce-line); }
+.ce-card > summary.ce-card-head { border-bottom: 0; }
+.ce-card > summary:focus-visible { outline: 3px solid #b9b5f7; outline-offset: -3px; }
+
+/* ---------- Fields ---------- */
+.ce-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ce-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ce-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.ce-span-2 { grid-column: span 2; }
+.ce-stack > * + * { margin-top: 16px; }
+
+.ce-field { display: block; margin: 0; min-width: 0; }
+.ce-field > span:first-child,
+.ce-field > label:first-child,
+.ce-label {
+    display: block; margin-bottom: 6px; color: #3a4357; font-size: 13.5px; font-weight: 650;
+}
+.ce-req { margin-left: 3px; color: var(--ce-red); }
+.ce-help { margin: 6px 0 0; color: var(--ce-muted); font-size: 13px; }
+.ce-error { margin: 6px 0 0; color: var(--ce-red); font-size: 13px; font-weight: 600; }
+
+.ce-input, .ce-select, .ce-textarea {
+    display: block; width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid #d5d9e3;
+    border-radius: 10px; background: #fff; color: var(--ce-ink); font: inherit; font-size: 14px;
+    transition: border-color .15s, box-shadow .15s;
+}
+.ce-textarea { min-height: 130px; resize: vertical; }
+.ce-input:hover, .ce-select:hover, .ce-textarea:hover { border-color: #bcc2d0; }
+.ce-input:focus, .ce-select:focus, .ce-textarea:focus {
+    border-color: #7c75ee; box-shadow: 0 0 0 3px rgba(79, 70, 229, .15); outline: 0;
+}
+.ce-input.is-invalid, .ce-select.is-invalid, .ce-textarea.is-invalid { border-color: #e0786f; }
+.ce-input::placeholder, .ce-textarea::placeholder { color: #98a1b3; }
+.ce-upper { text-transform: uppercase; }
+
+/* ---------- Buttons ---------- */
+.ce-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px;
+    padding: 8px 16px; border: 1px solid transparent; border-radius: 10px; font: inherit;
+    font-size: 14px; font-weight: 650; line-height: 1.2; text-decoration: none; white-space: nowrap; cursor: pointer;
+    transition: background-color .15s, border-color .15s;
+}
+.ce-btn-sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; }
+.ce-btn-primary { background: var(--ce-accent); color: #fff; }
+.ce-btn-primary:hover { background: var(--ce-accent-dark); color: #fff; }
+.ce-btn-soft { background: var(--ce-accent-soft); border-color: #d9dcfb; color: var(--ce-accent-dark); }
+.ce-btn-soft:hover { background: #e2e5ff; color: var(--ce-accent-dark); }
+.ce-btn-ghost { background: #fff; border-color: var(--ce-line); color: #3a4357; }
+.ce-btn-ghost:hover { background: var(--ce-bg); color: #3a4357; }
+.ce-btn:disabled { opacity: .55; cursor: not-allowed; }
+.ce-icon-btn {
+    display: inline-grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px;
+    border: 1px solid #f1d0cc; border-radius: 9px; background: #fff; color: var(--ce-red); cursor: pointer;
+}
+.ce-icon-btn:hover:not(:disabled) { background: var(--ce-red-soft); }
+.ce-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.ce a:focus-visible, .ce button:focus-visible, .ce-file:focus-within, .ce-check:focus-within, .ce-radio:focus-within, .ce-switch:focus-within {
+    outline: 3px solid #b9b5f7; outline-offset: 2px;
+}
+
+/* ---------- Location ---------- */
+.ce-search { position: relative; }
+.ce-search > i { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #98a1b3; pointer-events: none; }
+.ce-search .ce-input { padding-left: 40px; padding-right: 130px; }
+.ce-search .ce-btn { position: absolute; top: 4px; right: 4px; }
+.ce-status { display: flex; align-items: center; gap: 7px; min-height: 22px; margin: 8px 0 0; color: var(--ce-muted); font-size: 13px; }
+.ce-status.is-loading { color: var(--ce-accent); }
+.ce-status.is-success { color: var(--ce-green); }
+.ce-status.is-error { color: var(--ce-red); }
+.ce-results { margin-top: 8px; overflow: hidden; border: 1px solid var(--ce-line); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgba(27, 33, 51, .08); }
+.ce-result {
+    display: block; width: 100%; padding: 11px 14px; border: 0; border-bottom: 1px solid #eef0f5;
+    background: #fff; font: inherit; text-align: left; cursor: pointer;
+}
+.ce-result:last-child { border-bottom: 0; }
+.ce-result:hover { background: var(--ce-bg); }
+.ce-result.is-best { background: var(--ce-accent-soft); }
+.ce-result strong { display: block; font-size: 14px; }
+.ce-result span { display: block; margin-top: 2px; color: var(--ce-muted); font-size: 13px; }
+.ce-result em { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #fff; color: var(--ce-accent-dark); font-size: 12px; font-style: normal; font-weight: 650; }
+#event-location-map { position: relative; width: 100%; height: 360px; margin-top: 14px; overflow: hidden; border: 1px solid var(--ce-line); border-radius: 12px; background: #eceff4; }
+.ce-coords { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 13px; border-radius: 10px; background: var(--ce-green-soft); color: #0b5a3a; font-weight: 600; }
+.leaflet-popup-content { font-size: 13px; line-height: 1.5; }
+
+/* ---------- Pickers: file, check, radio, switch ---------- */
+.ce-file {
+    position: relative; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px;
+    border: 1px dashed #c3c8d6; border-radius: 10px; background: #fafbfd; cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+}
+.ce-file:hover { border-color: #8f89f0; background: #f7f7ff; }
+.ce-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.ce-file-btn {
+    display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; padding: 7px 12px;
+    border-radius: 8px; background: var(--ce-accent-soft); color: var(--ce-accent-dark); font-weight: 650;
+}
+.ce-file-name { min-width: 0; overflow: hidden; color: var(--ce-muted); text-overflow: ellipsis; white-space: nowrap; }
+.ce-file-name.has-file { color: var(--ce-ink); font-weight: 600; }
+
+.ce-banner-preview { position: relative; margin-top: 12px; overflow: hidden; border: 1px solid var(--ce-line); border-radius: 12px; background: var(--ce-bg); }
+.ce-banner-preview img { display: block; width: 100%; max-height: 260px; object-fit: cover; }
+.ce-banner-preview .ce-btn { position: absolute; top: 10px; right: 10px; background: #fff; }
+
+.ce-toggle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.ce-check {
+    display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 0; padding: 8px 14px;
+    border: 1px solid var(--ce-line); border-radius: 10px; background: #fff; font-weight: 600; cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+}
+.ce-check:hover { border-color: #b7b3f5; }
+.ce-check:has(input:checked) { border-color: var(--ce-accent); background: var(--ce-accent-soft); }
+.ce-check input { width: 17px; height: 17px; accent-color: var(--ce-accent); cursor: pointer; }
+.ce-size-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.ce-size-grid .ce-check { min-height: 40px; padding: 6px 12px; }
+.ce-add-size { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.ce-add-size .ce-input { max-width: 280px; }
+
+.ce-panel { padding: 16px; border: 1px solid var(--ce-line); border-radius: 12px; background: var(--ce-bg); }
+.ce-panel + .ce-panel { margin-top: 14px; }
+
+.ce-switch { position: relative; display: inline-flex; align-items: center; gap: 12px; margin: 0; font-weight: 650; cursor: pointer; }
+.ce-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ce-switch-ui { position: relative; flex-shrink: 0; width: 42px; height: 24px; border-radius: 999px; background: #c4c9d6; transition: background-color .15s; }
+.ce-switch-ui::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; transition: transform .15s;
+}
+.ce-switch input:checked + .ce-switch-ui { background: var(--ce-accent); }
+.ce-switch input:checked + .ce-switch-ui::after { transform: translateX(18px); }
+
+.ce-radio-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; padding: 0; border: 0; }
+.ce-radio-group legend { margin-bottom: 8px; padding: 0; color: #3a4357; font-size: 13.5px; font-weight: 650; }
+.ce-radio {
+    display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 14px; border: 1px solid var(--ce-line);
+    border-radius: 10px; background: #fff; cursor: pointer;
+}
+.ce-radio:has(input:checked) { border-color: var(--ce-accent); background: var(--ce-accent-soft); }
+.ce-radio input { margin-top: 3px; accent-color: var(--ce-accent); }
+.ce-radio strong { display: block; font-size: 14px; }
+.ce-radio small { display: block; margin-top: 2px; color: var(--ce-muted); font-size: 13px; }
+
+/* ---------- Ticket types and items ---------- */
+.ce-category, .ce-item { padding: 16px; border: 1px solid var(--ce-line); border-radius: 12px; background: #fff; }
+.ce-category + .ce-category, .ce-item + .ce-item { margin-top: 12px; }
+.ce-category-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.ce-category-head strong { font-size: 14.5px; }
+.ce-bib-fields { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--ce-line); }
+.ce-list-actions { margin-top: 14px; }
+.ce-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px; gap: 14px; align-items: end; }
+.ce-empty-note { padding: 18px; border: 1px dashed #cfd4e0; border-radius: 12px; background: var(--ce-bg); color: var(--ce-muted); text-align: center; }
+
+/* ---------- Group buy deals ---------- */
+.ce-gb-preview { margin: 12px 0 0; padding: 10px 13px; border-radius: 10px; background: var(--ce-green-soft); color: #0b5a3a; font-weight: 600; }
+.ce-gb-preview.is-warning { background: var(--ce-red-soft); color: #8f1d14; }
+.ce-gb-scope { margin: 14px 0 0; }
+.ce-gb-categories { margin: 0 0 14px; }
+.ce-gb-footer { margin-top: 2px; }
+
+/* ---------- Documents ---------- */
+.ce-note { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; padding: 12px 14px; border-radius: 10px; background: var(--ce-accent-soft); color: #3730a3; }
+.ce-note i { margin-top: 3px; }
+.ce-doc { margin: 0 0 18px; padding: 0; border: 0; }
+.ce-doc:last-child { margin-bottom: 0; }
+.ce-doc legend { margin-bottom: 8px; padding: 0; font-size: 14.5px; font-weight: 700; }
+
+/* ---------- Action bar ---------- */
+.ce-actionbar {
+    position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin: 18px 0 0; padding: 14px 20px; border: 1px solid var(--ce-line);
+    border-radius: 14px; background: rgba(255, 255, 255, .96); box-shadow: 0 -6px 24px rgba(27, 33, 51, .08);
+}
+.ce-actionbar p { margin: 0; color: var(--ce-muted); }
+.ce-actionbar-buttons { display: flex; align-items: center; gap: 10px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1099px) {
+    .ce-layout { grid-template-columns: 1fr; }
+    .ce-nav { display: none; }
+}
+@media (max-width: 767px) {
+    .ce-grid-2, .ce-grid-3, .ce-radio-group { grid-template-columns: 1fr; }
+    .ce-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ce-span-2 { grid-column: span 2; }
+    .ce-card-head { padding: 16px; }
+    .ce-card-body { padding: 16px; }
+    .ce-item { grid-template-columns: 1fr; }
+    .ce-item .ce-icon-btn { width: 100%; }
+    #event-location-map { height: 290px; }
+    .ce-search .ce-input { padding-right: 112px; }
+    .ce-actionbar { padding: 12px; }
+    .ce-actionbar p { display: none; }
+    .ce-actionbar-buttons { width: 100%; }
+    .ce-actionbar-buttons .ce-btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ce * { transition: none !important; }
+}
 </style>
 
-<link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+<div class="ce">
 
-<div class="create-event-page">
-    <div class="event-form-wrapper">
+    <header class="ce-head">
+        <a href="{{ route('admin.events.index') }}" class="ce-back">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to events
+        </a>
+        <h1>Create event</h1>
+        <p>Add the event details, tickets and registration form. Fields marked <span class="ce-req" style="margin-left:0;">*</span> are required.</p>
+    </header>
 
-    <div class="event-page-header">
-        <h1>Create Event</h1>
-        <p>
-            Set up your event details, tickets, capacity and participant information.
-        </p>
-    </div>
-
-    <div class="event-form-card">
-
-        <div class="event-form-header">
-            <div class="event-form-header-content">
-
-                <div class="event-header-icon">
-                    <i class="fa-solid fa-person-running"></i>
-                </div>
-
-                <div>
-                    <h2>New Event</h2>
-                    <p>
-                        Complete the information below to publish your event.
-                    </p>
-                </div>
-
+    {{-- ALERTS --}}
+    @if(session('success'))
+        <div class="ce-alert ce-alert-success" role="status">
+            <i class="fa-solid fa-circle-check ce-alert-icon" aria-hidden="true"></i>
+            <div>
+                <strong>Success</strong>
+                <p>{{ session('success') }}</p>
             </div>
+            <button type="button" class="ce-alert-close" aria-label="Dismiss" onclick="this.parentElement.remove()">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
         </div>
+    @endif
 
-        <div class="event-form-body">
+    @if(session('error'))
+        <div class="ce-alert ce-alert-danger" role="alert">
+            <i class="fa-solid fa-circle-exclamation ce-alert-icon" aria-hidden="true"></i>
+            <div>
+                <strong>The event could not be published</strong>
+                <p>{{ session('error') }}</p>
+            </div>
+            <button type="button" class="ce-alert-close" aria-label="Dismiss" onclick="this.parentElement.remove()">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
+    @endif
 
-            {{-- SUCCESS MESSAGE --}}
-            @if(session('success'))
-                <div class="event-alert event-alert-success">
+    @if($errors->any())
+        <div class="ce-alert ce-alert-danger" role="alert">
+            <i class="fa-solid fa-triangle-exclamation ce-alert-icon" aria-hidden="true"></i>
+            <div>
+                <strong>Please fix the following</strong>
+                <ul>
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                @if($hasOld)
+                    <p style="margin-top:8px;">Files such as the banner and PDFs can't be kept by the browser, so please choose them again.</p>
+                @endif
+            </div>
+            <button type="button" class="ce-alert-close" aria-label="Dismiss" onclick="this.parentElement.remove()">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
+    @endif
 
-                    <div class="event-alert-icon">
-                        <i class="fa-solid fa-circle-check"></i>
+    <form id="eventForm"
+          action="{{ route('admin.events.store') }}"
+          method="POST"
+          enctype="multipart/form-data">
+
+        @csrf
+
+        <div class="ce-layout">
+
+            {{-- SECTION NAV --}}
+            <nav class="ce-nav" aria-label="Form sections">
+                <ul>
+                    <li><a href="#sec-details" class="is-active">Event details</a></li>
+                    <li><a href="#sec-location">Location</a></li>
+                    <li><a href="#sec-tickets">Tickets</a></li>
+                    <li><a href="#sec-group-buy">Group buy</a></li>
+                    <li><a href="#sec-registration">Registration form</a></li>
+                    <li><a href="#sec-organizer">Organizer</a></li>
+                    <li><a href="#sec-items">Included items</a></li>
+                    <li><a href="#sec-documents">Documents</a></li>
+                </ul>
+                <small>Publish when you're ready from the bar at the bottom.</small>
+            </nav>
+
+            <div class="ce-main">
+
+                {{-- =================================================
+                     EVENT DETAILS
+                ================================================== --}}
+                <section class="ce-card" id="sec-details">
+                    <div class="ce-card-head">
+                        <h2>Event details</h2>
+                        <p>The basics runners see first.</p>
                     </div>
 
-                    <div class="event-alert-content">
-                        <strong>Success</strong>
-                        <p>{{ session('success') }}</p>
-                    </div>
+                    <div class="ce-card-body ce-stack">
 
-                    <button
-                        type="button"
-                        class="event-alert-close"
-                        onclick="this.parentElement.remove()">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-
-                </div>
-            @endif
-
-            {{-- GENERAL ERROR MESSAGE --}}
-            @if(session('error'))
-                <div class="event-alert event-alert-danger">
-
-                    <div class="event-alert-icon">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                    </div>
-
-                    <div class="event-alert-content">
-                        <strong>Event Could Not Be Published</strong>
-                        <p>{{ session('error') }}</p>
-                    </div>
-
-                    <button
-                        type="button"
-                        class="event-alert-close"
-                        onclick="this.parentElement.remove()">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-
-                </div>
-            @endif
-
-            {{-- VALIDATION ERRORS --}}
-            @if($errors->any())
-                <div class="event-alert event-alert-danger">
-
-                    <div class="event-alert-icon">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-
-                    <div class="event-alert-content">
-
-                        <strong>Please fix the following errors:</strong>
-
-                        <ul class="event-error-list">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-
-                    </div>
-
-                    <button
-                        type="button"
-                        class="event-alert-close"
-                        onclick="this.parentElement.remove()">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-
-                </div>
-            @endif
-
-            <form
-                action="{{ route('admin.events.store') }}"
-                method="POST"
-                enctype="multipart/form-data">
-
-                @csrf
-
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">01</div>
-
-                        <div>
-                            <h3>Event Information</h3>
-                            <p>Basic details about your event.</p>
+                        <div class="ce-field">
+                            <label for="title">Event title <span class="ce-req" aria-hidden="true">*</span></label>
+                            <input type="text" id="title" name="title" required
+                                   value="{{ old('title') }}"
+                                   placeholder="e.g. Yangon International Marathon"
+                                   class="ce-input @error('title') is-invalid @enderror">
+                            @error('title')<p class="ce-error">{{ $message }}</p>@enderror
                         </div>
 
-                    </div>
+                        <div class="ce-grid-2">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                        {{-- EVENT TITLE --}}
-                        <div>
-                            <label class="event-label">
-                                Event Title
-                            </label>
-
-                            <input
-                                type="text"
-                                name="title"
-                                required
-                                value="{{ old('title') }}"
-                                placeholder="e.g. Yangon International Marathon"
-                                class="event-input">
-                        </div>
-
-                        {{-- LOCATION --}}
-                        <div>
-
-                            <label class="event-label">
-                                Location
-                            </label>
-
-                            <input
-                                type="text"
-                                name="location"
-                                id="location"
-                                required
-                                value="{{ old('location') }}"
-                                placeholder="e.g. Shwedagon Pagoda, Yangon"
-                                class="event-input">
-
-                            {{-- OPENSTREETMAP LOCATION PICKER --}}
-                            <div class="location-picker">
-
-                                <div class="location-picker-header">
-
-                                    <div class="location-picker-icon">
-                                        <i class="fa-solid fa-location-dot"></i>
-                                    </div>
-
-                                    <div>
-                                        <h4>Find Event Location</h4>
-                                        <p>
-                                            Type a venue, street or city. The map will locate it automatically.
-                                        </p>
-                                    </div>
-
-                                </div>
-
-                                <div class="location-search-wrapper">
-
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-
-                                    <input
-                                        type="text"
-                                        id="location-search"
-                                        class="event-input"
-                                        value="{{ old('location') }}"
-                                        placeholder="Type a venue, street or city..."
-                                        autocomplete="off">
-
-                                    <button
-                                        type="button"
-                                        id="location-search-button"
-                                        class="location-search-button">
-                                        Search
-                                    </button>
-
-                                </div>
-
-                                <div
-                                    id="location-auto-status"
-                                    class="location-auto-status">
-                                </div>
-
-                                <div
-                                    id="location-search-results"
-                                    class="location-search-results">
-                                </div>
-
-                                <div id="event-location-map"></div>
-
-                                <div class="map-instruction">
-
-                                    <i class="fa-solid fa-circle-info"></i>
-
-                                    <span>
-                                        Type the location above and the map will automatically point to the place. Select a result if you need a more exact venue.
-                                    </span>
-
-                                </div>
-
-                                <div
-                                    id="selected-location-box"
-                                    class="selected-location-box"
-                                    style="display: none;">
-
-                                    <i class="fa-solid fa-location-crosshairs"></i>
-
-                                    <span id="selected-location-text">
-                                        Location selected
-                                    </span>
-
-                                </div>
-
+                            <div class="ce-field">
+                                <label for="event_date">Date and time <span class="ce-req" aria-hidden="true">*</span></label>
+                                <input type="datetime-local" id="event_date" name="event_date" required
+                                       value="{{ old('event_date') }}"
+                                       class="ce-input @error('event_date') is-invalid @enderror">
+                                @error('event_date')<p class="ce-error">{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- HIDDEN COORDINATES --}}
-                            <input
-                                type="hidden"
-                                name="latitude"
-                                id="latitude"
-                                value="{{ old('latitude') }}">
-
-                            <input
-                                type="hidden"
-                                name="longitude"
-                                id="longitude"
-                                value="{{ old('longitude') }}">
-
-                        </div>
-
-                        {{-- EVENT DATE --}}
-                        <div>
-
-                            <label class="event-label">
-                                Event Date & Time
-                            </label>
-
-                            <input
-                                type="datetime-local"
-                                name="event_date"
-                                required
-                                value="{{ old('event_date') }}"
-                                class="event-input">
-
-                        </div>
-
-                        {{-- STATUS --}}
-                        <div>
-
-                            <label class="event-label">
-                                Status
-                            </label>
-
-                            <select
-                                name="status"
-                                class="event-select">
-
-                                <option
-                                    value="upcoming"
-                                    {{ old('status') === 'upcoming' ? 'selected' : '' }}>
-                                    Upcoming
-                                </option>
-
-                                <option
-                                    value="live"
-                                    {{ old('status') === 'live' ? 'selected' : '' }}>
-                                    Live Now
-                                </option>
-
-                                <option
-                                    value="past"
-                                    {{ old('status') === 'past' ? 'selected' : '' }}>
-                                    Past
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- CAPACITY --}}
-                        <div class="md:col-span-2">
-
-                            <label class="event-label">
-                                Overall Event Capacity
-                            </label>
-
-                            <input
-                                type="number"
-                                name="overall_capacity"
-                                min="1"
-                                value="{{ old('overall_capacity') }}"
-                                placeholder="e.g. 5000"
-                                class="event-input">
-
-                            <div class="field-help">
-                                Optional. This limits the total number of participants across all ticket types. Leave empty for unlimited event capacity.
+                            <div class="ce-field">
+                                <label for="status">Status</label>
+                                <select id="status" name="status" class="ce-select">
+                                    <option value="upcoming" {{ old('status', 'upcoming') === 'upcoming' ? 'selected' : '' }}>Upcoming</option>
+                                    <option value="live" {{ old('status') === 'live' ? 'selected' : '' }}>Live now</option>
+                                    <option value="past" {{ old('status') === 'past' ? 'selected' : '' }}>Past</option>
+                                </select>
                             </div>
 
                         </div>
 
-                    </div>
+                        <div class="ce-field">
+                            <label for="overall_capacity">Overall capacity</label>
+                            <input type="number" id="overall_capacity" name="overall_capacity" min="1"
+                                   value="{{ old('overall_capacity') }}"
+                                   placeholder="Unlimited"
+                                   class="ce-input @error('overall_capacity') is-invalid @enderror"
+                                   style="max-width:260px;">
+                            <p class="ce-help">Optional. The total number of participants across all ticket types. Leave empty for no limit.</p>
+                            @error('overall_capacity')<p class="ce-error">{{ $message }}</p>@enderror
+                        </div>
 
-                </div>
+                        <div class="ce-field">
+                            <label for="description">Description <span class="ce-req" aria-hidden="true">*</span></label>
+                            <textarea id="description" name="description" rows="5" required
+                                      placeholder="Tell runners what they need to know about this event."
+                                      class="ce-textarea @error('description') is-invalid @enderror">{{ old('description') }}</textarea>
+                            @error('description')<p class="ce-error">{{ $message }}</p>@enderror
+                        </div>
 
-                <hr class="event-divider">
+                        <div class="ce-field">
+                            <span class="ce-label">Banner image</span>
+                            <label class="ce-file">
+                                <input type="file" id="bannerInput" name="image"
+                                       accept="image/jpeg,image/png,image/jpg,image/gif"
+                                       class="ce-file-input">
+                                <span class="ce-file-btn"><i class="fa-solid fa-image" aria-hidden="true"></i> Choose image</span>
+                                <span class="ce-file-name">No image chosen</span>
+                            </label>
+                            <p class="ce-help">JPG, PNG or GIF. A wide, high-quality image works best.</p>
+                            @error('image')<p class="ce-error">{{ $message }}</p>@enderror
 
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">02</div>
-
-                        <div>
-                            <h3>Form Customization & BIB Setup</h3>
-                            <p>
-                                Choose which fields appear on the registration form and configure BIB sequence generation.
-                            </p>
+                            <div class="ce-banner-preview" id="bannerPreview" hidden>
+                                <img src="" alt="Banner preview" id="bannerPreviewImg">
+                                <button type="button" class="ce-btn ce-btn-ghost ce-btn-sm" id="bannerRemoveBtn">
+                                    <i class="fa-solid fa-xmark" aria-hidden="true"></i> Remove
+                                </button>
+                            </div>
                         </div>
 
                     </div>
+                </section>
 
-                    @php
-                        $enabledFields = old('enabled_fields', [
-                            'viber',
-                            'father_name',
-                            'blood_type',
-                            'tshirt_size',
-                            'has_medical_condition',
-                            'itra',
-                            'experience',
-                            'address'
-                        ]);
+                {{-- =================================================
+                     LOCATION
+                ================================================== --}}
+                <section class="ce-card" id="sec-location">
+                    <div class="ce-card-head">
+                        <h2>Location</h2>
+                        <p>Type the venue and the map finds it for you.</p>
+                    </div>
 
-                        $availableFields = [
-                            'viber' => 'Viber Number',
-                            'father_name' => 'Father Name',
-                            'blood_type' => 'Blood Type',
-                            'tshirt_size' => 'T-Shirt Size',
-                            'has_medical_condition' => 'Medical Condition',
-                            'itra' => 'ITRA Details',
-                            'experience' => 'Running Experience',
-                            'address' => 'Address'
-                        ];
+                    <div class="ce-card-body">
 
-                        $selectedTshirtSizes = old('tshirt_sizes', ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']);
-                        $standardSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
-                        $customSizes = array_values(array_diff($selectedTshirtSizes, $standardSizes));
-                    @endphp
+                        <div class="ce-field">
+                            <label for="location">Venue or address <span class="ce-req" aria-hidden="true">*</span></label>
 
-                    <div class="fields-toggle-box mb-4">
-                        <label class="event-label mb-2">
-                            Display Fields in Registration Form
-                        </label>
+                            <div class="ce-search">
+                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                <input type="text" id="location" name="location" required
+                                       value="{{ old('location') }}"
+                                       placeholder="e.g. Shwedagon Pagoda, Yangon"
+                                       autocomplete="off"
+                                       class="ce-input @error('location') is-invalid @enderror">
+                                <button type="button" id="locationSearchBtn" class="ce-btn ce-btn-primary ce-btn-sm">
+                                    Find on map
+                                </button>
+                            </div>
 
-                        <div class="toggle-grid">
+                            @error('location')<p class="ce-error">{{ $message }}</p>@enderror
+
+                            <p id="locationStatus" class="ce-status" role="status" aria-live="polite"></p>
+                            <div id="locationResults" class="ce-results" hidden></div>
+                        </div>
+
+                        <div id="event-location-map" aria-label="Map showing the event location"></div>
+
+                        <p class="ce-help">
+                            Click the map or drag the pin to fine-tune the exact spot. Your typed text stays as written.
+                            Pick a suggestion above if you want to use its full address.
+                        </p>
+
+                        <div class="ce-coords" id="coordsBox" hidden>
+                            <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+                            <span id="coordsText"></span>
+                        </div>
+
+                        <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
+                        <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
+
+                    </div>
+                </section>
+
+                {{-- =================================================
+                     TICKETS
+                ================================================== --}}
+                <section class="ce-card" id="sec-tickets">
+                    <div class="ce-card-head">
+                        <h2>Tickets</h2>
+                        <p>Add each distance or registration option with its price and capacity.</p>
+                    </div>
+
+                    <div class="ce-card-body">
+
+                        <div id="categoriesContainer"></div>
+
+                        <div class="ce-list-actions">
+                            <button type="button" id="addCategoryBtn" class="ce-btn ce-btn-soft">
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add another ticket type
+                            </button>
+                        </div>
+
+                    </div>
+                </section>
+
+                {{-- =================================================
+                     GROUP BUY (optional)
+                ================================================== --}}
+                <details class="ce-card" id="sec-group-buy" {{ count($groupBuysData) ? 'open' : '' }}>
+                    <summary class="ce-card-head">
+                        <span class="ce-card-head-text">
+                            <h2>Group buy deals</h2>
+                            <p>Give a discount when runners buy several tickets together.</p>
+                        </span>
+                        <span class="ce-opt-tag">Optional</span>
+                        <i class="fa-solid fa-chevron-down ce-chevron" aria-hidden="true"></i>
+                    </summary>
+
+                    <div class="ce-card-body">
+
+                        <div class="ce-note">
+                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                            <div>
+                                Each deal sets how many tickets a group must buy (2 or more) and how much is taken off the total.
+                                You can add several deals. Group buy orders can't use promo codes.
+                            </div>
+                        </div>
+
+                        @error('group_buys')<p class="ce-error" style="margin:0 0 12px;">{{ $message }}</p>@enderror
+
+                        <div id="groupBuyContainer"></div>
+
+                        <div class="ce-empty-note" id="emptyGroupBuyMessage" hidden>
+                            <i class="fa-solid fa-users" aria-hidden="true"></i>
+                            No group buy deals yet.
+                        </div>
+
+                        <div class="ce-list-actions">
+                            <button type="button" id="addGroupBuyBtn" class="ce-btn ce-btn-soft">
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add a group buy deal
+                            </button>
+                        </div>
+
+                    </div>
+                </details>
+
+                {{-- =================================================
+                     REGISTRATION FORM
+                ================================================== --}}
+                <section class="ce-card" id="sec-registration">
+                    <div class="ce-card-head">
+                        <h2>Registration form</h2>
+                        <p>Choose what runners fill in, and how BIB numbers are made.</p>
+                    </div>
+
+                    <div class="ce-card-body">
+
+                        <h3 class="ce-sub">Fields to show</h3>
+                        <p class="ce-sub-note">Name, email, phone and ID are always asked. Turn extra fields on or off.</p>
+
+                        <div class="ce-toggle-grid">
                             @foreach($availableFields as $fieldKey => $fieldLabel)
-                                <label class="toggle-card">
-                                    <input
-                                        type="checkbox"
-                                        name="enabled_fields[]"
-                                        value="{{ $fieldKey }}"
-                                        id="field_toggle_{{ $fieldKey }}"
-                                        {{ in_array($fieldKey, $enabledFields) ? 'checked' : '' }}>
+                                <label class="ce-check">
+                                    <input type="checkbox"
+                                           name="enabled_fields[]"
+                                           value="{{ $fieldKey }}"
+                                           id="field_toggle_{{ $fieldKey }}"
+                                           {{ in_array($fieldKey, $enabledFields) ? 'checked' : '' }}>
                                     <span>{{ $fieldLabel }}</span>
                                 </label>
                             @endforeach
                         </div>
-                    </div>
 
-                    {{-- T-SHIRT SIZES CONFIGURATION: MATCHES EDIT EVENT --}}
-                    <div
-                        id="tshirt_sizes_config_box"
-                        class="fields-toggle-box mb-4"
-                        style="{{ in_array('tshirt_size', $enabledFields) ? 'display: block;' : 'display: none;' }}">
+                        {{-- T-shirt sizes --}}
+                        <div id="tshirt_sizes_config_box" class="ce-panel" style="margin-top:16px;"
+                             {{ in_array('tshirt_size', $enabledFields) ? '' : 'hidden' }}>
 
-                        <label class="event-label mb-1">Available T-Shirt Sizes</label>
-                        <p class="field-help mb-3 mt-0">
-                            Select which shirt sizes participants can choose during registration.
-                        </p>
+                            <span class="ce-label">Available T-shirt sizes</span>
+                            <p class="ce-help" style="margin:-2px 0 12px;">Pick the sizes runners can choose from.</p>
 
-                        <div class="tshirt-sizes-wrapper">
-                            <div class="tshirt-sizes-grid" id="tshirt_sizes_grid">
+                            <div class="ce-size-grid" id="tshirt_sizes_grid">
                                 @foreach($standardSizes as $size)
-                                    <label class="tshirt-size-card">
-                                        <input
-                                            type="checkbox"
-                                            name="tshirt_sizes[]"
-                                            value="{{ $size }}"
-                                            {{ in_array($size, $selectedTshirtSizes) ? 'checked' : '' }}>
+                                    <label class="ce-check">
+                                        <input type="checkbox" name="tshirt_sizes[]" value="{{ $size }}"
+                                               {{ in_array($size, $selectedTshirtSizes) ? 'checked' : '' }}>
                                         <span>{{ $size }}</span>
                                     </label>
                                 @endforeach
 
                                 @foreach($customSizes as $customSize)
-                                    <label class="tshirt-size-card custom-size-card">
-                                        <input
-                                            type="checkbox"
-                                            name="tshirt_sizes[]"
-                                            value="{{ $customSize }}"
-                                            checked>
+                                    <label class="ce-check">
+                                        <input type="checkbox" name="tshirt_sizes[]" value="{{ $customSize }}" checked>
                                         <span>{{ $customSize }}</span>
                                     </label>
                                 @endforeach
                             </div>
 
-                            <div class="custom-tshirt-input-group mt-2">
-                                <input
-                                    type="text"
-                                    id="custom_tshirt_input"
-                                    placeholder="Add custom size (e.g. 4XL, Kids M)"
-                                    class="event-input">
-                                <button
-                                    type="button"
-                                    id="add_custom_tshirt_btn"
-                                    class="add-category-button"
-                                    style="padding: 0 15px; white-space: nowrap;">
-                                    <i class="fa-solid fa-plus"></i> Add
+                            <div class="ce-add-size">
+                                <input type="text" id="custom_tshirt_input" class="ce-input"
+                                       placeholder="Add a custom size, e.g. 4XL or Kids M"
+                                       aria-label="Custom T-shirt size">
+                                <button type="button" id="add_custom_tshirt_btn" class="ce-btn ce-btn-soft">
+                                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Add
                                 </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="fields-toggle-box">
-
-                        <div class="flex items-center gap-3 mb-3">
-
-                            <input
-                                type="checkbox"
-                                name="enable_bib_number"
-                                id="enable_bib_number"
-                                value="1"
-                                checked
-                                class="w-4 h-4 accent-indigo-600">
-
-                            <label
-                                for="enable_bib_number"
-                                class="event-label mb-0 cursor-pointer">
-
-                                Enable Automatic BIB Generation
-
-                            </label>
-
-                        </div>
-
-                        <div
-                            id="bib_config_wrapper"
-                            class="mt-3 border-t border-gray-200 pt-3">
-
-                            <label class="event-label mb-2">
-                                BIB Prefix Mode
-                            </label>
-
-                            <div class="flex gap-4 mb-4">
-
-                                <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
-
-                                    <input
-                                        type="radio"
-                                        name="share_bib_prefix"
-                                        value="1"
-                                        checked
-                                        class="accent-indigo-600">
-
-                                    Entire Event Shares Same Prefix (e.g. NA-0001)
-
-                                </label>
-
-                                <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
-
-                                    <input
-                                        type="radio"
-                                        name="share_bib_prefix"
-                                        value="0"
-                                        class="accent-indigo-600">
-
-                                    Separate Prefix Per Ticket Category
-
-                                </label>
-
-                            </div>
-
-                            <div
-                                id="shared_prefix_box"
-                                class="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-                                <div>
-
-                                    <label class="event-label">
-                                        Event BIB Prefix (Max 3 Chars)
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="event_bib_prefix"
-                                        maxlength="3"
-                                        placeholder="e.g. NA"
-                                        class="event-input uppercase">
-
-                                </div>
-
-                                <div>
-
-                                    <label class="event-label">
-                                        Start Number
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        name="event_bib_start_number"
-                                        value="1"
-                                        min="1"
-                                        class="event-input">
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <hr class="event-divider">
-
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">03</div>
-
-                        <div>
-                            <h3>Event Creator</h3>
-                            <p>
-                                Contact information for the person responsible for this event.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="creator-box">
-
-                        <div class="creator-header">
-
-                            <div class="creator-icon">
-                                <i class="fa-solid fa-user-tie"></i>
-                            </div>
-
-                            <div>
-                                <h3>Event Organizer / Creator</h3>
-                                <p>
-                                    Clients can use this information to contact the event creator.
-                                </p>
-                            </div>
-
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                            <div>
-
-                                <label class="event-label">
-                                    Creator Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="creator_name"
-                                    value="{{ old('creator_name') }}"
-                                    placeholder="e.g. John Doe"
-                                    class="event-input"
-                                    required>
-
-                            </div>
-
-                            <div>
-
-                                <label class="event-label">
-                                    Creator Phone Number
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="creator_phone"
-                                    value="{{ old('creator_phone') }}"
-                                    placeholder="e.g. 09 123 456 789"
-                                    class="event-input"
-                                    required>
-
-                            </div>
-
-                            <div>
-
-                                <label class="event-label">
-                                    Creator Email
-                                </label>
-
-                                <input
-                                    type="email"
-                                    name="creator_email"
-                                    value="{{ old('creator_email') }}"
-                                    placeholder="organizer@example.com"
-                                    class="event-input"
-                                    required>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <hr class="event-divider">
-
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">04</div>
-
-                        <div>
-                            <h3>Event Description</h3>
-                            <p>
-                                Tell runners what they need to know about this event.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <label class="event-label">
-                            Description
+                        {{-- BIB --}}
+                        <h3 class="ce-sub">BIB numbers</h3>
+
+                        <label class="ce-switch">
+                            <input type="checkbox" name="enable_bib_number" id="enable_bib_number" value="1"
+                                   {{ $enableBib ? 'checked' : '' }}>
+                            <span class="ce-switch-ui" aria-hidden="true"></span>
+                            <span>Generate BIB numbers automatically</span>
                         </label>
 
-                        <textarea
-                            name="description"
-                            rows="4"
-                            required
-                            placeholder="Write a description about your event..."
-                            class="event-textarea">{{ old('description') }}</textarea>
+                        <div id="bib_config_wrapper" class="ce-panel" style="margin-top:14px;" {{ $enableBib ? '' : 'hidden' }}>
 
-                    </div>
+                            <fieldset class="ce-radio-group">
+                                <legend>Prefix mode</legend>
 
-                </div>
+                                <label class="ce-radio">
+                                    <input type="radio" name="share_bib_prefix" value="1" {{ $shareBib !== '0' ? 'checked' : '' }}>
+                                    <span>
+                                        <strong>One prefix for the whole event</strong>
+                                        <small>For example NA-0001, NA-0002</small>
+                                    </span>
+                                </label>
 
-                <hr class="event-divider">
+                                <label class="ce-radio">
+                                    <input type="radio" name="share_bib_prefix" value="0" {{ $shareBib === '0' ? 'checked' : '' }}>
+                                    <span>
+                                        <strong>A prefix for each ticket type</strong>
+                                        <small>Set it on each ticket type above</small>
+                                    </span>
+                                </label>
+                            </fieldset>
 
-                <div class="form-section">
+                            <div id="shared_prefix_box" class="ce-grid-2" {{ $shareBib === '0' ? 'hidden' : '' }}>
 
-                    <div class="form-section-heading">
-
-                        <div class="section-number">05</div>
-
-                        <div>
-                            <h3>Event Banner</h3>
-                            <p>
-                                Upload an image to represent your event.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="image-upload-box">
-
-                        <div class="image-upload-content">
-
-                            <div class="image-upload-icon">
-                                <i class="fa-solid fa-image"></i>
-                            </div>
-
-                            <div class="image-upload-text">
-
-                                <strong>Event Banner Image</strong>
-
-                                <span>
-                                    Choose a high-quality image for your event.
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <input
-                            type="file"
-                            name="image"
-                            accept="image/jpeg,image/png,image/jpg,image/gif"
-                            class="event-file-input">
-
-                    </div>
-
-                </div>
-
-                <hr class="event-divider">
-
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">06</div>
-
-                        <div>
-                            <h3>Ticket Categories</h3>
-                            <p>
-                                Create ticket types, prices and participant capacity.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="ticket-builder">
-
-                        <div class="ticket-builder-header">
-
-                            <div class="ticket-builder-title">
-
-                                <div class="ticket-builder-title-icon">
-                                    <i class="fa-solid fa-ticket"></i>
+                                <div class="ce-field">
+                                    <label for="event_bib_prefix">Event BIB prefix</label>
+                                    <input type="text" id="event_bib_prefix" name="event_bib_prefix" maxlength="3"
+                                           value="{{ old('event_bib_prefix') }}"
+                                           placeholder="e.g. NA"
+                                           class="ce-input ce-upper">
+                                    <p class="ce-help">Up to 3 characters.</p>
                                 </div>
 
-                                <div>
-                                    <h3>Ticket Types</h3>
-                                    <p>
-                                        Add different distances or registration options.
-                                    </p>
+                                <div class="ce-field">
+                                    <label for="event_bib_start_number">Start number</label>
+                                    <input type="number" id="event_bib_start_number" name="event_bib_start_number" min="1"
+                                           value="{{ old('event_bib_start_number', 1) }}"
+                                           class="ce-input">
                                 </div>
 
                             </div>
 
-                            <button
-                                type="button"
-                                id="add-category-btn"
-                                class="add-category-button">
+                        </div>
 
-                                <i class="fa-solid fa-plus"></i>
-                                Add Another Ticket Type
+                    </div>
+                </section>
 
+                {{-- =================================================
+                     ORGANIZER
+                ================================================== --}}
+                <section class="ce-card" id="sec-organizer">
+                    <div class="ce-card-head">
+                        <h2>Organizer</h2>
+                        <p>Runners can use these details to contact the person responsible for the event.</p>
+                    </div>
+
+                    <div class="ce-card-body">
+                        <div class="ce-grid-3">
+
+                            <div class="ce-field">
+                                <label for="creator_name">Name <span class="ce-req" aria-hidden="true">*</span></label>
+                                <input type="text" id="creator_name" name="creator_name" required
+                                       value="{{ old('creator_name') }}"
+                                       placeholder="e.g. John Doe"
+                                       class="ce-input @error('creator_name') is-invalid @enderror">
+                                @error('creator_name')<p class="ce-error">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div class="ce-field">
+                                <label for="creator_phone">Phone number <span class="ce-req" aria-hidden="true">*</span></label>
+                                <input type="text" id="creator_phone" name="creator_phone" required
+                                       value="{{ old('creator_phone') }}"
+                                       placeholder="e.g. 09 123 456 789"
+                                       class="ce-input @error('creator_phone') is-invalid @enderror">
+                                @error('creator_phone')<p class="ce-error">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div class="ce-field">
+                                <label for="creator_email">Email <span class="ce-req" aria-hidden="true">*</span></label>
+                                <input type="email" id="creator_email" name="creator_email" required
+                                       value="{{ old('creator_email') }}"
+                                       placeholder="organizer@example.com"
+                                       class="ce-input @error('creator_email') is-invalid @enderror">
+                                @error('creator_email')<p class="ce-error">{{ $message }}</p>@enderror
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                {{-- =================================================
+                     INCLUDED ITEMS (optional)
+                ================================================== --}}
+                <details class="ce-card" id="sec-items" {{ $oldItemsOpen ? 'open' : '' }}>
+                    <summary class="ce-card-head">
+                        <span class="ce-card-head-text">
+                            <h2>Included items</h2>
+                            <p>What runners get with their ticket, like a shirt or medal.</p>
+                        </span>
+                        <span class="ce-opt-tag">Optional</span>
+                        <i class="fa-solid fa-chevron-down ce-chevron" aria-hidden="true"></i>
+                    </summary>
+
+                    <div class="ce-card-body">
+
+                        <div id="itemsContainer"></div>
+
+                        <div class="ce-empty-note" id="emptyItemsMessage" hidden>
+                            <i class="fa-solid fa-box-open" aria-hidden="true"></i>
+                            No items added yet.
+                        </div>
+
+                        <div class="ce-list-actions">
+                            <button type="button" id="addItemBtn" class="ce-btn ce-btn-soft">
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add an item
                             </button>
-
-                        </div>
-
-                        <div
-                            id="categories-container"
-                            class="space-y-3">
-
-                            <div class="category-row grid grid-cols-1 md:grid-cols-6 gap-3">
-
-                                <input
-                                    type="text"
-                                    name="categories[0][name]"
-                                    placeholder="Category (e.g., 10km)"
-                                    required
-                                    class="md:col-span-2">
-
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="categories[0][local_price]"
-                                    placeholder="Local Price (MMK)"
-                                    required>
-
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="categories[0][foreign_price]"
-                                    placeholder="Foreign Price (Optional)">
-
-                                <input
-                                    type="number"
-                                    name="categories[0][capacity]"
-                                    min="1"
-                                    placeholder="Capacity">
-
-                                <div
-                                    class="flex items-center space-x-2 separate-bib-inputs"
-                                    style="display:none;">
-
-                                    <input
-                                        type="text"
-                                        name="categories[0][bib_prefix]"
-                                        maxlength="3"
-                                        placeholder="Prefix"
-                                        class="uppercase">
-
-                                    <input
-                                        type="number"
-                                        name="categories[0][bib_start_number]"
-                                        value="1"
-                                        min="1"
-                                        placeholder="Start #">
-
-                                    <button
-                                        type="button"
-                                        class="remove-category-btn"
-                                        title="Delete ticket category">
-
-                                        <i class="fa-solid fa-trash"></i>
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
                         </div>
 
                     </div>
+                </details>
 
-                </div>
+                {{-- =================================================
+                     DOCUMENTS (optional)
+                ================================================== --}}
+                <details class="ce-card" id="sec-documents">
+                    <summary class="ce-card-head">
+                        <span class="ce-card-head-text">
+                            <h2>Waivers, consent forms and race guides</h2>
+                            <p>PDF documents for runners, in English and Burmese.</p>
+                        </span>
+                        <span class="ce-opt-tag">Optional</span>
+                        <i class="fa-solid fa-chevron-down ce-chevron" aria-hidden="true"></i>
+                    </summary>
 
-                <hr class="event-divider">
+                    <div class="ce-card-body">
 
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">07</div>
-
-                        <div>
-                            <h3>Event Items</h3>
-                            <p>
-                                Add any items or benefits included with the event.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="items-builder">
-
-                        <div class="promo-heading">
-
-                            <div
-                                class="promo-icon"
-                                style="background:#ecfdf5;color:#059669;">
-
-                                <i class="fa-solid fa-gift"></i>
-
-                            </div>
-
+                        <div class="ce-note">
+                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                             <div>
-                                <h3>What's Included?</h3>
-                                <p>
-                                    These items are independent from ticket categories.
-                                </p>
+                                Runners see the waiver and consent form before they pay. Race guides give event-day details.
+                                If you skip the consent form, that step is left out automatically.
                             </div>
-
                         </div>
 
-                        <div id="items-container">
-
-                            @php
-                                $oldItems = old('items');
-
-                                if (is_array($oldItems) && count($oldItems) > 0) {
-                                    $itemsForDisplay = $oldItems;
-                                } else {
-                                    $itemsForDisplay = [
-                                        0 => [
-                                            'title' => ''
-                                        ]
-                                    ];
-                                }
-                            @endphp
-
-                            @foreach($itemsForDisplay as $index => $oldItem)
-
-                                <div class="item-row">
-
-                                    <div>
-
-                                        <label class="event-label">
-                                            Item Title
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            name="items[{{ $index }}][title]"
-                                            value="{{ old("items.$index.title", $oldItem['title'] ?? '') }}"
-                                            placeholder="e.g. Running Shirt"
-                                            class="event-input">
-
-                                    </div>
-
-                                    <div>
-
-                                        <label class="event-label">
-                                            Item Image
-                                        </label>
-
-                                        <input
-                                            type="file"
-                                            name="items[{{ $index }}][image]"
-                                            accept="image/jpeg,image/png,image/jpg,image/gif"
-                                            class="event-file-input">
-
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        class="remove-item-btn"
-                                        title="Delete event item">
-
-                                        <i class="fa-solid fa-trash"></i>
-
-                                    </button>
-
+                        <fieldset class="ce-doc">
+                            <legend>Waiver</legend>
+                            <div class="ce-grid-2">
+                                <div class="ce-field">
+                                    <span class="ce-label">English (PDF)</span>
+                                    <label class="ce-file">
+                                        <input type="file" name="english_waiver" accept="application/pdf" class="ce-file-input">
+                                        <span class="ce-file-btn"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Choose PDF</span>
+                                        <span class="ce-file-name">No file chosen</span>
+                                    </label>
                                 </div>
+                                <div class="ce-field">
+                                    <span class="ce-label">Burmese (PDF)</span>
+                                    <label class="ce-file">
+                                        <input type="file" name="burmese_waiver" accept="application/pdf" class="ce-file-input">
+                                        <span class="ce-file-btn"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Choose PDF</span>
+                                        <span class="ce-file-name">No file chosen</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </fieldset>
 
-                            @endforeach
+                        <fieldset class="ce-doc">
+                            <legend>Consent form</legend>
+                            <div class="ce-grid-2">
+                                <div class="ce-field">
+                                    <span class="ce-label">English (PDF)</span>
+                                    <label class="ce-file">
+                                        <input type="file" name="english_consent" accept="application/pdf" class="ce-file-input">
+                                        <span class="ce-file-btn"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Choose PDF</span>
+                                        <span class="ce-file-name">No file chosen</span>
+                                    </label>
+                                </div>
+                                <div class="ce-field">
+                                    <span class="ce-label">Burmese (PDF)</span>
+                                    <label class="ce-file">
+                                        <input type="file" name="burmese_consent" accept="application/pdf" class="ce-file-input">
+                                        <span class="ce-file-btn"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Choose PDF</span>
+                                        <span class="ce-file-name">No file chosen</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </fieldset>
 
-                        </div>
-
-                        <div
-                            id="empty-items-message"
-                            class="empty-items-message">
-
-                            <i class="fa-solid fa-box-open me-1"></i>
-                            No event items added. Click "Add Another Item" if you want to include an item.
-
-                        </div>
-
-                        <button
-                            type="button"
-                            id="add-item-btn"
-                            class="add-item-button">
-
-                            <i class="fa-solid fa-plus"></i>
-                            Add Another Item
-
-                        </button>
+                        <fieldset class="ce-doc">
+                            <legend>Race guide</legend>
+                            <div class="ce-grid-2">
+                                <div class="ce-field">
+                                    <span class="ce-label">English (PDF)</span>
+                                    <label class="ce-file">
+                                        <input type="file" name="english_race_guide" accept="application/pdf" class="ce-file-input">
+                                        <span class="ce-file-btn"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Choose PDF</span>
+                                        <span class="ce-file-name">No file chosen</span>
+                                    </label>
+                                </div>
+                                <div class="ce-field">
+                                    <span class="ce-label">Burmese (PDF)</span>
+                                    <label class="ce-file">
+                                        <input type="file" name="burmese_race_guide" accept="application/pdf" class="ce-file-input">
+                                        <span class="ce-file-btn"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Choose PDF</span>
+                                        <span class="ce-file-name">No file chosen</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </fieldset>
 
                     </div>
+                </details>
 
-                </div>
-
-                <hr class="event-divider">
-
-                <div class="form-section">
-
-                    <div class="form-section-heading">
-
-                        <div class="section-number">08</div>
-
-                        <div>
-                            <h3>
-                                Participant Waivers, Consents & Race Guides
-                            </h3>
-
-                            <p>
-                                Upload rules, terms, consent forms, and event guides for registered runners.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="waiver-box">
-
-                        <div class="waiver-info">
-
-                            <i class="fa-solid fa-circle-info"></i>
-
-                            <div>
-                                Participants will see the waiver and optional consent forms before completing payment. Race guides provide additional event day details. English and Burmese PDF documents can be uploaded separately. If no consent form PDF is uploaded, it will be skipped automatically.
-                            </div>
-
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            {{-- ENGLISH WAIVER --}}
-                            <div class="waiver-file">
-
-                                <label class="event-label">
-                                    English Waiver PDF
-                                </label>
-
-                                <input
-                                    type="file"
-                                    name="english_waiver"
-                                    accept="application/pdf"
-                                    class="event-file-input">
-
-                                <div class="field-help">
-                                    Optional PDF document.
-                                </div>
-
-                            </div>
-
-                            {{-- BURMESE WAIVER --}}
-                            <div class="waiver-file">
-
-                                <label class="event-label">
-                                    Burmese Waiver PDF
-                                </label>
-
-                                <input
-                                    type="file"
-                                    name="burmese_waiver"
-                                    accept="application/pdf"
-                                    class="event-file-input">
-
-                                <div class="field-help">
-                                    Optional PDF document.
-                                </div>
-
-                            </div>
-
-                            {{-- ENGLISH CONSENT --}}
-                            <div class="waiver-file">
-
-                                <label class="event-label">
-                                    English Consent Form PDF (Optional)
-                                </label>
-
-                                <input
-                                    type="file"
-                                    name="english_consent"
-                                    accept="application/pdf"
-                                    class="event-file-input">
-
-                                <div class="field-help">
-                                    Optional downloadable consent form. Skipped if left empty.
-                                </div>
-
-                            </div>
-
-                            {{-- BURMESE CONSENT --}}
-                            <div class="waiver-file">
-
-                                <label class="event-label">
-                                    Burmese Consent Form PDF (Optional)
-                                </label>
-
-                                <input
-                                    type="file"
-                                    name="burmese_consent"
-                                    accept="application/pdf"
-                                    class="event-file-input">
-
-                                <div class="field-help">
-                                    Optional downloadable consent form. Skipped if left empty.
-                                </div>
-
-                            </div>
-
-                            {{-- ENGLISH RACE GUIDE --}}
-                            <div class="waiver-file">
-
-                                <label class="event-label">
-                                    English Race Guide PDF (Optional)
-                                </label>
-
-                                <input
-                                    type="file"
-                                    name="english_race_guide"
-                                    accept="application/pdf"
-                                    class="event-file-input">
-
-                                <div class="field-help">
-                                    Optional PDF document for race instructions.
-                                </div>
-
-                            </div>
-
-                            {{-- BURMESE RACE GUIDE --}}
-                            <div class="waiver-file">
-
-                                <label class="event-label">
-                                    Burmese Race Guide PDF (Optional)
-                                </label>
-
-                                <input
-                                    type="file"
-                                    name="burmese_race_guide"
-                                    accept="application/pdf"
-                                    class="event-file-input">
-
-                                <div class="field-help">
-                                    Optional PDF document for race instructions.
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {{-- PUBLISH BUTTON --}}
-                <div class="pt-2">
-
-                    <button
-                        type="submit"
-                        class="publish-button">
-
-                        <i class="fa-solid fa-rocket"></i>
-                        Publish Event
-
-                    </button>
-
-                </div>
-
-            </form>
-
+            </div>
         </div>
 
+        {{-- PUBLISH BAR --}}
+        <div class="ce-actionbar">
+            <p>Review your details, then publish. You can edit the event afterwards.</p>
+            <div class="ce-actionbar-buttons">
+                <a href="{{ route('admin.events.index') }}" class="ce-btn ce-btn-ghost">Cancel</a>
+                <button type="submit" id="publishBtn" class="ce-btn ce-btn-primary">
+                    <i class="fa-solid fa-rocket" aria-hidden="true"></i> Publish event
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+
+
+{{-- =========================================================
+     TEMPLATES
+========================================================= --}}
+<template id="categoryTemplate">
+    <div class="ce-category">
+        <div class="ce-category-head">
+            <strong class="ce-category-title">Ticket type</strong>
+            <button type="button" class="ce-icon-btn ce-remove-category" aria-label="Remove this ticket type">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="ce-grid-4">
+            <label class="ce-field ce-span-2">
+                <span>Name <span class="ce-req" aria-hidden="true">*</span></span>
+                <input type="text" name="categories[__INDEX__][name]" required placeholder="e.g. 10 km" class="ce-input">
+            </label>
+
+            <label class="ce-field">
+                <span>Local price (MMK) <span class="ce-req" aria-hidden="true">*</span></span>
+                <input type="number" step="0.01" name="categories[__INDEX__][local_price]" required placeholder="0" class="ce-input">
+            </label>
+
+            <label class="ce-field">
+                <span>Foreign price</span>
+                <input type="number" step="0.01" name="categories[__INDEX__][foreign_price]" placeholder="Optional" class="ce-input">
+            </label>
+
+            <label class="ce-field">
+                <span>Capacity</span>
+                <input type="number" min="1" name="categories[__INDEX__][capacity]" placeholder="Unlimited" class="ce-input">
+            </label>
+        </div>
+
+        <div class="ce-bib-fields" hidden>
+            <div class="ce-grid-4">
+                <label class="ce-field">
+                    <span>BIB prefix</span>
+                    <input type="text" maxlength="3" name="categories[__INDEX__][bib_prefix]" placeholder="e.g. 10K" class="ce-input ce-upper">
+                </label>
+
+                <label class="ce-field">
+                    <span>BIB start number</span>
+                    <input type="number" min="1" value="1" name="categories[__INDEX__][bib_start_number]" class="ce-input">
+                </label>
+            </div>
+        </div>
     </div>
+</template>
 
-</div>
+<template id="groupBuyTemplate">
+    <div class="ce-category ce-groupbuy">
+        <div class="ce-category-head">
+            <strong class="ce-gb-title">Group buy deal</strong>
+            <button type="button" class="ce-icon-btn ce-remove-groupbuy" aria-label="Remove this group buy deal">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            </button>
+        </div>
 
-</div>
+        <div class="ce-grid-4">
+            <label class="ce-field ce-span-2">
+                <span>Deal name</span>
+                <input type="text" name="group_buys[__INDEX__][name]" placeholder="e.g. Squad of 5" class="ce-input">
+            </label>
+
+            <label class="ce-field">
+                <span>Tickets required <span class="ce-req" aria-hidden="true">*</span></span>
+                <input type="number" min="2" max="100" step="1" name="group_buys[__INDEX__][quantity]" required placeholder="5" class="ce-input">
+            </label>
+
+            <label class="ce-field">
+                <span>Discount (MMK) <span class="ce-req" aria-hidden="true">*</span></span>
+                <input type="number" min="0.01" step="0.01" name="group_buys[__INDEX__][discount_amount]" required placeholder="20" class="ce-input">
+            </label>
+        </div>
+
+        <p class="ce-gb-preview" hidden></p>
+
+        <fieldset class="ce-radio-group ce-gb-scope">
+            <legend>Which tickets can be bought together?</legend>
+
+            <label class="ce-radio">
+                <input type="radio" name="group_buys[__INDEX__][ticket_scope]" value="same_category" checked>
+                <span>
+                    <strong>Same ticket type only</strong>
+                    <small>Every ticket in the group must be the same type</small>
+                </span>
+            </label>
+
+            <label class="ce-radio">
+                <input type="radio" name="group_buys[__INDEX__][ticket_scope]" value="selected_categories">
+                <span>
+                    <strong>Selected ticket types</strong>
+                    <small>Choose which types can be mixed, like VIP and Regular</small>
+                </span>
+            </label>
+        </fieldset>
+
+        <div class="ce-gb-categories" hidden>
+            <span class="ce-label">Ticket types allowed in this deal</span>
+            <div class="ce-toggle-grid ce-gb-cat-list"></div>
+            <p class="ce-help">Tick at least one ticket type. Add ticket types in the Tickets section above.</p>
+        </div>
+
+        <div class="ce-gb-footer">
+            <label class="ce-switch">
+                <input type="hidden" name="group_buys[__INDEX__][is_active]" value="0">
+                <input type="checkbox" name="group_buys[__INDEX__][is_active]" value="1" checked>
+                <span class="ce-switch-ui" aria-hidden="true"></span>
+                <span>Deal is active</span>
+            </label>
+        </div>
+    </div>
+</template>
+
+<template id="itemTemplate">
+    <div class="ce-item">
+        <label class="ce-field">
+            <span>Item name</span>
+            <input type="text" name="items[__INDEX__][title]" placeholder="e.g. Finisher medal" class="ce-input">
+        </label>
+
+        <div class="ce-field">
+            <span class="ce-label">Item image</span>
+            <label class="ce-file">
+                <input type="file" name="items[__INDEX__][image]" accept="image/jpeg,image/png,image/jpg,image/gif" class="ce-file-input">
+                <span class="ce-file-btn"><i class="fa-solid fa-image" aria-hidden="true"></i> Choose image</span>
+                <span class="ce-file-name">No image chosen</span>
+            </label>
+        </div>
+
+        <button type="button" class="ce-icon-btn ce-remove-item" aria-label="Remove this item">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+    </div>
+</template>
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const $ = id => document.getElementById(id);
 
-    const mapElement =
-        document.getElementById('event-location-map');
+    const form = $('eventForm');
+    let dirty = false;
+    let submitting = false;
 
-    if (!mapElement || typeof L === 'undefined') {
+    form.addEventListener('input', () => { dirty = true; });
+    form.addEventListener('change', () => { dirty = true; });
+
+    window.addEventListener('beforeunload', function (event) {
+        if (dirty && !submitting) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    });
+
+    form.addEventListener('submit', function () {
+        submitting = true;
+
+        const button = $('publishBtn');
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Publishing...';
+    });
+
+    /* ---------------------------------------------------------
+       Uppercase BIB prefixes
+    --------------------------------------------------------- */
+    document.addEventListener('input', function (event) {
+        if (event.target.classList && event.target.classList.contains('ce-upper')) {
+            event.target.value = event.target.value.toUpperCase();
+        }
+    });
+
+    /* ---------------------------------------------------------
+       File pickers (show chosen file name)
+    --------------------------------------------------------- */
+    document.addEventListener('change', function (event) {
+        const input = event.target;
+        if (!input.classList || !input.classList.contains('ce-file-input')) return;
+
+        const label = input.closest('.ce-file');
+        const name = label ? label.querySelector('.ce-file-name') : null;
+        if (!name) return;
+
+        const file = input.files && input.files[0];
+        const empty = input.accept.indexOf('pdf') !== -1 ? 'No file chosen' : 'No image chosen';
+
+        name.textContent = file ? file.name : empty;
+        name.classList.toggle('has-file', !!file);
+    });
+
+    /* ---------------------------------------------------------
+       Banner preview
+    --------------------------------------------------------- */
+    const bannerInput = $('bannerInput');
+    const bannerPreview = $('bannerPreview');
+    const bannerImg = $('bannerPreviewImg');
+    let bannerUrl = null;
+
+    function clearBanner() {
+        if (bannerUrl) URL.revokeObjectURL(bannerUrl);
+        bannerUrl = null;
+        bannerInput.value = '';
+        bannerImg.removeAttribute('src');
+        bannerPreview.hidden = true;
+
+        const name = bannerInput.closest('.ce-file').querySelector('.ce-file-name');
+        name.textContent = 'No image chosen';
+        name.classList.remove('has-file');
+    }
+
+    bannerInput.addEventListener('change', function () {
+        const file = bannerInput.files[0];
+
+        if (!file || file.type.indexOf('image/') !== 0) {
+            clearBanner();
+            return;
+        }
+
+        if (bannerUrl) URL.revokeObjectURL(bannerUrl);
+        bannerUrl = URL.createObjectURL(file);
+        bannerImg.src = bannerUrl;
+        bannerPreview.hidden = false;
+    });
+
+    $('bannerRemoveBtn').addEventListener('click', clearBanner);
+
+    /* ---------------------------------------------------------
+       T-shirt sizes
+    --------------------------------------------------------- */
+    const tshirtToggle = $('field_toggle_tshirt_size');
+    const tshirtBox = $('tshirt_sizes_config_box');
+    const tshirtGrid = $('tshirt_sizes_grid');
+    const customInput = $('custom_tshirt_input');
+    const addCustomBtn = $('add_custom_tshirt_btn');
+
+    if (tshirtToggle && tshirtBox) {
+        tshirtToggle.addEventListener('change', function () {
+            tshirtBox.hidden = !this.checked;
+        });
+    }
+
+    function addCustomSize() {
+        const value = customInput.value.trim().toUpperCase();
+        if (!value) return;
+
+        const existing = Array.prototype.find.call(
+            tshirtGrid.querySelectorAll('input[type="checkbox"]'),
+            input => input.value.toUpperCase() === value
+        );
+
+        if (existing) {
+            existing.checked = true;
+            customInput.value = '';
+            return;
+        }
+
+        const label = document.createElement('label');
+        label.className = 'ce-check';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'tshirt_sizes[]';
+        input.value = value;
+        input.checked = true;
+
+        const text = document.createElement('span');
+        text.textContent = value;
+
+        label.append(input, text);
+        tshirtGrid.appendChild(label);
+        customInput.value = '';
+        dirty = true;
+    }
+
+    addCustomBtn.addEventListener('click', addCustomSize);
+    customInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addCustomSize();
+        }
+    });
+
+    /* ---------------------------------------------------------
+       BIB settings
+    --------------------------------------------------------- */
+    const enableBib = $('enable_bib_number');
+    const bibWrapper = $('bib_config_wrapper');
+    const sharedBox = $('shared_prefix_box');
+    const bibRadios = document.querySelectorAll('input[name="share_bib_prefix"]');
+
+    function separateMode() {
+        const checked = document.querySelector('input[name="share_bib_prefix"]:checked');
+        return enableBib.checked && checked && checked.value === '0';
+    }
+
+    function applyBibState() {
+        bibWrapper.hidden = !enableBib.checked;
+
+        const checked = document.querySelector('input[name="share_bib_prefix"]:checked');
+        sharedBox.hidden = !!(checked && checked.value === '0');
+
+        const separate = separateMode();
+        document.querySelectorAll('.ce-bib-fields').forEach(function (box) {
+            box.hidden = !separate;
+        });
+    }
+
+    enableBib.addEventListener('change', applyBibState);
+    bibRadios.forEach(radio => radio.addEventListener('change', applyBibState));
+
+    /* ---------------------------------------------------------
+       Ticket types
+    --------------------------------------------------------- */
+    const categoriesContainer = $('categoriesContainer');
+    const categoryTemplate = $('categoryTemplate');
+    let categoryIndex = 0;
+
+    // GROUP BUY: set to true once the group buy section is ready.
+    let groupBuysReady = false;
+
+    // GROUP BUY: maps a category key from old input ("new-3") to its key on this page.
+    const categoryKeyMap = {};
+
+    function fill(row, key, value) {
+        const input = row.querySelector('[name$="[' + key + ']"]');
+        if (input && value !== undefined && value !== null) input.value = value;
+    }
+
+    function refreshCategories() {
+        const rows = categoriesContainer.querySelectorAll('.ce-category');
+
+        rows.forEach(function (row, position) {
+            row.querySelector('.ce-category-title').textContent = 'Ticket type ' + (position + 1);
+            row.querySelector('.ce-remove-category').disabled = rows.length === 1;
+        });
+
+        applyBibState();
+        refreshGroupBuyOptions();
+    }
+
+    function addCategory(values, originalKey) {
+        const holder = document.createElement('div');
+        holder.innerHTML = categoryTemplate.innerHTML.replace(/__INDEX__/g, categoryIndex).trim();
+
+        const row = holder.firstElementChild;
+
+        if (values) {
+            fill(row, 'name', values.name);
+            fill(row, 'local_price', values.local_price);
+            fill(row, 'foreign_price', values.foreign_price);
+            fill(row, 'capacity', values.capacity);
+            fill(row, 'bib_prefix', values.bib_prefix);
+            fill(row, 'bib_start_number', values.bib_start_number);
+        }
+
+        // GROUP BUY: remember this row's form index so deals can point at it.
+        row.dataset.catIndex = categoryIndex;
+
+        if (originalKey !== undefined && originalKey !== null) {
+            categoryKeyMap['new-' + originalKey] = 'new-' + categoryIndex;
+        }
+
+        categoryIndex++;
+        categoriesContainer.appendChild(row);
+        refreshCategories();
+
+        return row;
+    }
+
+    $('addCategoryBtn').addEventListener('click', function () {
+        const row = addCategory();
+        row.querySelector('input').focus();
+        dirty = true;
+    });
+
+    categoriesContainer.addEventListener('click', function (event) {
+        const button = event.target.closest('.ce-remove-category');
+        if (!button || button.disabled) return;
+
+        button.closest('.ce-category').remove();
+        refreshCategories();
+        dirty = true;
+    });
+
+    const oldCategories = Object.values(@json(old('categories', [])) || {});
+    const oldCategoryKeys = @json(array_keys((array) old('categories', [])));
+
+    if (oldCategories.length) {
+        oldCategories.forEach(function (values, position) {
+            addCategory(values, oldCategoryKeys[position]);
+        });
+    } else {
+        addCategory();
+    }
+
+    /* ---------------------------------------------------------
+       Group buy deals
+    --------------------------------------------------------- */
+    const groupBuyContainer = $('groupBuyContainer');
+    const groupBuyTemplate = $('groupBuyTemplate');
+    const emptyGroupBuys = $('emptyGroupBuyMessage');
+    let groupBuyIndex = 0;
+
+    function money(value) {
+        return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    // Ticket types currently on the page, each with a key the server understands.
+    function categoryOptions() {
+        return Array.prototype.map.call(
+            categoriesContainer.querySelectorAll('.ce-category'),
+            function (row, position) {
+                const nameInput = row.querySelector('[name$="[name]"]');
+                const priceInput = row.querySelector('[name$="[local_price]"]');
+                const idInput = row.querySelector('.ce-id');
+
+                const key = (idInput && !idInput.disabled && idInput.value)
+                    ? String(idInput.value)
+                    : 'new-' + row.dataset.catIndex;
+
+                return {
+                    key: key,
+                    label: (nameInput && nameInput.value.trim()) || ('Ticket type ' + (position + 1)),
+                    price: parseFloat(priceInput ? priceInput.value : '')
+                };
+            }
+        );
+    }
+
+    function selectedKeys(row) {
+        return new Set(
+            Array.prototype.map.call(
+                row.querySelectorAll('.ce-gb-cat-list input:checked'),
+                input => input.value
+            )
+        );
+    }
+
+    function currentScope(row) {
+        const checked = row.querySelector('input[type="radio"]:checked');
+        return checked ? checked.value : 'same_category';
+    }
+
+    function renderGroupBuyOptions(row, selected) {
+        const list = row.querySelector('.ce-gb-cat-list');
+        const useSelected = currentScope(row) === 'selected_categories';
+
+        list.replaceChildren();
+
+        categoryOptions().forEach(function (option) {
+            const label = document.createElement('label');
+            label.className = 'ce-check';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.name = 'group_buys[' + row.dataset.gbIndex + '][allowed_ticket_category_ids][]';
+            input.value = option.key;
+            input.checked = selected.has(option.key);
+            input.disabled = !useSelected;
+
+            const text = document.createElement('span');
+            text.textContent = option.label;
+
+            label.append(input, text);
+            list.appendChild(label);
+        });
+
+        row.querySelector('.ce-gb-categories').hidden = !useSelected;
+    }
+
+    function updateGroupBuyPreview(row) {
+        const preview = row.querySelector('.ce-gb-preview');
+        const quantity = parseInt(row.querySelector('[name$="[quantity]"]').value, 10);
+        const discount = parseFloat(row.querySelector('[name$="[discount_amount]"]').value);
+
+        if (!(quantity >= 2) || !(discount > 0)) {
+            preview.hidden = true;
+            return;
+        }
+
+        let options = categoryOptions();
+
+        if (currentScope(row) === 'selected_categories') {
+            const selected = selectedKeys(row);
+            options = options.filter(option => selected.has(option.key));
+        }
+
+        const prices = options
+            .map(option => option.price)
+            .filter(price => Number.isFinite(price) && price > 0);
+
+        preview.classList.remove('is-warning');
+
+        if (!prices.length) {
+            preview.textContent = 'Runners save ' + money(discount) + ' MMK when they buy ' + quantity + ' tickets together.';
+            preview.hidden = false;
+            return;
+        }
+
+        const lowest = Math.min.apply(null, prices);
+        const total = quantity * lowest;
+
+        if (discount >= total) {
+            preview.classList.add('is-warning');
+            preview.textContent = 'The discount must be less than the group total (' + quantity + ' x ' + money(lowest) + ' = ' + money(total) + ' MMK).';
+        } else {
+            preview.textContent = 'Example at ' + money(lowest) + ' MMK per ticket: ' + quantity + ' x ' + money(lowest) +
+                ' = ' + money(total) + ', minus ' + money(discount) + ' = ' + money(total - discount) + ' MMK.';
+        }
+
+        preview.hidden = false;
+    }
+
+    // Rebuild every deal's ticket type list (called when ticket types change).
+    function refreshGroupBuyOptions() {
+        if (!groupBuysReady) return;
+
+        groupBuyContainer.querySelectorAll('.ce-groupbuy').forEach(function (row) {
+            renderGroupBuyOptions(row, selectedKeys(row));
+            updateGroupBuyPreview(row);
+        });
+    }
+
+    function refreshGroupBuys() {
+        const rows = groupBuyContainer.querySelectorAll('.ce-groupbuy');
+
+        rows.forEach(function (row, position) {
+            row.querySelector('.ce-gb-title').textContent = 'Group buy deal ' + (position + 1);
+        });
+
+        emptyGroupBuys.hidden = rows.length > 0;
+    }
+
+    function addGroupBuy(values) {
+        const holder = document.createElement('div');
+        holder.innerHTML = groupBuyTemplate.innerHTML.replace(/__INDEX__/g, groupBuyIndex).trim();
+
+        const row = holder.firstElementChild;
+        row.dataset.gbIndex = groupBuyIndex;
+
+        let selected = new Set();
+
+        if (values) {
+            fill(row, 'name', values.name);
+            fill(row, 'quantity', values.quantity);
+            fill(row, 'discount_amount', values.discount_amount);
+
+            const scopeRadio = row.querySelector('input[type="radio"][value="' + values.ticket_scope + '"]');
+            if (scopeRadio) scopeRadio.checked = true;
+
+            row.querySelector('input[type="checkbox"][name$="[is_active]"]').checked = values.is_active !== false;
+
+            selected = new Set((values.allowed || []).map(key => categoryKeyMap[key] || key));
+        }
+
+        groupBuyIndex++;
+        groupBuyContainer.appendChild(row);
+
+        renderGroupBuyOptions(row, selected);
+        updateGroupBuyPreview(row);
+        refreshGroupBuys();
+
+        return row;
+    }
+
+    $('addGroupBuyBtn').addEventListener('click', function () {
+        const row = addGroupBuy();
+        row.querySelector('input[type="text"]').focus();
+        dirty = true;
+    });
+
+    groupBuyContainer.addEventListener('click', function (event) {
+        const button = event.target.closest('.ce-remove-groupbuy');
+        if (!button) return;
+
+        button.closest('.ce-groupbuy').remove();
+        refreshGroupBuys();
+        dirty = true;
+    });
+
+    groupBuyContainer.addEventListener('input', function (event) {
+        const row = event.target.closest('.ce-groupbuy');
+        if (row) updateGroupBuyPreview(row);
+    });
+
+    groupBuyContainer.addEventListener('change', function (event) {
+        const row = event.target.closest('.ce-groupbuy');
+        if (!row) return;
+
+        if (event.target.type === 'radio') {
+            renderGroupBuyOptions(row, selectedKeys(row));
+        }
+
+        updateGroupBuyPreview(row);
+    });
+
+    // Keep deal lists in step when ticket names or prices change.
+    categoriesContainer.addEventListener('input', function (event) {
+        if (event.target.matches('[name$="[name]"], [name$="[local_price]"]')) {
+            refreshGroupBuyOptions();
+        }
+    });
+
+    groupBuysReady = true;
+
+    Object.values(@json($groupBuysData) || {}).forEach(function (values) {
+        addGroupBuy(values);
+    });
+
+    refreshGroupBuys();
+
+    /* ---------------------------------------------------------
+       Included items
+    --------------------------------------------------------- */
+    const itemsContainer = $('itemsContainer');
+    const itemTemplate = $('itemTemplate');
+    const emptyItems = $('emptyItemsMessage');
+    let itemIndex = 0;
+
+    function refreshItems() {
+        emptyItems.hidden = itemsContainer.querySelectorAll('.ce-item').length > 0;
+    }
+
+    function addItem(values) {
+        const holder = document.createElement('div');
+        holder.innerHTML = itemTemplate.innerHTML.replace(/__INDEX__/g, itemIndex).trim();
+
+        const row = holder.firstElementChild;
+
+        if (values && values.title) {
+            row.querySelector('[name$="[title]"]').value = values.title;
+        }
+
+        itemIndex++;
+        itemsContainer.appendChild(row);
+        refreshItems();
+
+        return row;
+    }
+
+    $('addItemBtn').addEventListener('click', function () {
+        const row = addItem();
+        row.querySelector('input[type="text"]').focus();
+        dirty = true;
+    });
+
+    itemsContainer.addEventListener('click', function (event) {
+        const button = event.target.closest('.ce-remove-item');
+        if (!button) return;
+
+        button.closest('.ce-item').remove();
+        refreshItems();
+        dirty = true;
+    });
+
+    const oldItems = Object.values(@json(old('items', [])) || {});
+    oldItems.forEach(addItem);
+    refreshItems();
+
+    /* ---------------------------------------------------------
+       Section nav (scroll spy)
+    --------------------------------------------------------- */
+    const navLinks = Array.prototype.slice.call(document.querySelectorAll('.ce-nav a'));
+
+    navLinks.forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            const target = document.querySelector(link.getAttribute('href'));
+            if (!target) return;
+
+            event.preventDefault();
+
+            if (target.tagName === 'DETAILS') target.open = true;
+
+            const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        });
+    });
+
+    if ('IntersectionObserver' in window && navLinks.length) {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+
+                navLinks.forEach(function (link) {
+                    link.classList.toggle('is-active', link.getAttribute('href') === '#' + entry.target.id);
+                });
+            });
+        }, { rootMargin: '-15% 0px -70% 0px' });
+
+        navLinks.forEach(function (link) {
+            const section = document.querySelector(link.getAttribute('href'));
+            if (section) observer.observe(section);
+        });
+    }
+
+    /* ---------------------------------------------------------
+       Location picker (OpenStreetMap)
+    --------------------------------------------------------- */
+    const mapElement = $('event-location-map');
+    const locationInput = $('location');
+    const searchButton = $('locationSearchBtn');
+    const resultsBox = $('locationResults');
+    const statusLine = $('locationStatus');
+    const latInput = $('latitude');
+    const lngInput = $('longitude');
+    const coordsBox = $('coordsBox');
+    const coordsText = $('coordsText');
+
+    function setStatus(message, type, icon) {
+        statusLine.className = 'ce-status' + (type ? ' is-' + type : '');
+        statusLine.replaceChildren();
+
+        if (!message) return;
+
+        if (icon) {
+            const i = document.createElement('i');
+            i.className = 'fa-solid ' + icon;
+            i.setAttribute('aria-hidden', 'true');
+            statusLine.appendChild(i);
+        }
+
+        statusLine.appendChild(document.createTextNode(message));
+    }
+
+    if (typeof L === 'undefined') {
+        setStatus('The map could not load. You can still type the location and publish.', 'error', 'fa-circle-exclamation');
+        mapElement.hidden = true;
+        searchButton.disabled = true;
         return;
     }
 
-    const locationInput =
-        document.getElementById('location');
+    const oldLat = parseFloat(@json(old('latitude')));
+    const oldLng = parseFloat(@json(old('longitude')));
+    const hasOldPin = Number.isFinite(oldLat) && Number.isFinite(oldLng);
 
-    const searchInput =
-        document.getElementById('location-search');
+    const map = L.map('event-location-map').setView(
+        hasOldPin ? [oldLat, oldLng] : [16.8409, 96.1735],
+        hasOldPin ? 16 : 12
+    );
 
-    const searchButton =
-        document.getElementById('location-search-button');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-    const searchResults =
-        document.getElementById('location-search-results');
+    const marker = L.marker(map.getCenter(), { draggable: true }).addTo(map);
 
-    const latitudeInput =
-        document.getElementById('latitude');
+    function saveCoordinates(lat, lng) {
+        latInput.value = Number(lat).toFixed(7);
+        lngInput.value = Number(lng).toFixed(7);
 
-    const longitudeInput =
-        document.getElementById('longitude');
+        coordsText.textContent = 'Pin saved at ' + Number(lat).toFixed(5) + ', ' + Number(lng).toFixed(5);
+        coordsBox.hidden = false;
+    }
 
-    const selectedLocationBox =
-        document.getElementById('selected-location-box');
+    function clearCoordinates() {
+        latInput.value = '';
+        lngInput.value = '';
+        coordsBox.hidden = true;
+    }
 
-    const selectedLocationText =
-        document.getElementById('selected-location-text');
+    function placePin(lat, lng, zoom) {
+        marker.setLatLng([lat, lng]);
+        saveCoordinates(lat, lng);
 
-    const autoStatus =
-        document.getElementById('location-auto-status');
-
-    const oldLatitude =
-        parseFloat(@json(old('latitude')));
-
-    const oldLongitude =
-        parseFloat(@json(old('longitude')));
-
-    const defaultLatitude =
-        Number.isFinite(oldLatitude)
-            ? oldLatitude
-            : 16.8409;
-
-    const defaultLongitude =
-        Number.isFinite(oldLongitude)
-            ? oldLongitude
-            : 96.1735;
-
-    const eventMap =
-        L.map('event-location-map', {
-            zoomControl: true,
-            scrollWheelZoom: true,
-            dragging: true
-        }).setView(
-            [
-                defaultLatitude,
-                defaultLongitude
-            ],
-            Number.isFinite(oldLatitude) &&
-            Number.isFinite(oldLongitude)
-                ? 16
-                : 12
-        );
-
-    L.tileLayer(
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        {
-            maxZoom: 19,
-
-            attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+        if (zoom) {
+            map.setView([lat, lng], zoom, { animate: true });
         }
-    ).addTo(eventMap);
+    }
 
-    const eventMarker =
-        L.marker(
-            [
-                defaultLatitude,
-                defaultLongitude
-            ],
-            {
-                draggable: false
+    if (hasOldPin) {
+        placePin(oldLat, oldLng, 16);
+    }
+
+    map.on('click', function (event) {
+        placePin(event.latlng.lat, event.latlng.lng);
+        setStatus('Pin moved. Coordinates saved.', 'success', 'fa-circle-check');
+    });
+
+    marker.on('dragend', function () {
+        const position = marker.getLatLng();
+        saveCoordinates(position.lat, position.lng);
+        setStatus('Pin moved. Coordinates saved.', 'success', 'fa-circle-check');
+    });
+
+    function renderResults(results) {
+        resultsBox.replaceChildren();
+
+        results.forEach(function (result, index) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'ce-result' + (index === 0 ? ' is-best' : '');
+
+            const title = document.createElement('strong');
+            title.textContent = result.name || (result.display_name || '').split(',')[0] || 'Location';
+
+            if (index === 0) {
+                const badge = document.createElement('em');
+                badge.textContent = 'Best match';
+                title.appendChild(badge);
             }
-        ).addTo(eventMap);
 
-    function setAutoStatus(
-        message,
-        type = ''
-    ) {
+            const address = document.createElement('span');
+            address.textContent = result.display_name || '';
 
-        if (!autoStatus) {
-            return;
-        }
+            button.append(title, address);
 
-        autoStatus.className =
-            'location-auto-status ' + type;
+            button.addEventListener('click', function () {
+                locationInput.value = result.display_name || result.name || locationInput.value;
+                placePin(parseFloat(result.lat), parseFloat(result.lon), 16);
+                resultsBox.hidden = true;
+                setStatus('Location selected and pin saved.', 'success', 'fa-circle-check');
+                dirty = true;
+            });
 
-        autoStatus.innerHTML =
-            message;
+            resultsBox.appendChild(button);
+        });
 
-    }
-
-    function updateCoordinates(
-        latitude,
-        longitude
-    ) {
-
-        latitudeInput.value =
-            Number(latitude).toFixed(7);
-
-        longitudeInput.value =
-            Number(longitude).toFixed(7);
-
-    }
-
-    function showSelectedLocation(
-        text
-    ) {
-
-        if (!selectedLocationBox || !selectedLocationText) {
-            return;
-        }
-
-        selectedLocationBox.style.display =
-            'flex';
-
-        selectedLocationText.textContent =
-            text;
-
-    }
-
-    function setMapLocation(
-        latitude,
-        longitude,
-        locationName = ''
-    ) {
-
-        latitude =
-            Number(latitude);
-
-        longitude =
-            Number(longitude);
-
-        if (
-            !Number.isFinite(latitude) ||
-            !Number.isFinite(longitude)
-        ) {
-            return;
-        }
-
-        updateCoordinates(
-            latitude,
-            longitude
-        );
-
-        eventMarker.setLatLng([
-            latitude,
-            longitude
-        ]);
-
-        eventMap.setView(
-            [
-                latitude,
-                longitude
-            ],
-            16,
-            {
-                animate: true
-            }
-        );
-
-        if (locationName) {
-
-            locationInput.value =
-                locationName;
-
-            searchInput.value =
-                locationName;
-
-            showSelectedLocation(
-                locationName
-            );
-
-        }
-
-        const popupTitle =
-            locationName || 'Event Location';
-
-        eventMarker
-            .bindPopup(
-                `<strong>${escapeHtml(popupTitle)}</strong>`
-            )
-            .openPopup();
-
-        setAutoStatus(
-            '<i class="fa-solid fa-circle-check"></i> Location found and coordinates saved automatically.',
-            'success'
-        );
-
+        resultsBox.hidden = results.length === 0;
     }
 
     let searchTimer = null;
+    let controller = null;
 
-    let currentSearchController = null;
-
-    async function searchLocation(
-        automatic = false
-    ) {
-
-        const query =
-            searchInput.value.trim();
-
-        if (!query) {
-
-            if (!automatic) {
-                searchInput.focus();
-            }
-
-            return;
-
-        }
+    async function searchLocation(automatic) {
+        const query = locationInput.value.trim();
 
         if (query.length < 3) {
-
-            if (automatic) {
-                return;
-            }
-
-            setAutoStatus(
-                '<i class="fa-solid fa-circle-info"></i> Type at least 3 characters.',
-                ''
-            );
-
+            if (!automatic) setStatus('Type at least 3 characters.', '', 'fa-circle-info');
             return;
-
         }
 
-        if (currentSearchController) {
-            currentSearchController.abort();
-        }
-
-        currentSearchController =
-            new AbortController();
+        if (controller) controller.abort();
+        controller = new AbortController();
 
         if (!automatic) {
-
-            searchButton.disabled =
-                true;
-
-            searchButton.textContent =
-                'Searching...';
-
+            searchButton.disabled = true;
+            searchButton.textContent = 'Searching...';
         }
 
-        setAutoStatus(
-            '<i class="fa-solid fa-spinner fa-spin"></i> Finding location...',
-            'loading'
-        );
-
-        searchResults.innerHTML =
-            '';
-
-        searchResults.style.display =
-            'none';
+        setStatus('Finding location...', 'loading', 'fa-spinner fa-spin');
 
         try {
+            const response = await fetch(
+                'https://nominatim.openstreetmap.org/search?' + new URLSearchParams({
+                    format: 'jsonv2',
+                    q: query,
+                    limit: 5,
+                    addressdetails: 1
+                }),
+                { headers: { 'Accept': 'application/json' }, signal: controller.signal }
+            );
 
-            const response =
-                await fetch(
-                    'https://nominatim.openstreetmap.org/search?' +
-                    new URLSearchParams({
-                        format: 'jsonv2',
-                        q: query,
-                        limit: 5,
-                        addressdetails: 1
-                    }),
-                    {
-                        headers: {
-                            'Accept':
-                                'application/json'
-                        },
-                        signal:
-                            currentSearchController.signal
-                    }
-                );
+            if (!response.ok) throw new Error('Location search failed.');
 
-            if (!response.ok) {
-
-                throw new Error(
-                    'Location search failed.'
-                );
-
-            }
-
-            const results =
-                await response.json();
+            const results = await response.json();
 
             if (!results.length) {
-
-                setAutoStatus(
-                    '<i class="fa-solid fa-circle-exclamation"></i> Location not found. Try adding the city or country.',
-                    'error'
-                );
-
-                searchResults.innerHTML = `
-                    <div class="location-result">
-                        <div class="location-result-title">
-                            No locations found
-                        </div>
-
-                        <div class="location-result-address">
-                            Try a more specific venue, street or city name.
-                        </div>
-                    </div>
-                `;
-
-                searchResults.style.display =
-                    'block';
-
+                resultsBox.hidden = true;
+                setStatus('Location not found. Try adding the city or country.', 'error', 'fa-circle-exclamation');
                 return;
-
             }
 
-            const bestResult =
-                results[0];
-
-            const bestLatitude =
-                parseFloat(bestResult.lat);
-
-            const bestLongitude =
-                parseFloat(bestResult.lon);
-
-            const bestLocationName =
-                bestResult.display_name ||
-                bestResult.name ||
-                query;
-
-            setMapLocation(
-                bestLatitude,
-                bestLongitude,
-                bestLocationName
-            );
-
-            results.forEach(
-                function (result, index) {
-
-                    const resultElement =
-                        document.createElement('div');
-
-                    resultElement.className =
-                        'location-result' +
-                        (index === 0 ? ' selected' : '');
-
-                    const title =
-                        result.name ||
-                        'Selected Location';
-
-                    const address =
-                        result.display_name ||
-                        '';
-
-                    resultElement.innerHTML = `
-                        <div class="location-result-title">
-                            ${index === 0 ? '<i class="fa-solid fa-check me-1"></i>' : ''}
-                            ${escapeHtml(title)}
-                        </div>
-
-                        <div class="location-result-address">
-                            ${escapeHtml(address)}
-                        </div>
-                    `;
-
-                    resultElement.addEventListener(
-                        'click',
-                        function () {
-
-                            const latitude =
-                                parseFloat(result.lat);
-
-                            const longitude =
-                                parseFloat(result.lon);
-
-                            const locationName =
-                                result.display_name ||
-                                result.name ||
-                                query;
-
-                            setMapLocation(
-                                latitude,
-                                longitude,
-                                locationName
-                            );
-
-                            searchResults.style.display =
-                                'none';
-
-                        }
-                    );
-
-                    searchResults.appendChild(
-                        resultElement
-                    );
-
-                }
-            );
-
-            searchResults.style.display =
-                'block';
+            placePin(parseFloat(results[0].lat), parseFloat(results[0].lon), 16);
+            renderResults(results);
+            setStatus('Pin placed at the best match. Pick another suggestion if it is wrong.', 'success', 'fa-circle-check');
 
         } catch (error) {
+            if (error.name === 'AbortError') return;
 
-            if (error.name === 'AbortError') {
-                return;
-            }
-
-            console.error(
-                'Location search error:',
-                error
-            );
-
-            setAutoStatus(
-                '<i class="fa-solid fa-circle-exclamation"></i> Unable to search location. Please try again.',
-                'error'
-            );
-
-            searchResults.innerHTML = `
-                <div class="location-result">
-                    <div class="location-result-title">
-                        Unable to search location
-                    </div>
-
-                    <div class="location-result-address">
-                        Please try again.
-                    </div>
-                </div>
-            `;
-
-            searchResults.style.display =
-                'block';
+            resultsBox.hidden = true;
+            setStatus('Unable to search right now. Please try again.', 'error', 'fa-circle-exclamation');
 
         } finally {
-
             if (!automatic) {
-
-                searchButton.disabled =
-                    false;
-
-                searchButton.textContent =
-                    'Search';
-
+                searchButton.disabled = false;
+                searchButton.textContent = 'Find on map';
             }
-
         }
-
     }
 
-    searchInput.addEventListener(
-        'input',
-        function () {
-
-            const query =
-                this.value.trim();
-
-            locationInput.value =
-                query;
-
-            if (query.length >= 3) {
-
-                latitudeInput.value =
-                    '';
-
-                longitudeInput.value =
-                    '';
-
-            }
-
-            clearTimeout(searchTimer);
-
-            if (query.length < 3) {
-
-                searchResults.style.display =
-                    'none';
-
-                setAutoStatus(
-                    '',
-                    ''
-                );
-
-                return;
-
-            }
-
-            searchTimer =
-                setTimeout(
-                    function () {
-
-                        searchLocation(true);
-
-                    },
-                    800
-                );
-
-        }
-    );
-
-    searchButton.addEventListener(
-        'click',
-        function () {
-
-            clearTimeout(searchTimer);
-
-            searchLocation(false);
-
-        }
-    );
-
-    searchInput.addEventListener(
-        'keydown',
-        function (event) {
-
-            if (event.key === 'Enter') {
-
-                event.preventDefault();
-
-                clearTimeout(searchTimer);
-
-                searchLocation(false);
-
-            }
-
-        }
-    );
-
-    locationInput.addEventListener(
-        'input',
-        function () {
-
-            searchInput.value =
-                this.value;
-
-            clearTimeout(searchTimer);
-
-            const query =
-                this.value.trim();
-
-            if (query.length < 3) {
-
-                searchResults.style.display =
-                    'none';
-
-                return;
-
-            }
-
-            latitudeInput.value =
-                '';
-
-            longitudeInput.value =
-                '';
-
-            searchTimer =
-                setTimeout(
-                    function () {
-
-                        searchLocation(true);
-
-                    },
-                    800
-                );
-
-        }
-    );
-
-    document.addEventListener(
-        'click',
-        function (event) {
-
-            if (
-                !event.target.closest(
-                    '.location-search-wrapper'
-                ) &&
-                !event.target.closest(
-                    '#location-search-results'
-                )
-            ) {
-
-                searchResults.style.display =
-                    'none';
-
-            }
-
-        }
-    );
-
-    function escapeHtml(value) {
-
-        const div =
-            document.createElement('div');
-
-        div.textContent =
-            value;
-
-        return div.innerHTML;
-
-    }
-
-    if (
-        Number.isFinite(oldLatitude) &&
-        Number.isFinite(oldLongitude)
-    ) {
-
-        updateCoordinates(
-            oldLatitude,
-            oldLongitude
-        );
-
-        const oldLocation =
-            locationInput.value.trim();
-
-        if (oldLocation) {
-
-            searchInput.value =
-                oldLocation;
-
-            showSelectedLocation(
-                oldLocation
-            );
-
-            eventMarker
-                .bindPopup(
-                    `<strong>${escapeHtml(oldLocation)}</strong>`
-                );
-
-        }
-
-    }
-    else if (
-        locationInput.value.trim().length >= 3
-    ) {
-
-        searchInput.value =
-            locationInput.value.trim();
-
-        setTimeout(
-            function () {
-                searchLocation(true);
-            },
-            500
-        );
-
-    }
-
-    setTimeout(
-        function () {
-            eventMap.invalidateSize();
-        },
-        300
-    );
-
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    // T-Shirt size configuration - same behavior as Edit Event
-    const tshirtCheckbox = document.getElementById('field_toggle_tshirt_size');
-    const tshirtConfigBox = document.getElementById('tshirt_sizes_config_box');
-
-    if (tshirtCheckbox && tshirtConfigBox) {
-        tshirtCheckbox.addEventListener('change', function () {
-            tshirtConfigBox.style.display = this.checked ? 'block' : 'none';
-        });
-    }
-
-    // Add custom T-shirt sizes, matching Edit Event
-    const addCustomBtn = document.getElementById('add_custom_tshirt_btn');
-    const customInput = document.getElementById('custom_tshirt_input');
-    const tshirtGrid = document.getElementById('tshirt_sizes_grid');
-
-    if (addCustomBtn && customInput && tshirtGrid) {
-        addCustomBtn.addEventListener('click', function () {
-            const value = customInput.value.trim().toUpperCase();
-            if (!value) return;
-
-            const existingInputs = tshirtGrid.querySelectorAll('input[type="checkbox"]');
-            for (const input of existingInputs) {
-                if (input.value.toUpperCase() === value) {
-                    input.checked = true;
-                    customInput.value = '';
-                    return;
-                }
-            }
-
-            const label = document.createElement('label');
-            label.className = 'tshirt-size-card custom-size-card';
-            label.innerHTML = `
-                <input type="checkbox" name="tshirt_sizes[]" value="${value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" checked>
-                <span></span>
-            `;
-            label.querySelector('span').textContent = value;
-            tshirtGrid.appendChild(label);
-            customInput.value = '';
-        });
-
-        customInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addCustomBtn.click();
-            }
-        });
-    }
-
-    let categoryIndex = 1;
-    let itemIndex = 1;
-
-    document
-        .querySelectorAll(
-            '#items-container .item-row input[type="text"]'
-        )
-        .forEach(function (input) {
-
-            const match =
-                input.name.match(
-                    /items\[(\d+)\]\[title\]/
-                );
-
-            if (match) {
-
-                const existingIndex =
-                    parseInt(match[1]);
-
-                if (
-                    Number.isFinite(existingIndex) &&
-                    existingIndex >= itemIndex
-                ) {
-
-                    itemIndex =
-                        existingIndex + 1;
-
-                }
-
-            }
-
-        });
-
-    const enableBibCheckbox =
-        document.getElementById('enable_bib_number');
-
-    const bibConfigWrapper =
-        document.getElementById('bib_config_wrapper');
-
-    const shareBibRadios =
-        document.querySelectorAll(
-            'input[name="share_bib_prefix"]'
-        );
-
-    const sharedPrefixBox =
-        document.getElementById('shared_prefix_box');
-
-    if (enableBibCheckbox && bibConfigWrapper) {
-
-        enableBibCheckbox.addEventListener(
-            'change',
-            function () {
-
-                bibConfigWrapper.style.display =
-                    this.checked ? 'block' : 'none';
-
-            }
-        );
-
-    }
-
-    shareBibRadios.forEach(function (radio) {
-
-        radio.addEventListener(
-            'change',
-            function () {
-
-                if (this.value === '1') {
-
-                    sharedPrefixBox.style.display =
-                        'grid';
-
-                    document
-                        .querySelectorAll(
-                            '.separate-bib-inputs'
-                        )
-                        .forEach(function (el) {
-
-                            el.style.display =
-                                'none';
-
-                        });
-
-                } else {
-
-                    sharedPrefixBox.style.display =
-                        'none';
-
-                    document
-                        .querySelectorAll(
-                            '.separate-bib-inputs'
-                        )
-                        .forEach(function (el) {
-
-                            el.style.display =
-                                'flex';
-
-                        });
-
-                }
-
-            }
-        );
-
-    });
-
-    const categoryContainer =
-        document.getElementById(
-            'categories-container'
-        );
-
-    const addCategoryBtn =
-        document.getElementById(
-            'add-category-btn'
-        );
-
-    if (addCategoryBtn && categoryContainer) {
-
-        addCategoryBtn.addEventListener(
-            'click',
-            function () {
-
-                const row =
-                    document.createElement('div');
-
-                const selectedBibRadio =
-                    document.querySelector(
-                        'input[name="share_bib_prefix"]:checked'
-                    );
-
-                const separateMode =
-                    selectedBibRadio &&
-                    selectedBibRadio.value === '0';
-
-                row.className =
-                    'category-row grid grid-cols-1 md:grid-cols-6 gap-3';
-
-                row.innerHTML = `
-                    <input
-                        type="text"
-                        name="categories[${categoryIndex}][name]"
-                        placeholder="Category (e.g., 21km)"
-                        required
-                        class="md:col-span-2">
-
-                    <input
-                        type="number"
-                        step="0.01"
-                        name="categories[${categoryIndex}][local_price]"
-                        placeholder="Local Price (MMK)"
-                        required>
-
-                    <input
-                        type="number"
-                        step="0.01"
-                        name="categories[${categoryIndex}][foreign_price]"
-                        placeholder="Foreign Price (Optional)">
-
-                    <input
-                        type="number"
-                        name="categories[${categoryIndex}][capacity]"
-                        min="1"
-                        placeholder="Capacity">
-
-                    <div
-                        class="flex items-center space-x-2 separate-bib-inputs"
-                        style="${separateMode ? 'display:flex;' : 'display:none;'}">
-
-                        <input
-                            type="text"
-                            name="categories[${categoryIndex}][bib_prefix]"
-                            maxlength="3"
-                            placeholder="Prefix"
-                            class="uppercase">
-
-                        <input
-                            type="number"
-                            name="categories[${categoryIndex}][bib_start_number]"
-                            value="1"
-                            min="1"
-                            placeholder="Start #">
-
-                        <button
-                            type="button"
-                            class="remove-category-btn"
-                            title="Delete ticket category">
-
-                            <i class="fa-solid fa-trash"></i>
-
-                        </button>
-
-                    </div>
-                `;
-
-                categoryContainer.appendChild(row);
-
-                categoryIndex++;
-
-            }
-        );
-
-        categoryContainer.addEventListener(
-            'click',
-            function (e) {
-
-                const removeButton =
-                    e.target.closest(
-                        '.remove-category-btn'
-                    );
-
-                if (!removeButton) {
-                    return;
-                }
-
-                const categoryRow =
-                    removeButton.closest(
-                        '.category-row'
-                    );
-
-                if (categoryRow) {
-
-                    categoryRow.remove();
-
-                }
-
-            }
-        );
-
-    }
-
-    const itemsContainer =
-        document.getElementById(
-            'items-container'
-        );
-
-    const addItemBtn =
-        document.getElementById(
-            'add-item-btn'
-        );
-
-    const emptyItemsMessage =
-        document.getElementById(
-            'empty-items-message'
-        );
-
-    function updateItemsEmptyState() {
-
-        if (!itemsContainer || !emptyItemsMessage) {
+    locationInput.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+
+        if (locationInput.value.trim().length < 3) {
+            resultsBox.hidden = true;
+            setStatus('', '');
             return;
         }
 
-        const itemRows =
-            itemsContainer.querySelectorAll(
-                '.item-row'
-            );
+        // The typed place changed, so the old pin no longer applies.
+        clearCoordinates();
 
-        emptyItemsMessage.style.display =
-            itemRows.length === 0
-                ? 'block'
-                : 'none';
+        searchTimer = setTimeout(function () { searchLocation(true); }, 800);
+    });
 
+    locationInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            clearTimeout(searchTimer);
+            searchLocation(false);
+        }
+    });
+
+    searchButton.addEventListener('click', function () {
+        clearTimeout(searchTimer);
+        searchLocation(false);
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('#locationResults') && !event.target.closest('.ce-search')) {
+            resultsBox.hidden = true;
+        }
+    });
+
+    // Re-shown after an error with text but no pin: find it again.
+    if (!hasOldPin && locationInput.value.trim().length >= 3) {
+        setTimeout(function () { searchLocation(true); }, 500);
     }
 
-    if (addItemBtn && itemsContainer) {
+    setTimeout(function () { map.invalidateSize(); }, 300);
 
-        addItemBtn.addEventListener(
-            'click',
-            function () {
-
-                const currentIndex =
-                    itemIndex++;
-
-                const row =
-                    document.createElement('div');
-
-                row.className =
-                    'item-row';
-
-                row.innerHTML = `
-                    <div>
-
-                        <label class="event-label">
-                            Item Title
-                        </label>
-
-                        <input
-                            type="text"
-                            name="items[${currentIndex}][title]"
-                            placeholder="e.g. Finisher Medal"
-                            class="event-input">
-
-                    </div>
-
-                    <div>
-
-                        <label class="event-label">
-                            Item Image
-                        </label>
-
-                        <input
-                            type="file"
-                            name="items[${currentIndex}][image]"
-                            accept="image/jpeg,image/png,image/jpg,image/gif"
-                            class="event-file-input">
-
-                    </div>
-
-                    <button
-                        type="button"
-                        class="remove-item-btn"
-                        title="Delete event item">
-
-                        <i class="fa-solid fa-trash"></i>
-
-                    </button>
-                `;
-
-                itemsContainer.appendChild(row);
-
-                updateItemsEmptyState();
-
-            }
-        );
-
-    }
-
-    if (itemsContainer) {
-
-        itemsContainer.addEventListener(
-            'click',
-            function (e) {
-
-                const removeButton =
-                    e.target.closest(
-                        '.remove-item-btn'
-                    );
-
-                if (!removeButton) {
-                    return;
-                }
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                const itemRow =
-                    removeButton.closest(
-                        '.item-row'
-                    );
-
-                if (!itemRow) {
-                    return;
-                }
-
-                itemRow.remove();
-
-                updateItemsEmptyState();
-
-            }
-        );
-
-    }
-
-    updateItemsEmptyState();
-
+    applyBibState();
 });
 </script>
 

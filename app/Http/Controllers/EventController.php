@@ -33,7 +33,13 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-        $event->load(['ticketCategories', 'promoCodes', 'items']);
+        // GROUP BUY: also load the active group buy deals, smallest group first.
+        $event->load([
+            'ticketCategories',
+            'promoCodes',
+            'items',
+            'groupBuys' => fn ($query) => $query->where('is_active', true)->orderBy('quantity'),
+        ]);
 
         $totalTicketsSold = $event->ticketCategories->sum('tickets_sold');
         
@@ -42,7 +48,41 @@ class EventController extends Controller
         $overallTicketsRemaining = $overallCapacity !== null ? max(0, $overallCapacity - $totalTicketsSold) : null;
         $isEventSoldOut = $overallCapacity !== null && ($totalTicketsSold >= $overallCapacity);
 
-        return view('events.show', compact('event', 'totalTicketsSold', 'overallTicketsRemaining', 'isEventSoldOut'));
+        // GROUP BUY: build the deals the page can safely show.
+        // A "selected categories" deal is dropped if none of its ticket types still exist.
+        $categoryIds = $event->ticketCategories->pluck('id')->all();
+
+        $groupBuys = $event->groupBuys->map(function ($deal) use ($categoryIds) {
+            $allowedIds = null;
+
+            if ($deal->ticket_scope === 'selected_categories') {
+                $allowedIds = array_values(array_map(
+                    'intval',
+                    array_intersect($deal->allowed_ticket_category_ids ?? [], $categoryIds)
+                ));
+
+                if (empty($allowedIds)) {
+                    return null;
+                }
+            }
+
+            return [
+                'id' => $deal->id,
+                'name' => $deal->name,
+                'quantity' => (int) $deal->quantity,
+                'discount_amount' => (float) $deal->discount_amount,
+                'ticket_scope' => $deal->ticket_scope,
+                'allowed_ticket_category_ids' => $allowedIds,
+            ];
+        })->filter()->values();
+
+        return view('events.show', compact(
+            'event',
+            'totalTicketsSold',
+            'overallTicketsRemaining',
+            'isEventSoldOut',
+            'groupBuys' // GROUP BUY: added
+        ));
     }
 
     /**
@@ -56,6 +96,9 @@ class EventController extends Controller
 
         $attendeesInput = $request->input('attendees', session('_old_input.attendees', []));
         $promoCode      = $request->input('promo_code', session('_old_input.promo_code'));
+
+        // GROUP BUY: carry the chosen deal through to the waiver step.
+        $groupBuyId     = $request->input('group_buy_id', session('_old_input.group_buy_id'));
 
         if (empty($attendeesInput)) {
             return redirect()->route('events.show', $event)
@@ -85,7 +128,7 @@ class EventController extends Controller
             $attendees[$index] = $data;
         }
 
-        return view('events.waiver', compact('event', 'attendees', 'promoCode'));
+        return view('events.waiver', compact('event', 'attendees', 'promoCode', 'groupBuyId'));
     }
 
     /**
@@ -95,6 +138,9 @@ class EventController extends Controller
     {
         $attendees = $request->input('attendees', []);
         $promoCode = $request->input('promo_code');
+
+        // GROUP BUY: keep the chosen deal when moving on to the race guide.
+        $groupBuyId = $request->input('group_buy_id');
 
         // === DEBUG LOG: WAIVER ACCEPT STEP ===
         Log::info('=== ACCEPT WAIVER METHOD EXECUTED ===', [
@@ -121,7 +167,7 @@ class EventController extends Controller
 
         if ($hasRaceGuide) {
             Log::info('Routing to race_guide view. Checking if promo_code_id will be passed.');
-            return view('events.race_guide', compact('event', 'attendees', 'promoCode'));
+            return view('events.race_guide', compact('event', 'attendees', 'promoCode', 'groupBuyId'));
         }
 
         Log::info('No race guide found. Forwarding request directly to CheckoutController@process');

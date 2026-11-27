@@ -8,12 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $event->title }} - Attendees Directory</title>
 
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 </head>
 
@@ -34,1476 +30,391 @@
 
 @endif
 
+@php
+    $isEventAdmin = auth('admin')->user()->isEventAdmin();
+
+    $categoryGroups = $attendees->groupBy(fn ($a) => $a->ticket_category_id ?? 0);
+
+    // GROUP BUY: how many runners came through a group buy order.
+    $groupBuyAttendeeCount = $attendees->filter(fn ($a) => $a->order && $a->order->isGroupBuy())->count();
+    $singleAttendeeCount = $attendees->count() - $groupBuyAttendeeCount;
+
+    $availableTshirtSizes = $event->tshirt_sizes ?? [];
+    if (is_string($availableTshirtSizes)) {
+        $availableTshirtSizes = json_decode($availableTshirtSizes, true) ?: [];
+    }
+    $availableTshirtSizes = is_array($availableTshirtSizes)
+        ? array_values(array_unique($availableTshirtSizes))
+        : [];
+@endphp
+
 <style>
 /* =========================================================
-   EVENT PLUS — ATTENDEES DIRECTORY
-   UI REDESIGN ONLY
+   EVENT PLUS - ATTENDEES DIRECTORY
+   Self-contained styles (no Tailwind needed)
    ========================================================= */
-
-:root {
-    --ep-navy: #0f172a;
-    --ep-navy-2: #17113b;
-    --ep-purple: #6d28d9;
-    --ep-violet: #8b5cf6;
-    --ep-pink: #ec4899;
-    --ep-rose: #f43f5e;
-    --ep-lavender: #f5f3ff;
-    --ep-light: #f8f7fc;
-    --ep-border: #e9e7f1;
-    --ep-text: #172033;
-    --ep-muted: #7a8192;
-    --ep-green: #10b981;
-    --ep-orange: #f59e0b;
-}
-
-/* ---------------------------------------------------------
-   PAGE
-   --------------------------------------------------------- */
 
 .eventplus-standalone-body {
     margin: 0;
     min-height: 100vh;
-    background:
-        radial-gradient(circle at 10% 0%, rgba(139, 92, 246, .08), transparent 28%),
-        radial-gradient(circle at 95% 10%, rgba(236, 72, 153, .07), transparent 25%),
-        #f7f7fb;
-    color: var(--ep-text);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     padding: 28px;
-}
-
-.eventplus-standalone-container {
-    max-width: 1500px;
-    margin: 0 auto;
-}
-
-.attendees-page {
-    width: 100%;
-}
-
-/* ---------------------------------------------------------
-   TOP HERO
-   --------------------------------------------------------- */
-
-.ep-attendees-hero {
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 24px;
-    padding: 27px 30px;
-    border-radius: 26px;
-    background:
-        radial-gradient(circle at 82% 15%, rgba(236,72,153,.24), transparent 24%),
-        radial-gradient(circle at 100% 100%, rgba(139,92,246,.25), transparent 32%),
-        linear-gradient(135deg, #0f172a 0%, #21134d 52%, #32145e 100%);
-    color: #fff;
-    box-shadow: 0 22px 55px rgba(30, 20, 70, .18);
-}
-
-.ep-attendees-hero::before {
-    content: "";
-    position: absolute;
-    width: 260px;
-    height: 260px;
-    right: -95px;
-    top: -135px;
-    border: 1px solid rgba(255,255,255,.13);
-    border-radius: 50%;
-}
-
-.ep-attendees-hero::after {
-    content: "";
-    position: absolute;
-    width: 180px;
-    height: 180px;
-    right: 80px;
-    bottom: -135px;
-    border: 1px solid rgba(255,255,255,.10);
-    border-radius: 50%;
-}
-
-.ep-hero-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 25px;
-}
-
-.ep-hero-left {
-    min-width: 0;
-}
-
-.ep-brand-line {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 11px;
-    padding: 6px 10px;
-    border: 1px solid rgba(255,255,255,.15);
-    border-radius: 999px;
-    background: rgba(255,255,255,.08);
-    color: #e9d5ff;
-    font-size: .63rem;
-    font-weight: 850;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-}
-
-.ep-brand-line i {
-    color: #f9a8d4;
-}
-
-.ep-hero-title {
-    margin: 0;
-    font-size: clamp(1.35rem, 2.3vw, 2rem);
-    line-height: 1.15;
-    font-weight: 900;
-    letter-spacing: -.04em;
-}
-
-.ep-hero-description {
-    margin: 8px 0 0;
-    max-width: 680px;
-    color: #cbd5e1;
-    font-size: .78rem;
-    line-height: 1.6;
-}
-
-.ep-event-pill {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 15px;
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 16px;
-    background: rgba(255,255,255,.08);
-    backdrop-filter: blur(12px);
-}
-
-.ep-event-pill-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #ec4899, #8b5cf6);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(236,72,153,.25);
-}
-
-.ep-event-pill-label {
-    margin: 0;
-    color: #a5b4fc;
-    font-size: .58rem;
-    font-weight: 800;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-}
-
-.ep-event-pill-name {
-    margin: 3px 0 0;
-    max-width: 260px;
-    overflow: hidden;
-    color: #fff;
-    font-size: .76rem;
-    font-weight: 800;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ---------------------------------------------------------
-   HEADER ACTIONS
-   --------------------------------------------------------- */
-
-.attendees-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 20px;
-}
-
-.attendees-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.attendees-title-icon {
-    width: 45px;
-    height: 45px;
-    min-width: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #ede9fe, #fce7f3);
-    color: var(--ep-purple);
-    font-size: 1rem;
-    box-shadow: 0 8px 18px rgba(109,40,217,.08);
-}
-
-.attendees-title h2 {
-    margin: 0;
-    color: var(--ep-text);
-    font-size: 1rem;
-    font-weight: 900;
-    letter-spacing: -.025em;
-}
-
-.attendees-title p {
-    margin: 3px 0 0;
-    color: var(--ep-muted);
-    font-size: .68rem;
-}
-
-.attendees-action-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.ep-excel-button,
-.ep-logout-button,
-.back-events-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 9px 13px;
-    border-radius: 11px;
-    font-size: .66rem;
-    font-weight: 850;
-    transition: all .2s ease;
-}
-
-.ep-excel-button {
-    background: linear-gradient(135deg, #059669, #10b981);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(16,185,129,.18);
-}
-
-.ep-excel-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(16,185,129,.25);
-}
-
-.ep-logout-button {
-    background: linear-gradient(135deg, #e11d48, #f43f5e);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(244,63,94,.16);
-}
-
-.ep-logout-button:hover {
-    transform: translateY(-1px);
-}
-
-.back-events-button {
-    border: 1px solid #ddd8ed;
-    background: #fff;
-    color: #667085;
-}
-
-.back-events-button:hover {
-    border-color: #c4b5fd;
-    color: var(--ep-purple);
-    transform: translateX(-2px);
-}
-
-/* ---------------------------------------------------------
-   SUCCESS
-   --------------------------------------------------------- */
-
-.attendee-success-alert {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-bottom: 20px;
-    padding: 12px 15px;
-    border: 1px solid #bbf7d0;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-    color: #166534;
-    font-size: .72rem;
-    font-weight: 700;
-    box-shadow: 0 8px 20px rgba(16,185,129,.06);
-}
-
-.attendee-success-icon {
-    width: 31px;
-    height: 31px;
-    min-width: 31px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: #dcfce7;
-    color: #16a34a;
-}
-
-/* ---------------------------------------------------------
-   STAT CARDS
-   --------------------------------------------------------- */
-
-.ep-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 15px;
-    margin-bottom: 24px;
-}
-
-.attendee-stat-card {
-    position: relative;
-    overflow: hidden;
-    min-height: 130px;
-    padding: 20px;
-    border: 1px solid var(--ep-border);
-    border-radius: 20px;
-    background: #fff;
-    box-shadow: 0 10px 35px rgba(31, 25, 60, .055);
-    transition: transform .22s ease, box-shadow .22s ease;
-}
-
-.attendee-stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 17px 42px rgba(31,25,60,.09);
-}
-
-.attendee-stat-card::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 4px;
-}
-
-.attendee-stat-card::after {
-    content: "";
-    position: absolute;
-    width: 130px;
-    height: 130px;
-    right: -65px;
-    bottom: -75px;
-    border-radius: 50%;
-}
-
-.stat-revenue::before {
-    background: linear-gradient(90deg, #10b981, #34d399);
-}
-
-.stat-revenue::after {
-    background: #d1fae5;
-}
-
-.stat-runners::before {
-    background: linear-gradient(90deg, #8b5cf6, #ec4899);
-}
-
-.stat-runners::after {
-    background: #ede9fe;
-}
-
-.stat-status::before {
-    background: linear-gradient(90deg, #3b82f6, #6366f1);
-}
-
-.stat-status::after {
-    background: #dbeafe;
-}
-
-.attendee-stat-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    height: 100%;
-}
-
-.stat-label {
-    margin: 0;
-    color: #8a91a1;
-    font-size: .6rem;
-    font-weight: 900;
-    letter-spacing: .075em;
-    text-transform: uppercase;
-}
-
-.stat-value {
-    margin: 7px 0 0;
-    font-size: 1.55rem;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: -.045em;
-}
-
-.stat-revenue .stat-value {
-    color: #059669;
-}
-
-.stat-runners .stat-value {
-    color: #6d28d9;
-}
-
-.stat-status .stat-value {
-    color: #2563eb;
-    font-size: 1.05rem;
-}
-
-.stat-icon {
-    width: 49px;
-    height: 49px;
-    min-width: 49px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 15px;
-    font-size: 1rem;
-}
-
-.stat-revenue .stat-icon {
-    background: #ecfdf5;
-    color: #059669;
-}
-
-.stat-runners .stat-icon {
-    background: linear-gradient(135deg, #ede9fe, #fce7f3);
-    color: #7c3aed;
-}
-
-.stat-status .stat-icon {
-    background: #eff6ff;
-    color: #2563eb;
-}
-
-/* ---------------------------------------------------------
-   PARTICIPANTS CARD
-   --------------------------------------------------------- */
-
-.participants-card {
-    overflow: hidden;
-    border: 1px solid var(--ep-border);
-    border-radius: 22px;
-    background: #fff;
-    box-shadow: 0 15px 45px rgba(31,25,60,.06);
-}
-
-.participants-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    padding: 18px 20px;
-    border-bottom: 1px solid var(--ep-border);
-    background:
-        radial-gradient(circle at 100% 0%, rgba(236,72,153,.06), transparent 25%),
-        linear-gradient(135deg, #fff, #faf9ff);
-}
-
-.participants-title {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-}
-
-.participants-title-icon {
-    width: 37px;
-    height: 37px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #ede9fe, #fce7f3);
-    color: #7c3aed;
-    font-size: .82rem;
-}
-
-.participants-title h3 {
-    margin: 0;
-    color: #252b3a;
-    font-size: .84rem;
-    font-weight: 900;
-}
-
-.participants-title p {
-    margin: 3px 0 0;
-    color: #969cac;
-    font-size: .63rem;
-}
-
-.participant-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 11px;
-    border: 1px solid #e9d5ff;
-    border-radius: 999px;
-    background: #faf5ff;
-    color: #7e22ce;
-    font-size: .61rem;
-    font-weight: 900;
-}
-
-.participant-count::before {
-    content: "\f183";
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-}
-
-/* ---------------------------------------------------------
-   TABLE
-   --------------------------------------------------------- */
-
-.participants-table {
-    width: 100%;
-    min-width: 1250px;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.participants-table thead {
-    background: #faf9fd;
-}
-
-.participants-table thead tr {
-    border-bottom: 1px solid var(--ep-border);
-}
-
-.participants-table th {
-    padding: 13px 15px;
-    border-bottom: 1px solid var(--ep-border);
-    color: #858b9b;
-    font-size: .58rem;
-    font-weight: 900;
-    letter-spacing: .075em;
-    text-align: left;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.participants-table td {
-    padding: 15px;
-    border-bottom: 1px solid #f0eef5;
-    color: #596273;
-    font-size: .69rem;
-    vertical-align: middle;
-}
-
-.participants-table tbody tr {
-    transition: background .18s ease;
-}
-
-.participants-table tbody tr:hover {
-    background: linear-gradient(90deg, #fcfbff, #fff);
-}
-
-.participants-table tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-/* ---------------------------------------------------------
-   RUNNER IDENTITY
-   --------------------------------------------------------- */
-
-.runner-identity {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 205px;
-}
-
-.runner-avatar {
-    width: 37px;
-    height: 37px;
-    min-width: 37px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #4c1d95, #ec4899);
-    color: #fff;
-    font-size: .72rem;
-    font-weight: 900;
-    box-shadow: 0 6px 14px rgba(124,58,237,.18);
-}
-
-.runner-identity-content {
-    min-width: 0;
-}
-
-.runner-edit-inline {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    margin: 0 0 6px;
-    padding: 5px 8px;
-    border: 1px solid #fed7aa;
-    border-radius: 7px;
-    background: #fff7ed;
-    color: #c2410c;
-    font-size: .58rem;
-    font-weight: 900;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.runner-edit-inline:hover {
-    background: #ffedd5;
-    border-color: #fdba74;
-}
-
-.runner-code {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 7px;
-    border: 1px solid #e9d5ff;
-    border-radius: 6px;
-    background: #faf5ff;
-    color: #7e22ce;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: .58rem;
-    font-weight: 900;
-}
-
-.runner-name {
-    max-width: 190px;
-    margin: 5px 0 0;
-    overflow: hidden;
-    color: #202738;
-    font-size: .72rem;
-    font-weight: 850;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.runner-father {
-    margin-top: 3px;
-    color: #9299a8;
-    font-size: .59rem;
-}
-
-/* ---------------------------------------------------------
-   BIB / CATEGORY
-   --------------------------------------------------------- */
-
-.bib-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 8px;
-    border: 1px solid #ddd6fe;
-    border-radius: 8px;
-    background: #f5f3ff;
-    color: #6d28d9;
-    font-size: .6rem;
-    font-weight: 900;
-}
-
-.category-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 5px;
-    padding: 5px 8px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #f8fafc;
-    color: #475467;
-    font-size: .59rem;
-    font-weight: 800;
-}
-
-/* ---------------------------------------------------------
-   PROMO
-   --------------------------------------------------------- */
-
-.promo-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 8px;
-    border: 1px dashed #d8b4fe;
-    border-radius: 8px;
-    background: #faf5ff;
-    color: #7e22ce;
-    font-size: .6rem;
-    font-weight: 900;
-}
-
-.promo-discount {
-    margin-top: 4px;
-    color: #9333ea;
-    font-size: .6rem;
-    font-weight: 850;
-}
-
-.promo-company {
-    margin-top: 3px;
-    color: #9ca3af;
-    font-size: .58rem;
-}
-
-/* ---------------------------------------------------------
-   CONTACT
-   --------------------------------------------------------- */
-
-.contact-stack {
-    min-width: 205px;
-}
-
-.contact-line {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-    color: #3f4858;
-    font-size: .62rem;
-    font-weight: 700;
-}
-
-.contact-line:last-child {
-    margin-bottom: 0;
-}
-
-.contact-line i {
-    width: 13px;
-    text-align: center;
-    color: #8b5cf6;
-}
-
-.contact-line.phone {
-    color: #64748b;
-}
-
-.contact-line.phone i {
-    color: #94a3b8;
-}
-
-.contact-line.viber {
-    color: #7360f2;
-}
-
-.contact-line.viber i {
-    color: #7360f2;
-}
-
-.contact-line.emergency {
-    color: #dc2626;
-}
-
-.contact-line.emergency i {
-    color: #ef4444;
-}
-
-/* ---------------------------------------------------------
-   DOCUMENT
-   --------------------------------------------------------- */
-
-.document-number {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 8px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #f8fafc;
-    color: #475467;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: .59rem;
-    font-weight: 800;
-}
-
-.country-line {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 5px;
-    color: #7b8494;
-    font-size: .59rem;
-}
-
-/* ---------------------------------------------------------
-   NATIONALITY
-   --------------------------------------------------------- */
-
-.nationality-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 9px;
-    border-radius: 999px;
-    font-size: .59rem;
-    font-weight: 900;
-}
-
-.nationality-foreigner {
-    border: 1px solid #bfdbfe;
-    background: #eff6ff;
-    color: #2563eb;
-}
-
-.nationality-myanmar {
-    border: 1px solid #bbf7d0;
-    background: #ecfdf5;
-    color: #059669;
-}
-
-.demographic-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
-}
-
-.shirt-size {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 5px 7px;
-    border-radius: 7px;
-    background: #f1f5f9;
-    color: #344054;
-    font-size: .59rem;
-    font-weight: 900;
-}
-
-.gender-label {
-    color: #667085;
-    font-size: .59rem;
-    font-weight: 700;
-}
-
-.dob-line {
-    margin-top: 5px;
-    color: #7b8494;
-    font-size: .59rem;
-}
-
-/* ---------------------------------------------------------
-   HEALTH
-   --------------------------------------------------------- */
-
-.blood-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 8px;
-    border-radius: 8px;
-    background: #fef2f2;
-    color: #dc2626;
-    font-size: .59rem;
-    font-weight: 900;
-}
-
-.health-line {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 6px;
-    font-size: .59rem;
-    font-weight: 800;
-}
-
-.health-clear {
-    color: #059669;
-}
-
-.health-warning {
-    color: #dc2626;
-}
-
-.itra-box {
-    margin-top: 7px;
-    padding-top: 7px;
-    border-top: 1px solid #f0eef5;
-}
-
-.itra-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: #6d28d9;
-    font-size: .59rem;
-    font-weight: 900;
-}
-
-.small-truncate {
-    display: block;
-    max-width: 175px;
-    margin-top: 3px;
-    overflow: hidden;
-    color: #8a91a0;
-    font-size: .57rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ---------------------------------------------------------
-   ADDRESS
-   --------------------------------------------------------- */
-
-.address-line,
-.experience-line {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    max-width: 190px;
-    color: #596273;
-    font-size: .59rem;
-    line-height: 1.45;
-}
-
-.address-line i,
-.experience-line i {
-    flex-shrink: 0;
-    margin-top: 2px;
-    color: #a1a1aa;
-}
-
-.experience-line {
-    margin-top: 7px;
-    color: #7b8494;
-}
-
-/* ---------------------------------------------------------
-   ACTIONS
-   --------------------------------------------------------- */
-
-.attendee-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 5px;
-    white-space: nowrap;
-}
-
-.attendee-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    min-height: 31px;
-    padding: 7px 9px;
-    border-radius: 8px;
-    font-size: .59rem;
-    font-weight: 900;
-    transition: all .18s ease;
-}
-
-.download-ticket-button {
-    background: #ecfdf5;
-    color: #059669;
-}
-
-.download-ticket-button:hover {
-    background: #d1fae5;
-    transform: translateY(-1px);
-}
-
-.edit-attendee-button {
-    border: 0;
-    background: #fff7ed;
-    color: #d97706;
-    cursor: pointer;
-}
-
-.edit-attendee-button:hover {
-    background: #ffedd5;
-    transform: translateY(-1px);
-}
-
-.delete-attendee-button {
-    border: 0;
-    background: #fef2f2;
-    color: #dc2626;
-    cursor: pointer;
-}
-
-.delete-attendee-button:hover {
-    background: #fee2e2;
-    transform: translateY(-1px);
-}
-
-/* ---------------------------------------------------------
-   EMPTY STATE
-   --------------------------------------------------------- */
-
-.attendees-empty-state {
-    padding: 75px 20px !important;
-    text-align: center;
-}
-
-.attendees-empty-icon {
-    width: 65px;
-    height: 65px;
-    margin: 0 auto 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #ede9fe, #fce7f3);
-    color: #7c3aed;
-    font-size: 1.25rem;
-}
-
-.attendees-empty-state h3 {
-    margin: 0;
-    color: #252b3a;
-    font-size: .85rem;
-    font-weight: 900;
-}
-
-.attendees-empty-state p {
-    margin: 5px 0 0;
-    color: #9299a8;
-    font-size: .66rem;
-}
-
-/* ---------------------------------------------------------
-   EDIT MODAL
-   --------------------------------------------------------- */
-
-.edit-runner-modal {
-    backdrop-filter: blur(7px);
-    background: rgba(15, 23, 42, .66) !important;
-}
-
-.edit-runner-modal-card {
-    overflow: hidden;
-    width: 100%;
-    max-width: 850px !important;
-    max-height: 91vh;
-    overflow-y: auto;
-    border: 1px solid rgba(255,255,255,.7);
-    border-radius: 24px !important;
-    background: #fff;
-    box-shadow: 0 35px 100px rgba(15,23,42,.28);
-}
-
-.edit-modal-header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 23px;
-    border-bottom: 1px solid #eeeaf6;
-    background:
-        radial-gradient(circle at 90% 0%, rgba(236,72,153,.13), transparent 25%),
-        linear-gradient(135deg, #17113b, #312e81);
-    color: #fff;
-}
-
-.edit-modal-header::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 150px;
-    height: 3px;
-    background: linear-gradient(90deg, #ec4899, #8b5cf6);
-}
-
-.edit-modal-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-}
-
-.edit-modal-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    background: rgba(255,255,255,.12);
-    color: #f9a8d4;
-}
-
-.edit-modal-title h3 {
-    margin: 0;
-    color: #fff;
-    font-size: .9rem;
-    font-weight: 900;
-}
-
-.edit-modal-title p {
-    margin: 3px 0 0;
-    color: #cbd5e1;
-    font-size: .61rem;
-}
-
-.edit-modal-close {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 10px;
-    background: rgba(255,255,255,.08);
-    color: #cbd5e1;
-    cursor: pointer;
-    transition: all .18s ease;
-}
-
-.edit-modal-close:hover {
-    background: rgba(255,255,255,.17);
-    color: #fff;
-}
-
-.edit-modal-body {
-    padding: 23px;
-    background: #fcfbfe;
-}
-
-.edit-field {
-    margin-bottom: 0;
-}
-
-.edit-label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 6px;
-    color: #475467;
-    font-size: .62rem;
-    font-weight: 850;
-}
-
-.edit-input,
-.edit-select,
-.edit-textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 9px 11px;
-    border: 1px solid #ddd9e8;
-    border-radius: 10px;
-    background: #fff;
-    color: #293445;
-    font-size: .68rem;
-    outline: none;
-    transition: border-color .18s ease, box-shadow .18s ease;
-}
-
-.edit-input:focus,
-.edit-select:focus,
-.edit-textarea:focus {
-    border-color: #a78bfa;
-    box-shadow: 0 0 0 3px rgba(139,92,246,.10);
-}
-
-.edit-textarea {
-    resize: vertical;
-    border-radius: 12px;
-}
-
-.edit-modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin: 22px -23px -23px;
-    padding: 16px 23px;
-    border-top: 1px solid #eeeaf6;
-    background: #fff;
-}
-
-.cancel-edit-button,
-.save-edit-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 9px 15px;
-    border-radius: 10px;
-    font-size: .64rem;
-    font-weight: 900;
-    cursor: pointer;
-    transition: all .18s ease;
-}
-
-.cancel-edit-button {
-    border: 1px solid #ddd9e8;
-    background: #fff;
-    color: #667085;
-}
-
-.cancel-edit-button:hover {
-    border-color: #c4b5fd;
-    color: #6d28d9;
-}
-
-.save-edit-button {
-    border: 0;
-    background: linear-gradient(135deg, #6d28d9, #ec4899);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(109,40,217,.18);
-}
-
-.save-edit-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 25px rgba(109,40,217,.25);
-}
-
-/* ---------------------------------------------------------
-   RESPONSIVE
-   --------------------------------------------------------- */
-
+    background: #f6f5fa;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.eventplus-standalone-container { max-width: 1500px; margin: 0 auto; }
+
+.ep-att {
+    --ep-accent: #6d28d9;
+    --ep-accent-dark: #5b21b6;
+    --ep-accent-soft: #f3effd;
+    --ep-ink: #1b2133;
+    --ep-muted: #667085;
+    --ep-line: #e7e5ef;
+    --ep-bg: #f6f5fa;
+    --ep-green: #047857;
+    --ep-green-soft: #e8f7f0;
+    --ep-red: #b42318;
+    --ep-red-soft: #fdeceb;
+    --ep-amber: #9a5b00;
+    --ep-amber-soft: #fff3dc;
+    color: var(--ep-ink);
+    font-size: 14px;
+    line-height: 1.5;
+}
+.ep-att *, .ep-att *::before, .ep-att *::after { box-sizing: border-box; }
+.ep-att .is-hidden { display: none !important; }
+.ep-att .ep-inline { display: inline; margin: 0; }
+
+/* ---------- Buttons ---------- */
+.ep-att .ep-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 9px;
+    font: inherit; font-size: 14px; font-weight: 650; line-height: 1.2;
+    text-decoration: none; white-space: nowrap; cursor: pointer;
+    transition: background-color .15s, border-color .15s, color .15s;
+}
+.ep-att .ep-btn-sm { min-height: 34px; padding: 6px 11px; font-size: 13px; }
+.ep-att .ep-btn-primary { background: var(--ep-accent); color: #fff; }
+.ep-att .ep-btn-primary:hover { background: var(--ep-accent-dark); color: #fff; }
+.ep-att .ep-btn-green { background: #047857; color: #fff; }
+.ep-att .ep-btn-green:hover { background: #065f46; color: #fff; }
+.ep-att .ep-btn-ghost { background: #fff; border-color: var(--ep-line); color: #3d4457; }
+.ep-att .ep-btn-ghost:hover { background: var(--ep-bg); color: #3d4457; }
+.ep-att .ep-btn-soft { background: var(--ep-accent-soft); border-color: #e0d6fa; color: var(--ep-accent-dark); }
+.ep-att .ep-btn-soft:hover { background: #ebe3fc; color: var(--ep-accent-dark); }
+.ep-att .ep-btn-danger { background: #fff; border-color: #f1d4d1; color: var(--ep-red); }
+.ep-att .ep-btn-danger:hover { background: var(--ep-red-soft); }
+.ep-att .ep-btn:disabled { opacity: .45; cursor: not-allowed; }
+.ep-att .ep-btn:focus-visible,
+.ep-att .ep-filter:focus-visible,
+.ep-att input:focus-visible,
+.ep-att select:focus-visible {
+    outline: 3px solid #bfa8f5; outline-offset: 2px;
+}
+
+/* ---------- Header ---------- */
+.ep-att .ep-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 22px;
+}
+.ep-att .ep-header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 750; letter-spacing: -.4px; }
+.ep-att .ep-header p { margin: 0; color: var(--ep-muted); }
+.ep-att .ep-header p strong { color: var(--ep-ink); }
+.ep-att .ep-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+.ep-att .ep-alert {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 15px;
+    border: 1px solid #bfe8d4; border-radius: 12px; background: var(--ep-green-soft);
+    color: #0b5a40; font-weight: 600;
+}
+
+/* ---------- Stats ---------- */
+.ep-att .ep-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+.ep-att .ep-stat {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 18px 20px; border: 1px solid var(--ep-line); border-radius: 14px; background: #fff;
+}
+.ep-att .ep-stat-label { margin: 0 0 4px; color: var(--ep-muted); font-weight: 600; }
+.ep-att .ep-stat-value { margin: 0; font-size: 28px; line-height: 1.1; font-weight: 750; letter-spacing: -.5px; }
+.ep-att .ep-stat-value.is-status { font-size: 22px; text-transform: capitalize; }
+.ep-att .ep-stat-icon {
+    display: grid; place-items: center; flex-shrink: 0; width: 46px; height: 46px;
+    border-radius: 12px; font-size: 18px;
+}
+.ep-att .ep-stat-revenue .ep-stat-icon { background: var(--ep-green-soft); color: var(--ep-green); }
+.ep-att .ep-stat-runners .ep-stat-icon { background: var(--ep-accent-soft); color: var(--ep-accent); }
+.ep-att .ep-stat-status .ep-stat-icon { background: #e8f0fd; color: #1d4ed8; }
+
+/* ---------- Card + toolbar ---------- */
+.ep-att .ep-card { overflow: hidden; border: 1px solid var(--ep-line); border-radius: 14px; background: #fff; }
+.ep-att .ep-toolbar { padding: 16px 18px; border-bottom: 1px solid var(--ep-line); }
+.ep-att .ep-toolbar-top { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.ep-att .ep-search { position: relative; flex: 1 1 280px; max-width: 460px; }
+.ep-att .ep-search i { position: absolute; top: 50%; left: 13px; transform: translateY(-50%); color: #98a2b3; pointer-events: none; }
+.ep-att .ep-search input {
+    width: 100%; min-height: 42px; padding: 8px 38px 8px 38px; border: 1px solid var(--ep-line);
+    border-radius: 10px; background: #fff; color: var(--ep-ink); font: inherit; font-size: 14px;
+}
+.ep-att .ep-search input:focus { border-color: #a58aee; }
+.ep-att .ep-search-clear {
+    position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+    display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
+    background: transparent; color: #667085; cursor: pointer;
+}
+.ep-att .ep-search-clear:hover { background: var(--ep-bg); }
+.ep-att .ep-pagesize { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; color: var(--ep-muted); font-weight: 600; }
+.ep-att .ep-pagesize select {
+    min-height: 40px; padding: 6px 10px; border: 1px solid var(--ep-line); border-radius: 9px;
+    background: #fff; color: var(--ep-ink); font: inherit; font-size: 14px;
+}
+.ep-att .ep-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.ep-att .ep-filter {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 5px 13px;
+    border: 1px solid var(--ep-line); border-radius: 999px; background: #fff;
+    color: #3d4457; font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer;
+    transition: background-color .15s, border-color .15s;
+}
+.ep-att .ep-filter span {
+    min-width: 24px; padding: 1px 7px; border-radius: 999px; background: var(--ep-bg);
+    color: var(--ep-muted); font-size: 12.5px; text-align: center;
+}
+.ep-att .ep-filter:hover { border-color: #cdbcf6; }
+.ep-att .ep-filter.is-active { background: var(--ep-accent); border-color: var(--ep-accent); color: #fff; }
+.ep-att .ep-filter.is-active span { background: rgba(255, 255, 255, .22); color: #fff; }
+
+/* ---------- Table ---------- */
+.ep-att .ep-table-wrap { overflow-x: auto; }
+.ep-att .att-table { width: 100%; border-collapse: collapse; }
+.ep-att .att-table th {
+    padding: 12px 16px; border-bottom: 1px solid var(--ep-line); background: #faf9fc;
+    color: var(--ep-muted); font-size: 13px; font-weight: 650; text-align: left; white-space: nowrap;
+}
+.ep-att .att-table td { padding: 14px 16px; border-bottom: 1px solid #efedf5; vertical-align: top; }
+.ep-att .att-table .att-main:hover td { background: #fcfbfe; }
+.ep-att .att-table th.att-col-actions { text-align: right; }
+
+.ep-att .att-runner { display: flex; align-items: flex-start; gap: 12px; min-width: 230px; }
+.ep-att .att-avatar {
+    display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px;
+    border-radius: 50%; background: var(--ep-accent-soft); color: var(--ep-accent-dark);
+    font-size: 15px; font-weight: 750;
+}
+.ep-att .att-name { margin: 0 0 4px; font-size: 14.5px; font-weight: 700; overflow-wrap: anywhere; }
+.ep-att .att-code {
+    display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--ep-accent-soft);
+    color: var(--ep-accent-dark); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; font-weight: 700;
+}
+.ep-att .att-bib { margin-top: 6px; color: var(--ep-muted); font-size: 13px; font-weight: 600; }
+
+.ep-att .att-line { margin: 0 0 4px; color: #3d4457; overflow-wrap: anywhere; }
+.ep-att .att-line:last-child { margin-bottom: 0; }
+.ep-att .att-line i { width: 16px; margin-right: 6px; color: #98a2b3; text-align: center; }
+.ep-att .att-muted { color: var(--ep-muted); }
+.ep-att .att-strong { font-weight: 650; }
+.ep-att .att-contact { min-width: 210px; }
+
+.ep-att .ep-tag {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+    background: var(--ep-bg); color: #3d4457; font-size: 12.5px; font-weight: 650;
+}
+.ep-att .ep-tag-green { background: var(--ep-green-soft); color: var(--ep-green); }
+.ep-att .ep-tag-red { background: var(--ep-red-soft); color: var(--ep-red); }
+.ep-att .ep-tag-blue { background: #e8f0fd; color: #1d4ed8; }
+.ep-att .ep-tag-purple { background: var(--ep-accent-soft); color: var(--ep-accent-dark); }
+.ep-att .ep-tag-amber { background: var(--ep-amber-soft); color: var(--ep-amber); }
+.ep-att .att-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ep-att .att-tags:first-child { margin-top: 0; }
+
+.ep-att .att-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.ep-att .att-toggle i { transition: transform .2s; }
+.ep-att .att-group.is-open .att-toggle i { transform: rotate(180deg); }
+.ep-att .att-group.is-open .att-main td { background: #fcfbfe; border-bottom-color: transparent; }
+
+/* expandable details */
+.ep-att .att-table .att-detail { display: none; }
+.ep-att .att-table .att-group.is-open .att-detail { display: table-row; }
+.ep-att .att-detail td { padding: 4px 20px 20px 68px; background: #fcfbfe; }
+.ep-att .att-detail-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px 28px;
+    padding: 16px 18px; border: 1px solid var(--ep-line); border-radius: 12px; background: #fff;
+}
+.ep-att .att-detail-item dt { margin: 0 0 2px; color: var(--ep-muted); font-size: 12.5px; font-weight: 600; }
+.ep-att .att-detail-item dd { margin: 0; overflow-wrap: anywhere; }
+.ep-att .att-detail-item.is-warning dd { color: var(--ep-red); font-weight: 650; }
+
+/* ---------- Pagination ---------- */
+.ep-att .ep-pagination {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 12px 18px; padding: 14px 18px; border-top: 1px solid var(--ep-line); background: #faf9fc;
+}
+.ep-att .ep-page-info { margin: 0; color: var(--ep-muted); font-weight: 600; }
+.ep-att .ep-page-info strong { color: var(--ep-ink); }
+.ep-att .ep-page-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ep-att .ep-page-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-width: 40px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--ep-line);
+    border-radius: 9px; background: #fff; color: #3d4457; font: inherit; font-size: 14px;
+    font-weight: 650; cursor: pointer; transition: background-color .15s, border-color .15s;
+}
+.ep-att .ep-page-btn:hover:not(:disabled):not(.is-current) { background: var(--ep-accent-soft); border-color: #cdbcf6; }
+.ep-att .ep-page-btn.is-current { background: var(--ep-accent); border-color: var(--ep-accent); color: #fff; cursor: default; }
+.ep-att .ep-page-btn:disabled { opacity: .45; cursor: not-allowed; }
+.ep-att .ep-page-btn:focus-visible { outline: 3px solid #bfa8f5; outline-offset: 2px; }
+.ep-att .ep-page-gap { padding: 0 4px; color: var(--ep-muted); }
+
+/* ---------- Empty states ---------- */
+.ep-att .ep-empty { padding: 56px 20px; text-align: center; }
+.ep-att .ep-empty i {
+    display: inline-grid; place-items: center; width: 60px; height: 60px; margin-bottom: 14px;
+    border-radius: 16px; background: var(--ep-accent-soft); color: var(--ep-accent); font-size: 24px;
+}
+.ep-att .ep-empty h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.ep-att .ep-empty p { margin: 0 0 14px; color: var(--ep-muted); }
+
+/* ---------- Edit modal ---------- */
+.ep-att .ep-modal {
+    position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(20, 16, 40, .62);
+}
+.ep-att .ep-modal.is-open { display: flex; }
+.ep-att .ep-modal-card {
+    display: flex; flex-direction: column; width: 100%; max-width: 900px; max-height: 92vh;
+    overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 30px 80px rgba(20, 16, 40, .35);
+}
+.ep-att .ep-modal-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 22px; border-bottom: 1px solid var(--ep-line);
+}
+.ep-att .ep-modal-head h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.ep-att .ep-modal-head p { margin: 2px 0 0; color: var(--ep-muted); font-size: 13px; }
+.ep-att .ep-modal-close {
+    display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px;
+    border: 0; border-radius: 9px; background: var(--ep-bg); color: #3d4457; cursor: pointer;
+}
+.ep-att .ep-modal-close:hover { background: #ebe8f3; }
+.ep-att .ep-modal-form { display: flex; flex-direction: column; min-height: 0; margin: 0; }
+.ep-att .ep-modal-body { overflow-y: auto; padding: 6px 22px 10px; }
+.ep-att .ep-form-section { padding: 16px 0; border-bottom: 1px solid #efedf5; }
+.ep-att .ep-form-section:last-child { border-bottom: 0; }
+.ep-att .ep-form-section h4 { margin: 0 0 12px; font-size: 14.5px; font-weight: 700; }
+.ep-att .ep-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.ep-att .ep-field { display: block; margin: 0; }
+.ep-att .ep-field > span { display: block; margin-bottom: 5px; color: #4d5568; font-size: 13px; font-weight: 600; }
+.ep-att .ep-field input,
+.ep-att .ep-field select,
+.ep-att .ep-field textarea {
+    display: block; width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid #d9d6e4;
+    border-radius: 9px; background: #fff; color: var(--ep-ink); font: inherit; font-size: 14px;
+}
+.ep-att .ep-field textarea { resize: vertical; }
+.ep-att .ep-field input:focus,
+.ep-att .ep-field select:focus,
+.ep-att .ep-field textarea:focus { border-color: #a58aee; box-shadow: 0 0 0 3px rgba(109, 40, 217, .14); outline: 0; }
+.ep-att .ep-field small { display: block; margin-top: 5px; color: var(--ep-muted); font-size: 12.5px; }
+.ep-att .ep-field .ep-static { padding: 9px 11px; border: 1px dashed #d9d6e4; border-radius: 9px; background: var(--ep-bg); color: var(--ep-muted); }
+.ep-att .ep-modal-foot {
+    display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px;
+    border-top: 1px solid var(--ep-line); background: #faf9fc;
+}
+body.ep-lock { overflow: hidden; }
+
+/* ---------- Tablet / mobile ---------- */
 @media (max-width: 900px) {
+    .ep-att .ep-stats { grid-template-columns: 1fr; }
+    .ep-att .ep-pagesize { margin-left: 0; }
+}
 
-    .ep-hero-content {
-        align-items: flex-start;
-        flex-direction: column;
+@media (max-width: 860px) {
+    .ep-att .att-table thead { display: none; }
+    .ep-att .att-table,
+    .ep-att .att-table tbody,
+    .ep-att .att-table tr,
+    .ep-att .att-table td { display: block; width: 100%; }
+    .ep-att .att-group { padding: 8px 0; border-bottom: 8px solid var(--ep-bg); }
+    .ep-att .att-table .att-main td { padding: 8px 16px; border: 0; }
+    .ep-att .att-table .att-main td[data-label]::before {
+        content: attr(data-label); display: block; margin-bottom: 3px;
+        color: var(--ep-muted); font-size: 12.5px; font-weight: 600;
     }
-
-    .ep-event-pill {
-        width: 100%;
-    }
-
-    .ep-stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .attendees-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .attendees-action-group {
-        width: 100%;
-    }
+    .ep-att .att-table .att-main:hover td { background: transparent; }
+    .ep-att .att-group.is-open .att-main td { background: transparent; }
+    .ep-att .att-actions { justify-content: flex-start; }
+    .ep-att .att-table .att-group.is-open .att-detail { display: block; }
+    .ep-att .att-detail td { padding: 4px 16px 14px; background: transparent; }
+    .ep-att .att-runner, .ep-att .att-contact { min-width: 0; }
 }
 
 @media (max-width: 640px) {
+    .eventplus-standalone-body { padding: 14px; }
+    .ep-att .ep-header h1 { font-size: 22px; }
+    .ep-att .ep-header-actions { width: 100%; }
+    .ep-att .ep-header-actions .ep-btn,
+    .ep-att .ep-header-actions form { flex: 1 1 100%; width: 100%; }
+    .ep-att .ep-search { max-width: none; flex-basis: 100%; }
+    .ep-att .ep-pagination { justify-content: center; }
+    .ep-att .ep-page-nav { justify-content: center; }
+    .ep-att .ep-modal { align-items: flex-end; padding: 0; }
+    .ep-att .ep-modal-card { max-height: 94vh; border-radius: 16px 16px 0 0; }
+    .ep-att .ep-modal-foot .ep-btn { flex: 1; }
+}
 
-    .eventplus-standalone-body {
-        padding: 14px;
-    }
-
-    .ep-attendees-hero {
-        padding: 22px 20px;
-        border-radius: 20px;
-    }
-
-    .attendees-title-wrapper {
-        align-items: flex-start;
-    }
-
-    .attendees-action-group {
-        display: grid;
-        grid-template-columns: 1fr;
-        width: 100%;
-    }
-
-    .ep-excel-button,
-    .ep-logout-button,
-    .back-events-button {
-        width: 100%;
-    }
-
-    .participants-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .participant-count {
-        align-self: flex-start;
-    }
-
-    .edit-runner-modal {
-        align-items: flex-start !important;
-        padding: 8px !important;
-        overflow-y: auto;
-    }
-
-    .edit-runner-modal-card {
-        max-height: calc(100dvh - 16px);
-        margin: auto 0;
-        border-radius: 18px !important;
-    }
-
-    .edit-modal-header {
-        position: sticky;
-        top: 0;
-        z-index: 5;
-        padding: 14px 16px;
-    }
-
-    .edit-modal-footer {
-        position: sticky;
-        bottom: 0;
-        z-index: 5;
-    }
-
-    .edit-modal-body {
-        padding: 17px;
-    }
-
-    .edit-modal-footer {
-        margin-left: -17px;
-        margin-right: -17px;
-        margin-bottom: -17px;
-        padding-left: 17px;
-        padding-right: 17px;
-    }
+@media (prefers-reduced-motion: reduce) {
+    .ep-att * { transition: none !important; }
 }
 </style>
 
-<div class="attendees-page">
+<div class="attendees-page ep-att">
 
 
 {{-- =====================================================
-     EVENT PLUS HERO
+     HEADER
      ===================================================== --}}
 
-<section class="ep-attendees-hero">
+<header class="ep-header">
 
-    <div class="ep-hero-content">
-
-        <div class="ep-hero-left">
-
-            <div class="ep-brand-line">
-                <i class="fa-solid fa-bolt"></i>
-                Event Plus Operations
-            </div>
-
-            <h1 class="ep-hero-title">
-                Attendee Command Center
-            </h1>
-
-            <p class="ep-hero-description">
-                Manage registrations, runner information, tickets and event revenue
-                from one centralized Event Plus workspace.
-            </p>
-
-        </div>
-
-        <div class="ep-event-pill">
-
-            <div class="ep-event-pill-icon">
-                <i class="fa-solid fa-calendar-days"></i>
-            </div>
-
-            <div>
-                <p class="ep-event-pill-label">
-                    Current Event
-                </p>
-
-                <p class="ep-event-pill-name">
-                    {{ $event->title }}
-                </p>
-            </div>
-
-        </div>
-
+    <div>
+        <h1>Attendees</h1>
+        <p>Registered runners, revenue and details for <strong>{{ $event->title }}</strong></p>
     </div>
 
-</section>
-
-
-{{-- =====================================================
-     PAGE HEADER
-     ===================================================== --}}
-
-<div class="attendees-header">
-
-    <div class="attendees-title-wrapper">
-
-        <div class="attendees-title-icon">
-            <i class="fa-solid fa-users"></i>
-        </div>
-
-        <div class="attendees-title">
-
-            <h2>
-                {{ $event->title }}
-            </h2>
-
-            <p>
-                Registered attendees, revenue and detailed runner information
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <div class="attendees-action-group">
-
-        {{-- Excel Download --}}
+    <div class="ep-header-actions">
 
         <a href="{{ route('admin.events.attendees.export', $event->slug) }}"
-           class="ep-excel-button">
-
-            <i class="fa-solid fa-file-excel"></i>
-
-            Download Excel Report
-
+           class="ep-btn ep-btn-green">
+            <i class="fa-solid fa-file-excel" aria-hidden="true"></i>
+            Download Excel report
         </a>
 
+        @if(!$isEventAdmin)
 
-        @if(!auth('admin')->user()->isEventAdmin())
-
-            <a href="{{ route('admin.events.index') }}"
-               class="back-events-button">
-
-                <i class="fa-solid fa-arrow-left"></i>
-
-                Back to Events
-
+            <a href="{{ route('admin.events.index') }}" class="ep-btn ep-btn-ghost">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                Back to events
             </a>
 
         @else
 
-            <form action="{{ route('admin.logout') }}"
-                  method="POST"
-                  class="inline-block">
-
+            <form action="{{ route('admin.logout') }}" method="POST" class="ep-inline">
                 @csrf
-
-                <button type="submit"
-                        class="ep-logout-button">
-
-                    <i class="fa-solid fa-right-from-bracket"></i>
-
+                <button type="submit" class="ep-btn ep-btn-danger">
+                    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
                     Logout
-
                 </button>
-
             </form>
 
         @endif
 
     </div>
 
-</div>
+</header>
 
-
-{{-- =====================================================
-     SUCCESS MESSAGE
-     ===================================================== --}}
 
 @if(session('success'))
-
-    <div class="attendee-success-alert">
-
-        <div class="attendee-success-icon">
-            <i class="fa-solid fa-check"></i>
-        </div>
-
-        <span>
-            {{ session('success') }}
-        </span>
-
+    <div class="ep-alert" role="status">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+        <span>{{ session('success') }}</span>
     </div>
-
 @endif
 
 
@@ -1511,1215 +422,687 @@
      STATISTICS
      ===================================================== --}}
 
-<div class="ep-stats-grid">
+<section class="ep-stats" aria-label="Summary">
 
-    {{-- Revenue --}}
-
-    <div class="attendee-stat-card stat-revenue">
-
-        <div class="attendee-stat-content">
-
-            <div>
-
-                <p class="stat-label">
-                    Total Revenue Generated
-                </p>
-
-                <h3 class="stat-value">
-                    {{ number_format($totalRevenue) }} MMK
-                </h3>
-
-            </div>
-
-            <div class="stat-icon">
-                <i class="fa-solid fa-sack-dollar"></i>
-            </div>
-
+    <div class="ep-stat ep-stat-revenue">
+        <div>
+            <p class="ep-stat-label">Total revenue</p>
+            <p class="ep-stat-value">{{ number_format($totalRevenue) }} MMK</p>
         </div>
-
+        <div class="ep-stat-icon"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i></div>
     </div>
 
-
-    {{-- Runners --}}
-
-    <div class="attendee-stat-card stat-runners">
-
-        <div class="attendee-stat-content">
-
-            <div>
-
-                <p class="stat-label">
-                    Total Confirmed Runners
-                </p>
-
-                <h3 class="stat-value">
-                    {{ $attendees->count() }}
-                </h3>
-
-            </div>
-
-            <div class="stat-icon">
-                <i class="fa-solid fa-person-running"></i>
-            </div>
-
+    <div class="ep-stat ep-stat-runners">
+        <div>
+            <p class="ep-stat-label">Confirmed runners</p>
+            <p class="ep-stat-value">{{ number_format($attendees->count()) }}</p>
         </div>
-
+        <div class="ep-stat-icon"><i class="fa-solid fa-person-running" aria-hidden="true"></i></div>
     </div>
 
-
-    {{-- Status --}}
-
-    <div class="attendee-stat-card stat-status">
-
-        <div class="attendee-stat-content">
-
-            <div>
-
-                <p class="stat-label">
-                    Event Status
-                </p>
-
-                <h3 class="stat-value capitalize">
-                    {{ $event->status }}
-                </h3>
-
-            </div>
-
-            <div class="stat-icon">
-                <i class="fa-solid fa-calendar-check"></i>
-            </div>
-
+    <div class="ep-stat ep-stat-status">
+        <div>
+            <p class="ep-stat-label">Event status</p>
+            <p class="ep-stat-value is-status">{{ $event->status }}</p>
         </div>
-
+        <div class="ep-stat-icon"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></div>
     </div>
 
-</div>
+</section>
 
 
 {{-- =====================================================
-     REGISTERED PARTICIPANTS
+     RUNNERS
      ===================================================== --}}
 
-@foreach($attendees->groupBy('ticket_category_id') as $categoryAttendees)
+@if($attendees->isEmpty())
 
-<div class="participants-card">
+    <div class="ep-card">
+        <div class="ep-empty">
+            <i class="fa-solid fa-users-slash" aria-hidden="true"></i>
+            <h3>No runners registered</h3>
+            <p>No runners have registered for this event yet.</p>
+        </div>
+    </div>
 
-    <div class="participants-header">
+@else
 
-        <div class="participants-title">
+<section class="ep-card" id="runnersCard" aria-label="Registered runners">
 
-            <div class="participants-title-icon">
-                <i class="fa-solid fa-person-running"></i>
+    {{-- Search, filters, page size --}}
+    <div class="ep-toolbar">
+
+        <div class="ep-toolbar-top">
+
+            <div class="ep-search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search"
+                       id="runnerSearch"
+                       placeholder="Search name, ticket code, email, phone, NRC or BIB"
+                       aria-label="Search runners"
+                       autocomplete="off">
+                <button type="button" class="ep-search-clear is-hidden" id="runnerSearchClear" aria-label="Clear search">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
             </div>
 
-            <div>
-
-                <h3>
-                    {{ $categoryAttendees->first()->ticketCategory->name ?? 'Uncategorized' }}
-                </h3>
-
-                <p>
-                    {{ $categoryAttendees->count() }} registered runners in this ticket category
-                </p>
-
-            </div>
+            <label class="ep-pagesize">
+                Rows per page
+                <select id="pageSize">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </label>
 
         </div>
 
-        <span class="participant-count">
-            {{ $categoryAttendees->count() }} Runners
-        </span>
+        @if($categoryGroups->count() > 1)
+            <div class="ep-filters" role="group" aria-label="Filter by ticket category">
+
+                <button type="button" class="ep-filter is-active" data-category="all">
+                    All runners <span>{{ $attendees->count() }}</span>
+                </button>
+
+                @foreach($categoryGroups as $categoryId => $group)
+                    <button type="button" class="ep-filter" data-category="{{ $categoryId }}">
+                        {{ $group->first()->ticketCategory->name ?? 'Uncategorized' }}
+                        <span>{{ $group->count() }}</span>
+                    </button>
+                @endforeach
+
+            </div>
+        @endif
+
+        {{-- GROUP BUY: filter by how the ticket was bought (only when this event has group buy orders) --}}
+        @if($groupBuyAttendeeCount > 0)
+            <div class="ep-filters" role="group" aria-label="Filter by purchase type">
+
+                <button type="button" class="ep-filter is-active" data-buytype="all">
+                    All purchases <span>{{ $attendees->count() }}</span>
+                </button>
+
+                <button type="button" class="ep-filter" data-buytype="group">
+                    <i class="fa-solid fa-users" aria-hidden="true"></i>
+                    Group buy <span>{{ $groupBuyAttendeeCount }}</span>
+                </button>
+
+                <button type="button" class="ep-filter" data-buytype="single">
+                    Individual <span>{{ $singleAttendeeCount }}</span>
+                </button>
+
+            </div>
+        @endif
 
     </div>
 
 
-    <div class="overflow-x-auto">
+    <div class="ep-table-wrap">
 
-        <table class="participants-table">
+        <table class="att-table">
 
             <thead>
-
                 <tr>
-
-                    <th>
-                        Reg Code / Runner / Father
-                    </th>
-
-                    <th>
-                        BIB & Category
-                    </th>
-
-                    <th>
-                        Promo Applied
-                    </th>
-
-                    <th>
-                        Contact & Emergency
-                    </th>
-
-                    <th>
-                        NRC / Passport / Country
-                    </th>
-
-                    <th>
-                        Demographics
-                    </th>
-
-                    <th>
-                        Health & ITRA
-                    </th>
-
-                    <th>
-                        Address & Experience
-                    </th>
-
-                    @if(!auth('admin')->user()->isEventAdmin())
-
-                        <th class="text-right">
-                            Actions
-                        </th>
-
-                    @endif
-
+                    <th>Runner</th>
+                    <th>Category and promo</th>
+                    <th>Contact</th>
+                    <th>ID and nationality</th>
+                    <th>Profile</th>
+                    <th class="att-col-actions">Actions</th>
                 </tr>
-
             </thead>
 
+            @foreach($attendees as $attendee)
 
-            <tbody>
+                @php
+                    $categoryName = $attendee->ticketCategory->name ?? 'Uncategorized';
+                    $isForeigner = strtolower((string) $attendee->nationality) === 'foreigner';
+                    $hasCondition = strtolower((string) $attendee->has_medical_condition) === 'yes';
+                    $isItra = strtolower((string) $attendee->itra) === 'yes';
+                    $dob = $attendee->date_of_birth
+                        ? \Carbon\Carbon::parse($attendee->date_of_birth)->format('Y-m-d')
+                        : null;
 
-                @foreach($categoryAttendees as $attendee)
+                    // GROUP BUY: did this runner buy through a group buy order?
+                    $attendeeOrder = $attendee->order;
+                    $isGroupBuy = $attendeeOrder && $attendeeOrder->isGroupBuy();
+                    $groupBuyLabel = $isGroupBuy
+                        ? ($attendeeOrder->group_buy_name ?: $attendeeOrder->group_buy_quantity . '-ticket group')
+                        : null;
 
-                    <tr>
+                    $searchText = mb_strtolower(implode(' ', array_filter([
+                        $attendee->full_name,
+                        $attendee->father_name,
+                        $attendee->ticket_code,
+                        $attendee->email,
+                        $attendee->phone,
+                        $attendee->viber,
+                        $attendee->nrc_passport,
+                        $attendee->bib_number,
+                        $attendee->bib_name,
+                        $attendee->country,
+                        $categoryName,
+                        $attendeeOrder?->order_number,
+                        $isGroupBuy ? 'group buy ' . $groupBuyLabel : null,
+                    ])));
+                @endphp
 
-                        {{-- =================================================
-                             RUNNER INFO
-                             ================================================= --}}
+                <tbody class="att-group"
+                       data-category="{{ $attendee->ticket_category_id ?? 0 }}"
+                       data-buytype="{{ $isGroupBuy ? 'group' : 'single' }}"
+                       data-search="{{ $searchText }}">
 
-                        <td>
+                    {{-- ===== Main row ===== --}}
+                    <tr class="att-main">
 
-                            <div class="runner-identity">
-
-                                <div class="runner-avatar">
-
-                                    {{ strtoupper(substr($attendee->full_name ?? 'R', 0, 1)) }}
-
+                        {{-- Runner --}}
+                        <td data-label="Runner">
+                            <div class="att-runner">
+                                <div class="att-avatar" aria-hidden="true">
+                                    {{ strtoupper(mb_substr($attendee->full_name ?? 'R', 0, 1)) }}
                                 </div>
+                                <div>
+                                    <p class="att-name">{{ $attendee->full_name }}</p>
+                                    <span class="att-code">{{ $attendee->ticket_code }}</span>
 
-                                <div class="runner-identity-content">
-
-                                    @if(!auth('admin')->user()->isEventAdmin())
-                                        <button type="button"
-                                                onclick="document.getElementById('edit-modal-{{ $attendee->id }}').classList.remove('hidden')"
-                                                class="runner-edit-inline">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                            Edit Runner
-                                        </button>
+                                    @if(!empty($attendee->bib_number))
+                                        <div class="att-bib">BIB {{ $attendee->bib_number }}</div>
+                                    @elseif(!empty($attendee->bib_name))
+                                        <div class="att-bib">BIB name: {{ $attendee->bib_name }}</div>
                                     @endif
-
-                                    <span class="runner-code">
-                                        {{ $attendee->ticket_code }}
-                                    </span>
-
-                                    <p class="runner-name">
-                                        {{ $attendee->full_name }}
-                                    </p>
-
-                                    @if($attendee->father_name)
-
-                                        <p class="runner-father">
-
-                                            <i class="fa-solid fa-user-group"></i>
-
-                                            Father:
-                                            {{ $attendee->father_name }}
-
-                                        </p>
-
-                                    @endif
-
                                 </div>
-
                             </div>
-
                         </td>
 
+                        {{-- Category and promo --}}
+                        <td data-label="Category and promo">
+                            <p class="att-line att-strong">
+                                <i class="fa-solid fa-ticket" aria-hidden="true"></i>{{ $categoryName }}
+                            </p>
 
-                        {{-- =================================================
-                             BIB & CATEGORY
-                             ================================================= --}}
-
-                        <td>
-
-                            @if(!empty($attendee->bib_number))
-
-                                <div>
-
-                                    <span class="bib-badge">
-
-                                        <i class="fa-solid fa-hashtag"></i>
-
-                                        BIB:
-                                        {{ $attendee->bib_number }}
-
-                                    </span>
-
-                                </div>
-
-                            @elseif(!empty($attendee->bib_name))
-
-                                <div>
-
-                                    <span class="bib-badge">
-
-                                        <i class="fa-solid fa-id-badge"></i>
-
-                                        {{ $attendee->bib_name }}
-
-                                    </span>
-
-                                </div>
-
+                            {{-- GROUP BUY badge --}}
+                            @if($isGroupBuy)
+                                <p class="att-line">
+                                    <i class="fa-solid fa-users" aria-hidden="true"></i>
+                                    <span class="ep-tag ep-tag-amber">Group buy</span>
+                                </p>
+                                <p class="att-line att-muted">{{ $groupBuyLabel }}</p>
                             @endif
 
-
-                            <span class="category-badge">
-
-                                <i class="fa-solid fa-ticket"></i>
-
-                                {{ $attendee->ticketCategory->name ?? 'N/A' }}
-
-                            </span>
-
-                        </td>
-
-
-                        {{-- =================================================
-                             PROMO
-                             ================================================= --}}
-
-                        <td>
-
                             @if($attendee->promoCode)
-
-                                <div>
-
-                                    <span class="promo-badge">
-
-                                        <i class="fa-solid fa-tags"></i>
-
-                                        {{ $attendee->promoCode->code }}
-
-                                    </span>
-
-                                </div>
-
-                                <p class="promo-discount">
-
-                                    Off:
-
+                                <p class="att-line">
+                                    <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                                    <span class="ep-tag ep-tag-purple">{{ $attendee->promoCode->code }}</span>
+                                </p>
+                                <p class="att-line att-muted">
+                                    Discount:
                                     {{ $attendee->promoCode->discount_type === 'percentage'
                                         ? $attendee->promoCode->discount_value . '%'
                                         : number_format($attendee->promoCode->discount_value) . ' MMK'
                                     }}
-
                                 </p>
-
-
-                                @if($attendee->promoCode->company_name)
-
-                                    <p class="promo-company">
-
-                                        <i class="fa-solid fa-building"></i>
-
-                                        {{ $attendee->promoCode->company_name }}
-
-                                    </p>
-
-                                @endif
-
                             @else
-
-                                <span class="text-xs text-gray-400">
-                                    -
-                                </span>
-
+                                <p class="att-line att-muted">No promo code</p>
                             @endif
-
                         </td>
 
-
-                        {{-- =================================================
-                             CONTACT
-                             ================================================= --}}
-
-                        <td>
-
-                            <div class="contact-stack">
-
-                                <p class="contact-line">
-
-                                    <i class="fa-solid fa-envelope"></i>
-
-                                    {{ $attendee->email }}
-
-                                </p>
-
-                                <p class="contact-line phone">
-
-                                    <i class="fa-solid fa-phone"></i>
-
-                                    {{ $attendee->phone }}
-
-                                </p>
-
-
+                        {{-- Contact --}}
+                        <td data-label="Contact">
+                            <div class="att-contact">
+                                <p class="att-line"><i class="fa-solid fa-envelope" aria-hidden="true"></i>{{ $attendee->email }}</p>
+                                <p class="att-line"><i class="fa-solid fa-phone" aria-hidden="true"></i>{{ $attendee->phone }}</p>
                                 @if($attendee->viber)
-
-                                    <p class="contact-line viber">
-
-                                        <i class="fa-brands fa-viber"></i>
-
-                                        Viber:
-                                        {{ $attendee->viber }}
-
-                                    </p>
-
+                                    <p class="att-line"><i class="fa-brands fa-viber" aria-hidden="true"></i>{{ $attendee->viber }}</p>
                                 @endif
-
-
-                                <p class="contact-line emergency">
-
-                                    <i class="fa-solid fa-phone-volume"></i>
-
-                                    ICE:
-                                    {{ $attendee->emergency_contact ?? 'N/A' }}
-
-                                </p>
-
                             </div>
-
                         </td>
 
+                        {{-- ID and nationality --}}
+                        <td data-label="ID and nationality">
+                            <p class="att-line att-strong">{{ $attendee->nrc_passport }}</p>
 
-                        {{-- =================================================
-                             NRC / PASSPORT
-                             ================================================= --}}
-
-                        <td>
-
-                            <span class="document-number">
-
-                                {{ $attendee->nrc_passport }}
-
-                            </span>
-
+                            <div class="att-tags">
+                                <span class="ep-tag {{ $isForeigner ? 'ep-tag-blue' : 'ep-tag-green' }}">
+                                    <i class="fa-solid {{ $isForeigner ? 'fa-earth-americas' : 'fa-flag' }}" aria-hidden="true"></i>
+                                    {{ $attendee->nationality }}
+                                </span>
+                            </div>
 
                             @if($attendee->country)
-
-                                <p class="country-line">
-
-                                    <i class="fa-solid fa-globe"></i>
-
-                                    {{ $attendee->country }}
-
+                                <p class="att-line att-muted" style="margin-top:6px;">
+                                    <i class="fa-solid fa-globe" aria-hidden="true"></i>{{ $attendee->country }}
                                 </p>
-
                             @endif
-
                         </td>
 
+                        {{-- Profile --}}
+                        <td data-label="Profile">
+                            <div class="att-tags">
+                                @if($attendee->tshirt_size)
+                                    <span class="ep-tag"><i class="fa-solid fa-shirt" aria-hidden="true"></i>{{ $attendee->tshirt_size }}</span>
+                                @endif
+                                @if($attendee->gender)
+                                    <span class="ep-tag" style="text-transform:capitalize;">{{ str_replace('_', ' ', $attendee->gender) }}</span>
+                                @endif
+                                @if($attendee->blood_type)
+                                    <span class="ep-tag ep-tag-red"><i class="fa-solid fa-droplet" aria-hidden="true"></i>{{ $attendee->blood_type }}</span>
+                                @endif
+                            </div>
 
-                        {{-- =================================================
-                             DEMOGRAPHICS
-                             ================================================= --}}
-
-                        <td>
-
-                            <div>
-
-                                <span class="nationality-badge
-                                    {{ strtolower($attendee->nationality) === 'foreigner'
-                                        ? 'nationality-foreigner'
-                                        : 'nationality-myanmar'
-                                    }}">
-
-                                    <i class="fa-solid
-                                        {{ strtolower($attendee->nationality) === 'foreigner'
-                                            ? 'fa-earth-americas'
-                                            : 'fa-flag'
-                                        }}">
-                                    </i>
-
-                                    {{ $attendee->nationality }}
-
-                                </span>
-
-
-                                <div class="demographic-row">
-
-                                    <span class="shirt-size">
-
-                                        Size:
-                                        {{ $attendee->tshirt_size }}
-
+                            <div class="att-tags">
+                                @if($hasCondition)
+                                    <span class="ep-tag ep-tag-red">
+                                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>Medical condition
                                     </span>
-
-                                    <span class="gender-label capitalize">
-
-                                        {{ $attendee->gender ?? 'N/A' }}
-
+                                @else
+                                    <span class="ep-tag ep-tag-green">
+                                        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>Health clear
                                     </span>
-
-                                </div>
-
-
-                                @if($attendee->date_of_birth)
-
-                                    <span class="dob-line">
-
-                                        <i class="fa-solid fa-cake-candles"></i>
-
-                                        {{ \Carbon\Carbon::parse($attendee->date_of_birth)->format('Y-m-d') }}
-
-                                    </span>
-
                                 @endif
 
-                            </div>
-
-                        </td>
-
-
-                        {{-- =================================================
-                             HEALTH & ITRA
-                             ================================================= --}}
-
-                        <td>
-
-                            <div>
-
-                                <span class="blood-badge">
-
-                                    <i class="fa-solid fa-droplet"></i>
-
-                                    {{ $attendee->blood_type ?? 'N/A' }}
-
-                                </span>
-
-                            </div>
-
-
-                            @if(strtolower($attendee->has_medical_condition) === 'yes')
-
-                                <span class="health-line health-warning">
-
-                                    <i class="fa-solid fa-triangle-exclamation"></i>
-
-                                    Has Condition
-
-                                </span>
-
-                                <p class="small-truncate"
-                                   title="{{ $attendee->medical_details }}">
-
-                                    {{ $attendee->medical_details }}
-
-                                </p>
-
-                            @else
-
-                                <span class="health-line health-clear">
-
-                                    <i class="fa-solid fa-circle-check"></i>
-
-                                    Clear
-
-                                </span>
-
-                            @endif
-
-
-                            @if(strtolower($attendee->itra) === 'yes')
-
-                                <div class="itra-box">
-
-                                    <span class="itra-label">
-
-                                        <i class="fa-solid fa-award"></i>
-
-                                        ITRA Member
-
+                                @if($isItra)
+                                    <span class="ep-tag ep-tag-purple">
+                                        <i class="fa-solid fa-award" aria-hidden="true"></i>ITRA
                                     </span>
-
-
-                                    @if($attendee->itra_details)
-
-                                        <p class="small-truncate"
-                                           title="{{ $attendee->itra_details }}">
-
-                                            {{ $attendee->itra_details }}
-
-                                        </p>
-
-                                    @endif
-
-                                </div>
-
-                            @endif
-
+                                @endif
+                            </div>
                         </td>
 
+                        {{-- Actions --}}
+                        <td data-label="Actions">
+                            <div class="att-actions">
 
-                        {{-- =================================================
-                             ADDRESS & EXPERIENCE
-                             ================================================= --}}
+                                <button type="button"
+                                        class="ep-btn ep-btn-ghost ep-btn-sm att-toggle"
+                                        aria-expanded="false">
+                                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                    Details
+                                </button>
 
-                        <td>
+                                @if(!$isEventAdmin)
 
-                            <p class="address-line"
-                               title="{{ $attendee->address }}">
-
-                                <i class="fa-solid fa-location-dot"></i>
-
-                                <span>
-                                    {{ $attendee->address ?? 'N/A' }}
-                                </span>
-
-                            </p>
-
-
-                            @if($attendee->experience)
-
-                                <p class="experience-line"
-                                   title="{{ $attendee->experience }}">
-
-                                    <i class="fa-solid fa-person-running"></i>
-
-                                    <span>
-                                        {{ $attendee->experience }}
-                                    </span>
-
-                                </p>
-
-                            @endif
-
-                        </td>
-
-
-                        {{-- =================================================
-                             ACTIONS — SUPER ADMIN ONLY
-                             ================================================= --}}
-
-                        @if(!auth('admin')->user()->isEventAdmin())
-
-                            <td>
-
-                                <div class="attendee-actions">
-
-                                    {{-- Download Ticket --}}
+                                    <button type="button"
+                                            class="ep-btn ep-btn-soft ep-btn-sm"
+                                            data-open-modal="{{ $attendee->id }}">
+                                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                                        Edit
+                                    </button>
 
                                     <a href="{{ route('admin.attendees.download_ticket', $attendee->id) }}"
-                                       class="attendee-action download-ticket-button"
-                                       title="Download Ticket PDF">
-
-                                        <i class="fa-solid fa-download"></i>
-
+                                       class="ep-btn ep-btn-ghost ep-btn-sm"
+                                       title="Download ticket PDF">
+                                        <i class="fa-solid fa-download" aria-hidden="true"></i>
                                         Ticket
-
                                     </a>
-
-
-                                    {{-- Delete --}}
 
                                     <form action="{{ route('admin.attendees.destroy', $attendee->id) }}"
                                           method="POST"
-                                          class="inline-block"
+                                          class="ep-inline"
+                                          data-group-buy="{{ $isGroupBuy ? $attendeeOrder->group_buy_quantity : '' }}"
                                           onsubmit="return confirmAttendeeDeletion(event, this);">
 
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit"
-                                                class="attendee-action delete-attendee-button">
-
-                                            <i class="fa-solid fa-trash"></i>
-
+                                        <button type="submit" class="ep-btn ep-btn-danger ep-btn-sm">
+                                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
                                             Delete
-
                                         </button>
 
                                     </form>
 
-                                </div>
+                                @endif
 
-                            </td>
-
-                        @endif
+                            </div>
+                        </td>
 
                     </tr>
 
+                    {{-- ===== Expandable details ===== --}}
+                    <tr class="att-detail">
+                        <td colspan="6">
+                            <dl class="att-detail-grid">
 
-@endforeach
+                                {{-- GROUP BUY details --}}
+                                @if($isGroupBuy)
+                                    <div class="att-detail-item">
+                                        <dt>Group buy</dt>
+                                        <dd>{{ $groupBuyLabel }} ({{ $attendeeOrder->group_buy_quantity }} tickets)</dd>
+                                    </div>
 
-            </tbody>
+                                    <div class="att-detail-item">
+                                        <dt>Group discount on the order</dt>
+                                        <dd>{{ number_format($attendeeOrder->group_buy_discount, 2) }} MMK</dd>
+                                    </div>
+                                @endif
+
+                                @if($attendeeOrder)
+                                    <div class="att-detail-item">
+                                        <dt>Order number</dt>
+                                        <dd>{{ $attendeeOrder->order_number }}</dd>
+                                    </div>
+                                @endif
+
+                                @if($attendee->father_name)
+                                    <div class="att-detail-item">
+                                        <dt>Father's name</dt>
+                                        <dd>{{ $attendee->father_name }}</dd>
+                                    </div>
+                                @endif
+
+                                @if($dob)
+                                    <div class="att-detail-item">
+                                        <dt>Date of birth</dt>
+                                        <dd>{{ $dob }}</dd>
+                                    </div>
+                                @endif
+
+                                <div class="att-detail-item">
+                                    <dt>Emergency contact</dt>
+                                    <dd>{{ $attendee->emergency_contact ?? 'N/A' }}</dd>
+                                </div>
+
+                                <div class="att-detail-item">
+                                    <dt>Address</dt>
+                                    <dd>{{ $attendee->address ?? 'N/A' }}</dd>
+                                </div>
+
+                                @if($attendee->experience)
+                                    <div class="att-detail-item">
+                                        <dt>Running experience</dt>
+                                        <dd>{{ $attendee->experience }}</dd>
+                                    </div>
+                                @endif
+
+                                @if($hasCondition)
+                                    <div class="att-detail-item is-warning">
+                                        <dt>Medical details</dt>
+                                        <dd>{{ $attendee->medical_details ?: 'No details given' }}</dd>
+                                    </div>
+                                @endif
+
+                                @if($isItra)
+                                    <div class="att-detail-item">
+                                        <dt>ITRA details</dt>
+                                        <dd>{{ $attendee->itra_details ?: 'No details given' }}</dd>
+                                    </div>
+                                @endif
+
+                                @if($attendee->promoCode && $attendee->promoCode->company_name)
+                                    <div class="att-detail-item">
+                                        <dt>Promo company</dt>
+                                        <dd>{{ $attendee->promoCode->company_name }}</dd>
+                                    </div>
+                                @endif
+
+                            </dl>
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            @endforeach
 
         </table>
 
     </div>
 
-</div>
 
-
-@endforeach
-
-@if($attendees->isEmpty())
-    <div class="participants-card">
-        <div class="attendees-empty-state">
-            <div class="attendees-empty-icon"><i class="fa-solid fa-users-slash"></i></div>
-            <h3>No Runners Registered</h3>
-            <p>No runners registered for this event yet.</p>
-        </div>
+    {{-- No matches --}}
+    <div class="ep-empty is-hidden" id="noResults">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <h3>No runners match your search</h3>
+        <p>Try a different name, code or category.</p>
+        <button type="button" class="ep-btn ep-btn-soft" id="clearFilters">Clear search and filters</button>
     </div>
+
+
+    {{-- Pagination --}}
+    <nav class="ep-pagination" aria-label="Runner pages">
+        <p class="ep-page-info" id="pageInfo" aria-live="polite"></p>
+        <div class="ep-page-nav" id="pageNav"></div>
+    </nav>
+
+</section>
+
 @endif
 
+
 {{-- =====================================================
-     EDIT RUNNER MODALS — SUPER ADMIN ONLY
+     EDIT RUNNER MODALS - SUPER ADMIN ONLY
      ===================================================== --}}
 
-@if(!auth('admin')->user()->isEventAdmin())
+@if(!$isEventAdmin)
 
     @foreach($attendees as $attendee)
 
-        <div id="edit-modal-{{ $attendee->id }}"
-             class="edit-runner-modal fixed inset-0 flex items-center justify-center z-50 hidden p-4">
+        @php
+            $modalDob = $attendee->date_of_birth
+                ? \Carbon\Carbon::parse($attendee->date_of_birth)->format('Y-m-d')
+                : '';
+        @endphp
 
-            <div class="edit-runner-modal-card">
+        <div class="ep-modal"
+             id="edit-modal-{{ $attendee->id }}"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="edit-title-{{ $attendee->id }}">
 
-                {{-- MODAL HEADER --}}
+            <div class="ep-modal-card">
 
-                <div class="edit-modal-header">
+                <div class="ep-modal-head">
+                    <div>
+                        <h3 id="edit-title-{{ $attendee->id }}">Edit {{ $attendee->full_name }}</h3>
+                        <p>Ticket {{ $attendee->ticket_code }}</p>
+                    </div>
+                    <button type="button" class="ep-modal-close" data-close-modal aria-label="Close">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
 
-                    <div class="edit-modal-title-wrapper">
+                <form action="{{ route('admin.attendees.update', $attendee->id) }}"
+                      method="POST"
+                      class="ep-modal-form">
 
-                        <div class="edit-modal-icon">
+                    @csrf
+                    @method('PUT')
 
-                            <i class="fa-solid fa-user-pen"></i>
+                    <div class="ep-modal-body">
 
+                        {{-- Runner --}}
+                        <div class="ep-form-section">
+                            <h4>Runner</h4>
+                            <div class="ep-grid">
+
+                                <label class="ep-field">
+                                    <span>Full name</span>
+                                    <input type="text" name="full_name" value="{{ $attendee->full_name }}" required>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Father's name</span>
+                                    <input type="text" name="father_name" value="{{ $attendee->father_name }}">
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Gender</span>
+                                    <select name="gender">
+                                        <option value="male" {{ $attendee->gender === 'male' ? 'selected' : '' }}>Male</option>
+                                        <option value="female" {{ $attendee->gender === 'female' ? 'selected' : '' }}>Female</option>
+                                        <option value="prefer_not_to_say" {{ $attendee->gender === 'prefer_not_to_say' ? 'selected' : '' }}>Prefer not to say</option>
+                                    </select>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Date of birth</span>
+                                    <input type="date" name="date_of_birth" value="{{ $modalDob }}">
+                                </label>
+
+                            </div>
                         </div>
 
-                        <div class="edit-modal-title">
+                        {{-- Contact --}}
+                        <div class="ep-form-section">
+                            <h4>Contact</h4>
+                            <div class="ep-grid">
 
-                            <h3>
-                                Edit Runner Details
-                            </h3>
+                                <label class="ep-field">
+                                    <span>Email</span>
+                                    <input type="email" name="email" value="{{ $attendee->email }}" required>
+                                </label>
 
-                            <p>
-                                Update participant profile and event record
-                            </p>
+                                <label class="ep-field">
+                                    <span>Phone</span>
+                                    <input type="text" name="phone" value="{{ $attendee->phone }}" required>
+                                </label>
 
+                                <label class="ep-field">
+                                    <span>Viber number</span>
+                                    <input type="text" name="viber" value="{{ $attendee->viber }}">
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Emergency contact</span>
+                                    <input type="text" name="emergency_contact" value="{{ $attendee->emergency_contact }}" required>
+                                </label>
+
+                            </div>
+                        </div>
+
+                        {{-- Identity and race --}}
+                        <div class="ep-form-section">
+                            <h4>Identity and race details</h4>
+                            <div class="ep-grid">
+
+                                <label class="ep-field">
+                                    <span>Nationality</span>
+                                    <select name="nationality">
+                                        <option value="Myanmar" {{ $attendee->nationality === 'Myanmar' ? 'selected' : '' }}>Myanmar</option>
+                                        <option value="Foreigner" {{ $attendee->nationality === 'Foreigner' ? 'selected' : '' }}>Foreigner</option>
+                                    </select>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>NRC / Passport</span>
+                                    <input type="text" name="nrc_passport" value="{{ $attendee->nrc_passport }}" required>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Country</span>
+                                    <input type="text" name="country" value="{{ $attendee->country }}">
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>BIB number</span>
+                                    <input type="text"
+                                           name="bib_number"
+                                           value="{{ $attendee->bib_number ?: $attendee->bib_name }}"
+                                           maxlength="50"
+                                           placeholder="e.g. GH-0001 or 1001">
+                                    <small>The runner's BIB code or number.</small>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>BIB name</span>
+                                    <input type="text" name="bib_name" maxlength="10" value="{{ $attendee->bib_name }}">
+                                    <small>Up to 10 characters.</small>
+                                </label>
+
+                                <div class="ep-field">
+                                    <span>T-shirt size</span>
+
+                                    @if(count($availableTshirtSizes))
+                                        <select name="tshirt_size">
+                                            <option value="">Select size</option>
+                                            @foreach($availableTshirtSizes as $size)
+                                                <option value="{{ $size }}" {{ $attendee->tshirt_size === $size ? 'selected' : '' }}>
+                                                    {{ $size }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <input type="hidden" name="tshirt_size" value="{{ $attendee->tshirt_size }}">
+                                        <div class="ep-static">No T-shirt sizes set for this event</div>
+                                    @endif
+                                </div>
+
+                            </div>
+                        </div>
+
+                        {{-- Health and ITRA --}}
+                        <div class="ep-form-section">
+                            <h4>Health and ITRA</h4>
+                            <div class="ep-grid">
+
+                                <label class="ep-field">
+                                    <span>Blood type</span>
+                                    <select name="blood_type">
+                                        @foreach(['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as $type)
+                                            <option value="{{ $type }}" {{ $attendee->blood_type === $type ? 'selected' : '' }}>
+                                                {{ $type }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Has a medical condition?</span>
+                                    <select name="has_medical_condition">
+                                        <option value="no" {{ strtolower((string) $attendee->has_medical_condition) !== 'yes' ? 'selected' : '' }}>No</option>
+                                        <option value="yes" {{ strtolower((string) $attendee->has_medical_condition) === 'yes' ? 'selected' : '' }}>Yes</option>
+                                    </select>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Medical details</span>
+                                    <input type="text" name="medical_details" value="{{ $attendee->medical_details }}">
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>ITRA registered?</span>
+                                    <select name="itra">
+                                        <option value="no" {{ strtolower((string) $attendee->itra) !== 'yes' ? 'selected' : '' }}>No</option>
+                                        <option value="yes" {{ strtolower((string) $attendee->itra) === 'yes' ? 'selected' : '' }}>Yes</option>
+                                    </select>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>ITRA details</span>
+                                    <input type="text" name="itra_details" value="{{ $attendee->itra_details }}">
+                                </label>
+
+                            </div>
+                        </div>
+
+                        {{-- About --}}
+                        <div class="ep-form-section">
+                            <h4>Address and experience</h4>
+                            <div class="ep-grid">
+
+                                <label class="ep-field">
+                                    <span>Address</span>
+                                    <textarea name="address" rows="3">{{ $attendee->address }}</textarea>
+                                </label>
+
+                                <label class="ep-field">
+                                    <span>Running experience</span>
+                                    <textarea name="experience" rows="3">{{ $attendee->experience }}</textarea>
+                                </label>
+
+                            </div>
                         </div>
 
                     </div>
 
-
-                    <button type="button"
-                            onclick="document.getElementById('edit-modal-{{ $attendee->id }}').classList.add('hidden')"
-                            class="edit-modal-close"
-                            aria-label="Close">
-
-                        <i class="fa-solid fa-xmark"></i>
-
-                    </button>
-
-                </div>
-
-
-                {{-- MODAL BODY --}}
-
-                <div class="edit-modal-body">
-
-                    <form action="{{ route('admin.attendees.update', $attendee->id) }}"
-                          method="POST"
-                          class="space-y-4">
-
-                        @csrf
-                        @method('PUT')
-
-
-                        {{-- NAME --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-user"></i>
-                                    Full Name
-                                </label>
-
-                                <input type="text"
-                                       name="full_name"
-                                       value="{{ $attendee->full_name }}"
-                                       required
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-user-group"></i>
-                                    Father Name
-                                </label>
-
-                                <input type="text"
-                                       name="father_name"
-                                       value="{{ $attendee->father_name }}"
-                                       class="edit-input">
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- CONTACT --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-envelope"></i>
-                                    Email
-                                </label>
-
-                                <input type="email"
-                                       name="email"
-                                       value="{{ $attendee->email }}"
-                                       required
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-phone"></i>
-                                    Phone
-                                </label>
-
-                                <input type="text"
-                                       name="phone"
-                                       value="{{ $attendee->phone }}"
-                                       required
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-brands fa-viber"></i>
-                                    Viber Number
-                                </label>
-
-                                <input type="text"
-                                       name="viber"
-                                       value="{{ $attendee->viber }}"
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-phone-volume"></i>
-                                    Emergency Contact
-                                </label>
-
-                                <input type="text"
-                                       name="emergency_contact"
-                                       value="{{ $attendee->emergency_contact }}"
-                                       required
-                                       class="edit-input">
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- NATIONALITY / DOCUMENT --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-earth-americas"></i>
-                                    Nationality
-                                </label>
-
-                                <select name="nationality"
-                                        class="edit-select">
-
-                                    <option value="Myanmar"
-                                        {{ $attendee->nationality === 'Myanmar' ? 'selected' : '' }}>
-                                        Myanmar
-                                    </option>
-
-                                    <option value="Foreigner"
-                                        {{ $attendee->nationality === 'Foreigner' ? 'selected' : '' }}>
-                                        Foreigner
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-id-card"></i>
-                                    NRC / Passport
-                                </label>
-
-                                <input type="text"
-                                       name="nrc_passport"
-                                       value="{{ $attendee->nrc_passport }}"
-                                       required
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-globe"></i>
-                                    Country
-                                </label>
-
-                                <input type="text"
-                                       name="country"
-                                       value="{{ $attendee->country }}"
-                                       class="edit-input">
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- PERSONAL / BIB --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-venus-mars"></i>
-                                    Gender
-                                </label>
-
-                                <select name="gender"
-                                        class="edit-select">
-
-                                    <option value="male"
-                                        {{ $attendee->gender === 'male' ? 'selected' : '' }}>
-                                        Male
-                                    </option>
-
-                                    <option value="female"
-                                        {{ $attendee->gender === 'female' ? 'selected' : '' }}>
-                                        Female
-                                    </option>
-
-                                    <option value="prefer_not_to_say"
-                                        {{ $attendee->gender === 'prefer_not_to_say' ? 'selected' : '' }}>
-                                        Prefer not to say
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-cake-candles"></i>
-                                    Date of Birth
-                                </label>
-
-                                <input type="date"
-                                       name="date_of_birth"
-                                       value="{{ $attendee->date_of_birth }}"
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-hashtag"></i>
-                                    BIB Number
-                                </label>
-
-                                <input type="text"
-                                       name="bib_number"
-                                       value="{{ $attendee->bib_number ?: $attendee->bib_name }}"
-                                       maxlength="50"
-                                       class="edit-input"
-                                       placeholder="e.g. GH-0001 or 1001">
-                                <p class="field-help" style="margin:5px 0 0;color:#8a91a0;font-size:.58rem;">
-                                    Enter the runner's BIB code/number here.
-                                </p>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-id-badge"></i>
-                                    BIB Name
-                                </label>
-
-                                <input type="text"
-                                       name="bib_name"
-                                       maxlength="10"
-                                       value="{{ $attendee->bib_name }}"
-                                       class="edit-input">
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-shirt"></i>
-                                    T-Shirt Size
-                                </label>
-
-                                @php
-                                    $availableTshirtSizes = $event->tshirt_sizes ?? [];
-                                    if (is_string($availableTshirtSizes)) {
-                                        $availableTshirtSizes = json_decode($availableTshirtSizes, true) ?: [];
-                                    }
-                                    $availableTshirtSizes = is_array($availableTshirtSizes)
-                                        ? array_values(array_unique($availableTshirtSizes))
-                                        : [];
-                                @endphp
-
-                                @if(count($availableTshirtSizes))
-                                    <select name="tshirt_size" class="edit-select">
-                                        <option value="">Select size</option>
-                                        @foreach($availableTshirtSizes as $size)
-                                            <option value="{{ $size }}"
-                                                {{ $attendee->tshirt_size === $size ? 'selected' : '' }}>
-                                                {{ $size }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                @else
-                                    <input type="hidden" name="tshirt_size" value="{{ $attendee->tshirt_size }}">
-                                    <div class="edit-input" style="background:#f8fafc;color:#98a2b3;">
-                                        No T-shirt sizes configured for this event
-                                    </div>
-                                @endif
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- HEALTH --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-droplet"></i>
-                                    Blood Type
-                                </label>
-
-                                <select name="blood_type"
-                                        class="edit-select">
-
-                                    @foreach(['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as $type)
-
-                                        <option value="{{ $type }}"
-                                            {{ $attendee->blood_type === $type ? 'selected' : '' }}>
-
-                                            {{ $type }}
-
-                                        </option>
-
-                                    @endforeach
-
-                                </select>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-heart-pulse"></i>
-                                    Has Medical Condition?
-                                </label>
-
-                                <select name="has_medical_condition"
-                                        class="edit-select">
-
-                                    <option value="no"
-                                        {{ strtolower($attendee->has_medical_condition) !== 'yes' ? 'selected' : '' }}>
-                                        No
-                                    </option>
-
-                                    <option value="yes"
-                                        {{ strtolower($attendee->has_medical_condition) === 'yes' ? 'selected' : '' }}>
-                                        Yes
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-notes-medical"></i>
-                                    Medical Details
-                                </label>
-
-                                <input type="text"
-                                       name="medical_details"
-                                       value="{{ $attendee->medical_details }}"
-                                       class="edit-input">
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- ITRA --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-award"></i>
-                                    ITRA Registered?
-                                </label>
-
-                                <select name="itra"
-                                        class="edit-select">
-
-                                    <option value="no"
-                                        {{ strtolower($attendee->itra) !== 'yes' ? 'selected' : '' }}>
-                                        No
-                                    </option>
-
-                                    <option value="yes"
-                                        {{ strtolower($attendee->itra) === 'yes' ? 'selected' : '' }}>
-                                        Yes
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                    ITRA Details
-                                </label>
-
-                                <input type="text"
-                                       name="itra_details"
-                                       value="{{ $attendee->itra_details }}"
-                                       class="edit-input">
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- ADDRESS / EXPERIENCE --}}
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-location-dot"></i>
-                                    Address
-                                </label>
-
-                                <textarea name="address"
-                                          rows="2"
-                                          class="edit-textarea">{{ $attendee->address }}</textarea>
-
-                            </div>
-
-
-                            <div class="edit-field">
-
-                                <label class="edit-label">
-                                    <i class="fa-solid fa-person-running"></i>
-                                    Running Experience
-                                </label>
-
-                                <textarea name="experience"
-                                          rows="2"
-                                          class="edit-textarea">{{ $attendee->experience }}</textarea>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- FOOTER --}}
-
-                        <div class="edit-modal-footer">
-
-                            <button type="button"
-                                    onclick="document.getElementById('edit-modal-{{ $attendee->id }}').classList.add('hidden')"
-                                    class="cancel-edit-button">
-
-                                <i class="fa-solid fa-xmark"></i>
-
-                                Cancel
-
-                            </button>
-
-
-                            <button type="submit"
-                                    class="save-edit-button">
-
-                                <i class="fa-solid fa-check"></i>
-
-                                Save Changes
-
-                            </button>
-
-                        </div>
-
-                    </form>
-
-                </div>
+                    <div class="ep-modal-foot">
+                        <button type="button" class="ep-btn ep-btn-ghost" data-close-modal>Cancel</button>
+                        <button type="submit" class="ep-btn ep-btn-primary">
+                            <i class="fa-solid fa-check" aria-hidden="true"></i>
+                            Save changes
+                        </button>
+                    </div>
+
+                </form>
 
             </div>
 
@@ -2736,8 +1119,14 @@
 function confirmAttendeeDeletion(event, form) {
     event.preventDefault();
 
+    // GROUP BUY: extra warning when the runner is part of a group buy order.
+    const groupSize = form.dataset.groupBuy;
+    const groupWarning = groupSize
+        ? '\n\nThis runner is part of a group buy order of ' + groupSize + ' tickets. Removing one ticket breaks the group. The order keeps its group discount, and the order total drops by this ticket\'s full price.'
+        : '';
+
     if (!window.confirm(
-        'Are you sure you want to delete this attendee? This action cannot be undone and may update the order revenue.'
+        'Are you sure you want to delete this attendee? This action cannot be undone and may update the order revenue.' + groupWarning
     )) {
         return false;
     }
@@ -2762,10 +1151,315 @@ function confirmAttendeeDeletion(event, form) {
     }
 
     passwordInput.value = adminPassword;
+
+    try { sessionStorage.setItem('ep-attendees-restore-{{ $event->id }}', '1'); } catch (e) {}
+
     form.submit();
 
     return false;
 }
+
+(function () {
+    /* ---------------------------------------------------------
+       Expand / collapse details
+    --------------------------------------------------------- */
+    document.addEventListener('click', function (event) {
+        const toggle = event.target.closest('.att-toggle');
+        if (!toggle) return;
+
+        const group = toggle.closest('.att-group');
+        const open = group.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    /* ---------------------------------------------------------
+       Edit modals
+    --------------------------------------------------------- */
+    let lastFocus = null;
+
+    function openModal(id) {
+        const modal = document.getElementById('edit-modal-' + id);
+        if (!modal) return;
+
+        lastFocus = document.activeElement;
+        modal.classList.add('is-open');
+        document.body.classList.add('ep-lock');
+
+        const first = modal.querySelector('input:not([type="hidden"]), select, textarea');
+        if (first) first.focus();
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+
+        modal.classList.remove('is-open');
+
+        if (!document.querySelector('.ep-modal.is-open')) {
+            document.body.classList.remove('ep-lock');
+        }
+
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    document.addEventListener('click', function (event) {
+        const opener = event.target.closest('[data-open-modal]');
+        if (opener) {
+            openModal(opener.dataset.openModal);
+            return;
+        }
+
+        const closer = event.target.closest('[data-close-modal]');
+        if (closer) {
+            closeModal(closer.closest('.ep-modal'));
+            return;
+        }
+
+        if (event.target.classList && event.target.classList.contains('ep-modal')) {
+            closeModal(event.target);
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        closeModal(document.querySelector('.ep-modal.is-open'));
+    });
+
+    document.querySelectorAll('.ep-modal-form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            try { sessionStorage.setItem('ep-attendees-restore-{{ $event->id }}', '1'); } catch (e) {}
+        });
+    });
+
+    /* ---------------------------------------------------------
+       Search, category filter and pagination
+    --------------------------------------------------------- */
+    const groups = Array.prototype.slice.call(document.querySelectorAll('.att-group'));
+    if (!groups.length) return;
+
+    const card = document.getElementById('runnersCard');
+    const searchInput = document.getElementById('runnerSearch');
+    const searchClear = document.getElementById('runnerSearchClear');
+    const sizeSelect = document.getElementById('pageSize');
+    const pageInfo = document.getElementById('pageInfo');
+    const pageNav = document.getElementById('pageNav');
+    const noResults = document.getElementById('noResults');
+    const tableWrap = card.querySelector('.ep-table-wrap');
+
+    // GROUP BUY: category and purchase-type filters are separate button sets.
+    const filterButtons = Array.prototype.slice.call(card.querySelectorAll('.ep-filter[data-category]'));
+    const buyTypeButtons = Array.prototype.slice.call(card.querySelectorAll('.ep-filter[data-buytype]'));
+
+    const STORE_KEY = 'ep-attendees-state-{{ $event->id }}';
+    const RESTORE_KEY = 'ep-attendees-restore-{{ $event->id }}';
+
+    const state = { page: 1, size: 10, query: '', category: 'all', buyType: 'all' };
+
+    // After saving or deleting a runner, return to the same page.
+    try {
+        if (sessionStorage.getItem(RESTORE_KEY) === '1') {
+            const saved = JSON.parse(sessionStorage.getItem(STORE_KEY) || '{}');
+
+            if ([10, 25, 50].indexOf(saved.size) !== -1) state.size = saved.size;
+            if (saved.page > 0) state.page = saved.page;
+            if (typeof saved.query === 'string') state.query = saved.query;
+            if (typeof saved.category === 'string') state.category = saved.category;
+            if (typeof saved.buyType === 'string') state.buyType = saved.buyType;
+        }
+        sessionStorage.removeItem(RESTORE_KEY);
+    } catch (e) {}
+
+    // GROUP BUY: ignore a saved purchase-type filter when there are no group buy runners.
+    if (!buyTypeButtons.length) state.buyType = 'all';
+
+    function saveState() {
+        try { sessionStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function matching() {
+        const query = state.query.trim().toLowerCase();
+
+        return groups.filter(function (group) {
+            const inCategory = state.category === 'all' || group.dataset.category === state.category;
+            const inBuyType = state.buyType === 'all' || group.dataset.buytype === state.buyType;
+            const inSearch = !query || group.dataset.search.indexOf(query) !== -1;
+            return inCategory && inBuyType && inSearch;
+        });
+    }
+
+    function pageList(page, pages) {
+        const items = [];
+        let last = 0;
+
+        for (let i = 1; i <= pages; i++) {
+            if (i === 1 || i === pages || Math.abs(i - page) <= 1) {
+                if (i - last > 1) items.push('gap');
+                items.push(i);
+                last = i;
+            }
+        }
+
+        return items;
+    }
+
+    function pageButton(label, onClick, options) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ep-page-btn' + (options.current ? ' is-current' : '');
+        button.disabled = !!options.disabled;
+
+        if (options.html) button.innerHTML = label;
+        else button.textContent = label;
+
+        if (options.aria) button.setAttribute('aria-label', options.aria);
+        if (options.current) button.setAttribute('aria-current', 'page');
+
+        button.addEventListener('click', onClick);
+        return button;
+    }
+
+    function goTo(page) {
+        state.page = page;
+        render();
+
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    function render() {
+        const list = matching();
+        const total = list.length;
+        const pages = Math.max(1, Math.ceil(total / state.size));
+
+        if (state.page > pages) state.page = pages;
+        if (state.page < 1) state.page = 1;
+
+        const start = (state.page - 1) * state.size;
+        const end = Math.min(start + state.size, total);
+        const visible = list.slice(start, end);
+
+        groups.forEach(function (group) {
+            group.classList.toggle('is-hidden', visible.indexOf(group) === -1);
+        });
+
+        tableWrap.classList.toggle('is-hidden', total === 0);
+        noResults.classList.toggle('is-hidden', total !== 0);
+        searchClear.classList.toggle('is-hidden', state.query === '');
+
+        filterButtons.forEach(function (button) {
+            button.classList.toggle('is-active', button.dataset.category === state.category);
+        });
+
+        buyTypeButtons.forEach(function (button) {
+            button.classList.toggle('is-active', button.dataset.buytype === state.buyType);
+        });
+
+        // Info text
+        pageInfo.replaceChildren();
+
+        if (total === 0) {
+            pageInfo.textContent = 'No runners to show';
+        } else {
+            const strong = document.createElement('strong');
+            strong.textContent = (start + 1) + '–' + end;
+
+            pageInfo.append('Showing ', strong, ' of ' + total + ' runner' + (total === 1 ? '' : 's'));
+
+            if (total !== groups.length) {
+                pageInfo.append(' (filtered from ' + groups.length + ')');
+            }
+        }
+
+        // Page buttons
+        pageNav.replaceChildren();
+
+        if (pages > 1) {
+            pageNav.appendChild(pageButton(
+                '<i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Previous',
+                function () { goTo(state.page - 1); },
+                { html: true, disabled: state.page === 1, aria: 'Previous page' }
+            ));
+
+            pageList(state.page, pages).forEach(function (item) {
+                if (item === 'gap') {
+                    const gap = document.createElement('span');
+                    gap.className = 'ep-page-gap';
+                    gap.textContent = '…';
+                    pageNav.appendChild(gap);
+                    return;
+                }
+
+                pageNav.appendChild(pageButton(
+                    String(item),
+                    function () { goTo(item); },
+                    { current: item === state.page, aria: 'Page ' + item }
+                ));
+            });
+
+            pageNav.appendChild(pageButton(
+                'Next <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>',
+                function () { goTo(state.page + 1); },
+                { html: true, disabled: state.page === pages, aria: 'Next page' }
+            ));
+        }
+
+        saveState();
+    }
+
+    let searchTimer = null;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+
+        searchTimer = setTimeout(function () {
+            state.query = searchInput.value;
+            state.page = 1;
+            render();
+        }, 150);
+    });
+
+    searchClear.addEventListener('click', function () {
+        searchInput.value = '';
+        state.query = '';
+        state.page = 1;
+        render();
+        searchInput.focus();
+    });
+
+    sizeSelect.addEventListener('change', function () {
+        state.size = Number(sizeSelect.value) || 10;
+        state.page = 1;
+        render();
+    });
+
+    filterButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            state.category = button.dataset.category;
+            state.page = 1;
+            render();
+        });
+    });
+
+    buyTypeButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            state.buyType = button.dataset.buytype;
+            state.page = 1;
+            render();
+        });
+    });
+
+    document.getElementById('clearFilters').addEventListener('click', function () {
+        searchInput.value = '';
+        state.query = '';
+        state.category = 'all';
+        state.buyType = 'all';
+        state.page = 1;
+        render();
+    });
+
+    searchInput.value = state.query;
+    sizeSelect.value = String(state.size);
+    render();
+})();
 </script>
 
 @if(auth('admin')->user()->isEventAdmin())

@@ -8,867 +8,492 @@
 
 @section('content')
 
+@php
+    $event = $attendee->ticketCategory->event ?? null;
+
+    $eventDate = null;
+    try {
+        if ($event && !empty($event->event_date)) {
+            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('F d, Y - h:i A');
+        }
+    } catch (\Throwable $e) {
+        $eventDate = null;
+    }
+
+    $age = null;
+    try {
+        if (!empty($attendee->dob)) {
+            $age = \Carbon\Carbon::parse($attendee->dob)->age;
+        }
+    } catch (\Throwable $e) {
+        $age = null;
+    }
+
+    $medical = trim((string) ($attendee->medical_conditions ?? ''));
+    $hasMedical = $medical !== '' && !in_array(strtolower($medical), ['none', 'no', 'n/a', '-'], true);
+
+    // Turns a phone-like value into a tel: link target (or null when it is not a phone number).
+    $telHref = function ($value) {
+        $value = trim((string) $value);
+        if ($value === '' || !preg_match('/^[\d\s+()\-]{6,}$/', $value)) {
+            return null;
+        }
+        return 'tel:' . preg_replace('/[^\d+]/', '', $value);
+    };
+
+    $phoneHref = $telHref($attendee->phone ?? '');
+    $emergencyHref = $telHref($attendee->emergency_contact ?? '');
+    $emergencyPhoneHref = $telHref($attendee->emergency_phone ?? '');
+@endphp
+
 <style>
-    /* =========================================================
-       EVENT PLUS — TICKET VERIFICATION
-       ========================================================= */
-
-    .verification-page {
-        min-height: calc(100vh - 80px);
-        padding: 45px 15px 65px;
-        background:
-            radial-gradient(circle at 8% 8%, rgba(124, 58, 237, 0.10), transparent 30%),
-            radial-gradient(circle at 92% 90%, rgba(236, 72, 153, 0.09), transparent 30%),
-            linear-gradient(180deg, #f8f7fc 0%, #f5f7fb 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .verification-wrapper {
-        width: 100%;
-        max-width: 650px;
-    }
-
-    /* HEADER */
-    .verification-header {
-        text-align: center;
-        margin-bottom: 24px;
-        animation: epFadeDown .65s ease both;
-    }
-
-    .verification-header .small-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 14px;
-        border-radius: 50px;
-        background: rgba(255, 255, 255, .88);
-        border: 1px solid #e8e2f4;
-        color: #6b5b84;
-        font-size: .70rem;
-        font-weight: 800;
-        letter-spacing: .09em;
-        text-transform: uppercase;
-        box-shadow: 0 6px 20px rgba(76, 29, 149, .06);
-    }
-
-    .verification-header .small-label i {
-        color: #7c3aed;
-        font-size: .85rem;
-    }
-
-    .verification-header h2 {
-        margin: 14px 0 0;
-        color: #111827;
-        font-size: 1.65rem;
-        font-weight: 850;
-        letter-spacing: -.035em;
-    }
-
-    .verification-header p {
-        margin: 6px 0 0;
-        color: #8b93a3;
-        font-size: .82rem;
-    }
-
-    /* MAIN TICKET CARD */
-    .ticket-card {
-        position: relative;
-        overflow: hidden;
-        background: #fff;
-        border: 1px solid rgba(124, 58, 237, .08);
-        border-radius: 26px;
-        box-shadow:
-            0 25px 70px rgba(31, 23, 51, .10),
-            0 5px 18px rgba(31, 23, 51, .04);
-        animation: epCardEnter .75s cubic-bezier(.22, 1, .36, 1) .08s both;
-    }
-
-    .ticket-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #4c1d95, #7c3aed, #ec4899);
-    }
-
-    .ticket-card::after {
-        content: "";
-        position: absolute;
-        width: 180px;
-        height: 180px;
-        right: -110px;
-        top: -110px;
-        border-radius: 50%;
-        background: rgba(236, 72, 153, .055);
-        pointer-events: none;
-    }
-
-    /* STATUS */
-    .ticket-status {
-        position: relative;
-        z-index: 1;
-        padding: 38px 25px 32px;
-        text-align: center;
-    }
-
-    .status-icon {
-        position: relative;
-        width: 82px;
-        height: 82px;
-        margin: 0 auto 17px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        animation: epStatusPop .75s cubic-bezier(.22, 1, .36, 1) .35s both;
-    }
-
-    .status-icon::before {
-        content: "";
-        position: absolute;
-        inset: -8px;
-        border-radius: 50%;
-        border: 1px solid currentColor;
-        opacity: .12;
-    }
-
-    .status-icon.active {
-        color: #7c3aed;
-        background: linear-gradient(145deg, #f3e8ff, #fce7f3);
-        box-shadow: 0 0 0 9px rgba(124, 58, 237, .045), 0 12px 30px rgba(124, 58, 237, .13);
-    }
-
-    .status-icon.expired {
-        color: #64748b;
-        background: #f1f5f9;
-        box-shadow: 0 0 0 9px rgba(100, 116, 139, .045);
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 15px;
-        border-radius: 50px;
-        font-size: .70rem;
-        font-weight: 850;
-        letter-spacing: .08em;
-    }
-
-    .status-badge.active {
-        color: #6d28d9;
-        background: #f3e8ff;
-        border: 1px solid #e9d5ff;
-    }
-
-    .status-badge.expired {
-        color: #475569;
-        background: #f1f5f9;
-        border: 1px solid #e2e8f0;
-    }
-
-    .ticket-name {
-        margin: 17px 0 5px;
-        color: #111827;
-        font-size: 1.75rem;
-        font-weight: 850;
-        line-height: 1.2;
-        letter-spacing: -.035em;
-        word-break: break-word;
-    }
-
-    .verification-text {
-        color: #8992a2;
-        font-size: .86rem;
-        margin: 0;
-    }
-
-    /* DIVIDER */
-    .ticket-divider {
-        position: relative;
-        height: 1px;
-        margin: 0 25px;
-        border-top: 1px dashed #dfe3ea;
-    }
-
-    .ticket-divider::before,
-    .ticket-divider::after {
-        content: "";
-        position: absolute;
-        top: -11px;
-        width: 22px;
-        height: 22px;
-        background: #f5f7fb;
-        border-radius: 50%;
-    }
-
-    .ticket-divider::before { left: -36px; }
-    .ticket-divider::after { right: -36px; }
-
-    /* INFORMATION */
-    .ticket-info {
-        position: relative;
-        z-index: 1;
-        padding: 23px 25px 22px;
-        max-height: 520px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: #c4b5fd transparent;
-    }
-
-    .ticket-info::-webkit-scrollbar { width: 5px; }
-    .ticket-info::-webkit-scrollbar-track { background: transparent; }
-    .ticket-info::-webkit-scrollbar-thumb {
-        background: #c4b5fd;
-        border-radius: 20px;
-    }
-
-    .info-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        padding: 13px 0;
-        animation: epInfoEnter .5s ease both;
-    }
-
-    .info-item:nth-child(1) { animation-delay: .15s; }
-    .info-item:nth-child(2) { animation-delay: .20s; }
-    .info-item:nth-child(3) { animation-delay: .25s; }
-    .info-item:nth-child(4) { animation-delay: .30s; }
-    .info-item:nth-child(5) { animation-delay: .35s; }
-    .info-item:nth-child(6) { animation-delay: .40s; }
-    .info-item:nth-child(7) { animation-delay: .45s; }
-    .info-item:nth-child(8) { animation-delay: .50s; }
-    .info-item:nth-child(9) { animation-delay: .55s; }
-    .info-item:nth-child(10) { animation-delay: .60s; }
-    .info-item:nth-child(11) { animation-delay: .65s; }
-    .info-item:nth-child(12) { animation-delay: .70s; }
-    .info-item:nth-child(13) { animation-delay: .75s; }
-
-    .info-item + .info-item {
-        border-top: 1px solid #f1f3f7;
-    }
-
-    .info-icon {
-        position: relative;
-        flex: 0 0 40px;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: linear-gradient(145deg, #f5f3ff, #fdf2f8);
-        color: #6d28d9;
-        border: 1px solid #ede9fe;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .95rem;
-        transition: transform .25s ease, box-shadow .25s ease;
-    }
-
-    .info-item:hover .info-icon {
-        transform: translateY(-2px) scale(1.04);
-        box-shadow: 0 7px 16px rgba(124, 58, 237, .12);
-    }
-
-    .info-content {
-        min-width: 0;
-        flex: 1;
-    }
-
-    .info-label {
-        display: block;
-        margin-bottom: 4px;
-        color: #929aaa;
-        font-size: .67rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .07em;
-    }
-
-    .info-value {
-        display: block;
-        color: #252b36;
-        font-size: .92rem;
-        font-weight: 700;
-        line-height: 1.5;
-        overflow-wrap: anywhere;
-    }
-
-    .info-value.text-primary {
-        color: #7c3aed !important;
-    }
-
-    .info-value .text-muted {
-        color: #9aa2ae !important;
-        font-weight: 600;
-    }
-
-    /* MESSAGE */
-    .verification-message {
-        position: relative;
-        z-index: 1;
-        margin: 0 25px 25px;
-        padding: 17px 18px;
-        border-radius: 15px;
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        font-size: .85rem;
-        line-height: 1.55;
-        animation: epMessageEnter .6s ease .7s both;
-    }
-
-    .verification-message.active {
-        background: linear-gradient(135deg, #faf5ff, #fdf2f8);
-        color: #5b21b6;
-        border: 1px solid #eadcff;
-    }
-
-    .verification-message.expired {
-        background: #f8fafc;
-        color: #5f666d;
-        border: 1px solid #e2e8f0;
-    }
-
-    .verification-message strong { font-weight: 850; }
-
-    .message-icon {
-        flex: 0 0 auto;
-        font-size: 1.05rem;
-        margin-top: 2px;
-    }
-
-    .verification-message.active .message-icon { color: #7c3aed; }
-    .verification-message.expired .message-icon { color: #64748b; }
-
-    /* FOOTER */
-    .verification-footer {
-        text-align: center;
-        margin-top: 18px;
-        color: #9aa2ae;
-        font-size: .70rem;
-        animation: epFadeUp .7s ease .85s both;
-    }
-
-    .verification-footer i {
-        margin-right: 4px;
-        color: #7c3aed;
-    }
-
-    /* ANIMATIONS */
-    @keyframes epFadeDown {
-        from { opacity: 0; transform: translateY(-14px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes epFadeUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes epCardEnter {
-        from { opacity: 0; transform: translateY(25px) scale(.985); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    @keyframes epStatusPop {
-        0% { opacity: 0; transform: scale(.55); }
-        70% { opacity: 1; transform: scale(1.08); }
-        100% { transform: scale(1); }
-    }
-
-    @keyframes epInfoEnter {
-        from { opacity: 0; transform: translateX(-8px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-
-    @keyframes epMessageEnter {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* MOBILE */
-    @media (max-width: 576px) {
-        .verification-page {
-            min-height: calc(100vh - 60px);
-            padding: 27px 12px 42px;
-            align-items: flex-start;
-        }
-
-        .verification-header { margin-bottom: 17px; }
-
-        .verification-header .small-label {
-            font-size: .63rem;
-            padding: 7px 11px;
-        }
-
-        .verification-header h2 {
-            font-size: 1.30rem;
-            margin-top: 10px;
-        }
-
-        .verification-header p { font-size: .75rem; }
-        .ticket-card { border-radius: 21px; }
-
-        .ticket-status { padding: 30px 18px 26px; }
-
-        .status-icon {
-            width: 67px;
-            height: 67px;
-            font-size: 1.65rem;
-            margin-bottom: 14px;
-        }
-
-        .status-badge {
-            padding: 7px 12px;
-            font-size: .64rem;
-        }
-
-        .ticket-name {
-            font-size: 1.38rem;
-            margin-top: 14px;
-        }
-
-        .verification-text { font-size: .78rem; }
-        .ticket-divider { margin: 0 18px; }
-
-        .ticket-info {
-            padding: 19px 17px 17px;
-            max-height: 600px;
-        }
-
-        .info-item {
-            gap: 10px;
-            padding: 11px 0;
-        }
-
-        .info-icon {
-            flex-basis: 35px;
-            width: 35px;
-            height: 35px;
-            border-radius: 10px;
-            font-size: .82rem;
-        }
-
-        .info-label { font-size: .61rem; }
-        .info-value { font-size: .84rem; }
-
-        .verification-message {
-            margin: 0 17px 18px;
-            padding: 14px;
-            font-size: .78rem;
-            border-radius: 13px;
-        }
-
-        .verification-footer {
-            font-size: .65rem;
-            margin-top: 13px;
-        }
-    }
-
-    @media (max-width: 360px) {
-        .verification-page {
-            padding-left: 8px;
-            padding-right: 8px;
-        }
-
-        .ticket-status {
-            padding-left: 14px;
-            padding-right: 14px;
-        }
-
-        .ticket-name { font-size: 1.25rem; }
-
-        .ticket-info {
-            padding-left: 13px;
-            padding-right: 13px;
-        }
-
-        .verification-message {
-            margin-left: 13px;
-            margin-right: 13px;
-        }
-    }
-
-    /* REDUCED MOTION */
-    @media (prefers-reduced-motion: reduce) {
-        .verification-header,
-        .ticket-card,
-        .status-icon,
-        .info-item,
-        .verification-message,
-        .verification-footer {
-            animation: none !important;
-        }
-
-        .info-icon { transition: none !important; }
-    }
+.tv {
+    --tv-accent: #6d28d9;
+    --tv-accent-dark: #5b21b6;
+    --tv-accent-soft: #f3effd;
+    --tv-ink: #1b2133;
+    --tv-muted: #667085;
+    --tv-line: #e6e3ef;
+    --tv-bg: #f5f4fa;
+    --tv-green: #0b5a3a;
+    --tv-green-soft: #e4f6ec;
+    --tv-amber: #7a4a00;
+    --tv-amber-soft: #fff1d6;
+    --tv-red: #b42318;
+    --tv-red-soft: #fdeceb;
+    min-height: calc(100vh - 80px);
+    padding: 28px 16px 56px;
+    background: var(--tv-bg);
+    color: var(--tv-ink);
+    font-size: 15px;
+    line-height: 1.5;
+}
+.tv *, .tv *::before, .tv *::after { box-sizing: border-box; }
+.tv-wrap { max-width: 560px; margin: 0 auto; }
+
+/* ---------- Ticket ---------- */
+.tv-ticket {
+    overflow: hidden; border: 1px solid var(--tv-line); border-radius: 20px;
+    background: #fff; box-shadow: 0 12px 40px rgba(27, 33, 51, .08);
+}
+
+/* ---------- Status ---------- */
+.tv-status { display: flex; align-items: center; gap: 14px; padding: 20px 22px; }
+.tv-status.is-valid { background: var(--tv-green-soft); color: var(--tv-green); }
+.tv-status.is-expired { background: var(--tv-amber-soft); color: var(--tv-amber); }
+.tv-status-icon {
+    display: grid; place-items: center; flex-shrink: 0; width: 46px; height: 46px;
+    border-radius: 50%; background: rgba(255, 255, 255, .75); font-size: 22px;
+}
+.tv-status-title { margin: 0; font-size: 21px; font-weight: 750; letter-spacing: -.2px; line-height: 1.2; }
+.tv-status-sub { margin: 3px 0 0; font-size: 14px; }
+
+/* ---------- Key facts ---------- */
+.tv-body { padding: 24px 22px 22px; }
+.tv-name { margin: 0; font-size: 27px; font-weight: 750; letter-spacing: -.4px; line-height: 1.2; overflow-wrap: anywhere; }
+.tv-code {
+    display: inline-flex; align-items: center; gap: 8px; margin: 10px 0 0; padding: 5px 12px;
+    border-radius: 8px; background: var(--tv-accent-soft); color: var(--tv-accent-dark);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.tv-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; margin: 22px 0 0; }
+.tv-fact { margin: 0; min-width: 0; }
+.tv-fact.is-wide { grid-column: 1 / -1; }
+.tv-fact dt { margin: 0 0 2px; color: var(--tv-muted); font-size: 13.5px; font-weight: 600; }
+.tv-fact dd { margin: 0; font-size: 16.5px; font-weight: 650; overflow-wrap: anywhere; }
+
+/* ---------- Ticket notches ---------- */
+.tv-divider { position: relative; height: 0; margin: 0; padding: 0; overflow: visible; border: 0; border-top: 2px dashed #dcd8e8; background: none; opacity: 1; }
+.tv-divider::before, .tv-divider::after {
+    content: ""; position: absolute; top: -13px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--tv-bg); border: 1px solid var(--tv-line);
+}
+.tv-divider::before { left: -13px; }
+.tv-divider::after { right: -13px; }
+
+/* ---------- Detail sections ---------- */
+.tv-sections { padding: 8px 14px 14px; }
+.tv-sections-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 4px; }
+.tv-sections-head p { margin: 0; color: var(--tv-muted); font-size: 14px; font-weight: 600; }
+.tv-link-btn {
+    padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--tv-accent);
+    font: inherit; font-size: 14px; font-weight: 650; cursor: pointer;
+}
+.tv-link-btn:hover { background: var(--tv-accent-soft); color: var(--tv-accent-dark); }
+
+.tv-sec { border-bottom: 1px solid var(--tv-line); }
+.tv-sec:last-child { border-bottom: 0; }
+.tv-sec > summary {
+    display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 8px; list-style: none; cursor: pointer;
+    border-radius: 12px;
+}
+.tv-sec > summary::-webkit-details-marker { display: none; }
+.tv-sec > summary:hover { background: #faf9fd; }
+.tv-sec-icon {
+    display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px;
+    border-radius: 10px; background: var(--tv-accent-soft); color: var(--tv-accent); font-size: 15px;
+}
+.tv-sec-text { flex: 1; min-width: 0; }
+.tv-sec-text strong { display: block; font-size: 16px; font-weight: 700; }
+.tv-sec-text span { display: block; color: var(--tv-muted); font-size: 13.5px; }
+.tv-sec-flag {
+    flex-shrink: 0; padding: 2px 10px; border-radius: 999px; background: var(--tv-red-soft);
+    color: var(--tv-red); font-size: 13px; font-weight: 700;
+}
+.tv-chevron { flex-shrink: 0; color: var(--tv-muted); transition: transform .2s; }
+.tv-sec[open] .tv-chevron { transform: rotate(180deg); }
+
+.tv-list { margin: 0; padding: 2px 8px 14px; }
+.tv-row {
+    display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 4px 16px; margin: 0;
+    padding: 11px 0; border-top: 1px solid #eef0f5;
+}
+.tv-row:first-child { border-top: 0; }
+.tv-row dt { color: var(--tv-muted); font-size: 14px; font-weight: 600; }
+.tv-row dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.tv-row dd small { display: block; margin-top: 2px; color: var(--tv-muted); font-size: 14px; font-weight: 500; }
+.tv-row a { color: var(--tv-accent); text-decoration: none; }
+.tv-row a:hover { color: var(--tv-accent-dark); text-decoration: underline; }
+.tv-tag {
+    display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 2px 10px;
+    border-radius: 999px; font-size: 13px; font-weight: 700; vertical-align: middle;
+}
+.tv-tag-red { background: var(--tv-red-soft); color: var(--tv-red); }
+.tv-empty { color: var(--tv-muted); font-weight: 500; }
+
+/* ---------- Actions ---------- */
+.tv-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.tv-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px;
+    padding: 10px 20px; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 700;
+    text-decoration: none; cursor: pointer; transition: background-color .15s;
+}
+.tv-btn-primary { border: 0; background: var(--tv-accent); color: #fff; }
+.tv-btn-primary:hover { background: var(--tv-accent-dark); color: #fff; }
+.tv-foot { margin: 18px 0 0; color: var(--tv-muted); font-size: 14px; text-align: center; }
+.tv-foot i { margin-right: 6px; color: var(--tv-accent); }
+
+.tv a:focus-visible, .tv button:focus-visible, .tv summary:focus-visible { outline: 3px solid #b9a3f3; outline-offset: 2px; }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 480px) {
+    .tv { padding: 16px 12px 40px; min-height: calc(100vh - 60px); }
+    .tv-status { padding: 18px; }
+    .tv-body { padding: 20px 18px 20px; }
+    .tv-name { font-size: 24px; }
+    .tv-row { grid-template-columns: 1fr; }
+    .tv-sections { padding: 6px 8px 10px; }
+}
+
+@media print {
+    .tv { padding: 0; background: #fff; }
+    .tv-actions, .tv-sections-head button { display: none !important; }
+    .tv-ticket { box-shadow: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tv * { transition: none !important; }
+}
 </style>
 
-<div class="verification-page">
+<main class="tv">
+    <div class="tv-wrap">
 
-    <div class="verification-wrapper">
-
-        {{-- PAGE HEADER --}}
-        <div class="verification-header">
-
-            <div class="small-label">
-                <i class="fa-solid fa-shield-halved"></i>
-                Ticket Verification
-            </div>
-
-            <h2>Ticket Status</h2>
-
-            <p>
-                Verify the registration and attendee information
-            </p>
-
-        </div>
-
-        {{-- DOWNLOAD BUTTON --}}
-        <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{{ route('ticket.download_pdf', $attendee->verification_token) }}"
-               class="btn-download"
-               style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #7c3aed; color: #fff; border-radius: 50px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
-                <i class="fa-solid fa-download"></i> Download Report (PDF)
-            </a>
-        </div>
-
-        {{-- TICKET CARD --}}
-        <div class="ticket-card">
+        <article class="tv-ticket" aria-labelledby="tv-name">
 
             {{-- STATUS --}}
-            <div class="ticket-status">
-
-                @if($isExpired)
-
-                    <div class="status-icon expired">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                    </div>
-
-                    <div class="status-badge expired">
-                        <i class="fa-solid fa-circle-xmark"></i>
-                        STATUS: EXPIRED
-                    </div>
-
-                @else
-
-                    <div class="status-icon active">
-                        <i class="fa-solid fa-circle-check"></i>
-                    </div>
-
-                    <div class="status-badge active">
-                        <i class="fa-solid fa-circle-check"></i>
-                        STATUS: ACTIVE
-                    </div>
-
-                @endif
-
-                <h1 class="ticket-name">
-                    {{ $attendee->full_name }}
-                </h1>
-
-                <p class="verification-text">
-                    Ticket verification result
-                </p>
-
-            </div>
-
-            {{-- DIVIDER --}}
-            <div class="ticket-divider"></div>
-
-            {{-- ATTENDEE INFORMATION --}}
-            <div class="ticket-info">
-
-                {{-- REG CODE / TICKET REFERENCE --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-barcode"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">
-                            Reg Code / Ticket Ref
-                        </span>
-
-                        <span class="info-value">
-                            {{ $attendee->ticket_code }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- EVENT NAME --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Event</span>
-
-                        <span class="info-value">
-                            {{ $attendee->ticketCategory->event->title ?? 'N/A' }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- TICKET CATEGORY --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-ticket"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Ticket Category</span>
-
-                        <span class="info-value">
-                            {{ $attendee->ticketCategory->name ?? 'N/A' }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- EVENT DATE --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-regular fa-calendar"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Event Date</span>
-
-                        <span class="info-value">
-                            {{
-                                isset($attendee->ticketCategory->event->event_date)
-                                    ? \Carbon\Carbon::parse(
-                                        $attendee->ticketCategory->event->event_date
-                                      )->format('F d, Y - h:i A')
-                                    : 'N/A'
-                            }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- FATHER'S NAME --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-user-group"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Father's Name</span>
-
-                        <span class="info-value">
-                            {{ $attendee->father_name ?? '-' }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- CONTACT INFORMATION --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-phone"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Contact / Email</span>
-
-                        <span class="info-value">
-                            {{ $attendee->phone ?? '-' }}
-
-                            @if($attendee->email)
-                                <br>
-                                <small class="text-muted">
-                                    {{ $attendee->email }}
-                                </small>
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                {{-- EMERGENCY CONTACT --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-heart-pulse"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Emergency Contact</span>
-
-                        <span class="info-value">
-                            {{ $attendee->emergency_contact ?? '-' }}
-
-                            @if($attendee->emergency_phone)
-                                ({{ $attendee->emergency_phone }})
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                {{-- NRC / PASSPORT / COUNTRY --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-id-card"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">
-                            NRC / Passport / Country
-                        </span>
-
-                        <span class="info-value">
-                            {{ $attendee->nrc_passport ?? '-' }}
-
-                            <span class="text-muted">
-                                ({{ $attendee->country ?? 'Myanmar' }})
-                            </span>
-                        </span>
-                    </div>
-                </div>
-
-                {{-- DEMOGRAPHICS --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-person"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Demographics</span>
-
-                        <span class="info-value">
-                            {{ ucfirst($attendee->gender ?? '-') }}
-
-                            @if($attendee->dob)
-                                &bull;
-                                Age: {{ \Carbon\Carbon::parse($attendee->dob)->age }} yrs
-                                (DOB: {{ $attendee->dob }})
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                {{-- T-SHIRT SIZE --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-shirt"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">T-Shirt Size</span>
-
-                        <span class="info-value">
-                            {{ $attendee->tshirt_size ?? '-' }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- HEALTH & ITRA --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-heart-circle-check"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Health & ITRA</span>
-
-                        <span class="info-value">
-                            Medical Cond:
-                            {{ $attendee->medical_conditions ?? 'None' }}
-
-                            @if($attendee->itra_profile)
-                                <br>
-                                ITRA: {{ $attendee->itra_profile }}
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                {{-- ADDRESS & EXPERIENCE --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-location-dot"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Address & Experience</span>
-
-                        <span class="info-value">
-                            {{ $attendee->address ?? '-' }}
-
-                            @if($attendee->running_experience)
-                                <br>
-                                <small class="text-muted">
-                                    Exp: {{ $attendee->running_experience }}
-                                </small>
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                {{-- PROMO APPLIED --}}
-                <div class="info-item">
-                    <div class="info-icon">
-                        <i class="fa-solid fa-tag"></i>
-                    </div>
-
-                    <div class="info-content">
-                        <span class="info-label">Promo Applied</span>
-
-                        <span class="info-value">
-                            {{ $attendee->promo_code ?? 'None' }}
-                        </span>
-                    </div>
-                </div>
-
-            </div>
-
-            {{-- VERIFICATION MESSAGE --}}
             @if($isExpired)
 
-                <div class="verification-message expired">
-                    <div class="message-icon">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </div>
-
+                <header class="tv-status is-expired" role="status">
+                    <span class="tv-status-icon" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
                     <div>
-                        <strong>Ticket Expired</strong>
-                        <br>
-                        This event has passed and the ticket status
-                        is now expired.
+                        <p class="tv-status-title">Ticket expired</p>
+                        <p class="tv-status-sub">This event has passed and the ticket status is now expired.</p>
                     </div>
-                </div>
+                </header>
 
             @else
 
-                <div class="verification-message active">
-                    <div class="message-icon">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-
+                <header class="tv-status is-valid" role="status">
+                    <span class="tv-status-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></span>
                     <div>
-                        <strong>Ticket Valid</strong>
-                        <br>
-                        This ticket is valid and the event is
-                        currently active.
+                        <p class="tv-status-title">Valid ticket</p>
+                        <p class="tv-status-sub">This ticket is valid and the event is currently active.</p>
                     </div>
-                </div>
+                </header>
 
             @endif
 
+            {{-- KEY FACTS --}}
+            <div class="tv-body">
+
+                <h1 class="tv-name" id="tv-name">{{ $attendee->full_name }}</h1>
+
+                <p class="tv-code">
+                    <i class="fa-solid fa-barcode" aria-hidden="true"></i>
+                    {{ $attendee->ticket_code }}
+                </p>
+
+                <dl class="tv-facts">
+
+                    <div class="tv-fact is-wide">
+                        <dt>Event</dt>
+                        <dd>{{ $event->title ?? 'N/A' }}</dd>
+                    </div>
+
+                    <div class="tv-fact">
+                        <dt>Ticket category</dt>
+                        <dd>{{ $attendee->ticketCategory->name ?? 'N/A' }}</dd>
+                    </div>
+
+                    @if(!empty($attendee->bib_number))
+                        <div class="tv-fact">
+                            <dt>BIB number</dt>
+                            <dd>{{ $attendee->bib_number }}</dd>
+                        </div>
+                    @endif
+
+                    <div class="tv-fact is-wide">
+                        <dt>Event date</dt>
+                        <dd>{{ $eventDate ?? 'N/A' }}</dd>
+                    </div>
+
+                    @if(!empty($attendee->tshirt_size))
+                        <div class="tv-fact">
+                            <dt>T-shirt size</dt>
+                            <dd>{{ $attendee->tshirt_size }}</dd>
+                        </div>
+                    @endif
+
+                </dl>
+
+            </div>
+
+            <hr class="tv-divider">
+
+            {{-- DETAILS --}}
+            <div class="tv-sections">
+
+                <div class="tv-sections-head">
+                    <p>Attendee details</p>
+                    <button type="button" class="tv-link-btn" id="toggleAll" aria-pressed="false">Expand all</button>
+                </div>
+
+                {{-- Contact --}}
+                <details class="tv-sec">
+                    <summary>
+                        <span class="tv-sec-icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
+                        <span class="tv-sec-text">
+                            <strong>Contact</strong>
+                            <span>Phone, email and emergency contact</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-down tv-chevron" aria-hidden="true"></i>
+                    </summary>
+
+                    <dl class="tv-list">
+                        <div class="tv-row">
+                            <dt>Phone</dt>
+                            <dd>
+                                @if(!empty($attendee->phone))
+                                    @if($phoneHref)
+                                        <a href="{{ $phoneHref }}">{{ $attendee->phone }}</a>
+                                    @else
+                                        {{ $attendee->phone }}
+                                    @endif
+                                @else
+                                    <span class="tv-empty">-</span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        <div class="tv-row">
+                            <dt>Email</dt>
+                            <dd>
+                                @if(!empty($attendee->email))
+                                    <a href="mailto:{{ $attendee->email }}">{{ $attendee->email }}</a>
+                                @else
+                                    <span class="tv-empty">-</span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        <div class="tv-row">
+                            <dt>Emergency contact</dt>
+                            <dd>
+                                @if(!empty($attendee->emergency_contact))
+                                    @if($emergencyHref)
+                                        <a href="{{ $emergencyHref }}">{{ $attendee->emergency_contact }}</a>
+                                    @else
+                                        {{ $attendee->emergency_contact }}
+                                    @endif
+                                @else
+                                    <span class="tv-empty">-</span>
+                                @endif
+
+                                @if(!empty($attendee->emergency_phone))
+                                    <small>
+                                        @if($emergencyPhoneHref)
+                                            <a href="{{ $emergencyPhoneHref }}">{{ $attendee->emergency_phone }}</a>
+                                        @else
+                                            {{ $attendee->emergency_phone }}
+                                        @endif
+                                    </small>
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
+                </details>
+
+                {{-- Identity --}}
+                <details class="tv-sec">
+                    <summary>
+                        <span class="tv-sec-icon" aria-hidden="true"><i class="fa-solid fa-id-card"></i></span>
+                        <span class="tv-sec-text">
+                            <strong>Identity</strong>
+                            <span>NRC or passport, family and age</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-down tv-chevron" aria-hidden="true"></i>
+                    </summary>
+
+                    <dl class="tv-list">
+                        <div class="tv-row">
+                            <dt>NRC / Passport</dt>
+                            <dd>
+                                {{ $attendee->nrc_passport ?? '-' }}
+                                <small>{{ $attendee->country ?? 'Myanmar' }}</small>
+                            </dd>
+                        </div>
+
+                        <div class="tv-row">
+                            <dt>Father's name</dt>
+                            <dd>{{ $attendee->father_name ?? '-' }}</dd>
+                        </div>
+
+                        <div class="tv-row">
+                            <dt>Gender</dt>
+                            <dd>{{ ucfirst($attendee->gender ?? '-') }}</dd>
+                        </div>
+
+                        <div class="tv-row">
+                            <dt>Age</dt>
+                            <dd>
+                                @if($age !== null)
+                                    {{ $age }} yrs
+                                    <small>Date of birth: {{ $attendee->dob }}</small>
+                                @else
+                                    <span class="tv-empty">-</span>
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
+                </details>
+
+                {{-- More details --}}
+                <details class="tv-sec">
+                    <summary>
+                        <span class="tv-sec-icon" aria-hidden="true"><i class="fa-solid fa-heart-pulse"></i></span>
+                        <span class="tv-sec-text">
+                            <strong>Health and background</strong>
+                            <span>Medical notes, ITRA, address and promo</span>
+                        </span>
+                        @if($hasMedical)
+                            <span class="tv-sec-flag">Medical note</span>
+                        @endif
+                        <i class="fa-solid fa-chevron-down tv-chevron" aria-hidden="true"></i>
+                    </summary>
+
+                    <dl class="tv-list">
+                        <div class="tv-row">
+                            <dt>Medical conditions</dt>
+                            <dd>
+                                {{ $attendee->medical_conditions ?? 'None' }}
+                                @if($hasMedical)
+                                    <span class="tv-tag tv-tag-red"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Check</span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        @if(!empty($attendee->itra_profile))
+                            <div class="tv-row">
+                                <dt>ITRA profile</dt>
+                                <dd>{{ $attendee->itra_profile }}</dd>
+                            </div>
+                        @endif
+
+                        <div class="tv-row">
+                            <dt>Address</dt>
+                            <dd>{{ $attendee->address ?? '-' }}</dd>
+                        </div>
+
+                        @if(!empty($attendee->running_experience))
+                            <div class="tv-row">
+                                <dt>Running experience</dt>
+                                <dd>{{ $attendee->running_experience }}</dd>
+                            </div>
+                        @endif
+
+                        <div class="tv-row">
+                            <dt>Promo applied</dt>
+                            <dd>{{ $attendee->promo_code ?? 'None' }}</dd>
+                        </div>
+                    </dl>
+                </details>
+
+            </div>
+
+        </article>
+
+        {{-- ACTIONS --}}
+        <div class="tv-actions">
+            <a href="{{ route('ticket.download_pdf', $attendee->verification_token) }}" class="tv-btn tv-btn-primary">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                Download report (PDF)
+            </a>
         </div>
 
-        {{-- FOOTER --}}
-        <div class="verification-footer">
-            <i class="fa-solid fa-shield-halved"></i>
+        <p class="tv-foot">
+            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
             Secure ticket verification
-        </div>
+        </p>
 
     </div>
+</main>
 
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const sections = Array.prototype.slice.call(document.querySelectorAll('.tv-sec'));
+    const toggle = document.getElementById('toggleAll');
+
+    if (!sections.length || !toggle) return;
+
+    function allOpen() {
+        return sections.every(function (section) { return section.open; });
+    }
+
+    function refresh() {
+        const open = allOpen();
+        toggle.textContent = open ? 'Collapse all' : 'Expand all';
+        toggle.setAttribute('aria-pressed', open ? 'true' : 'false');
+    }
+
+    toggle.addEventListener('click', function () {
+        const open = !allOpen();
+        sections.forEach(function (section) { section.open = open; });
+        refresh();
+    });
+
+    sections.forEach(function (section) {
+        section.addEventListener('toggle', refresh);
+    });
+
+    // Show everything when the page is printed or saved as PDF from the browser.
+    window.addEventListener('beforeprint', function () {
+        sections.forEach(function (section) { section.open = true; });
+    });
+
+    refresh();
+});
+</script>
 
 @endsection

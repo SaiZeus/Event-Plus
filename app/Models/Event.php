@@ -68,4 +68,10 @@ class Event extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function groupBuys()
+{
+    return $this->hasMany(EventGroupBuy::class);
+}
+
 }

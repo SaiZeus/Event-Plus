@@ -1,3 +1,24 @@
+@php
+    $event = $attendee->ticketCategory->event ?? null;
+
+    $eventDate = null;
+    try {
+        if ($event && !empty($event->event_date)) {
+            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('M d, Y - h:i A');
+        }
+    } catch (\Throwable $e) {
+        $eventDate = null;
+    }
+
+    $medical = trim((string) ($attendee->medical_conditions ?? ''));
+    $hasMedical = $medical !== '' && !in_array(strtolower($medical), ['none', 'no', 'n/a', '-'], true);
+
+    // Status colours (valid = green, expired = amber)
+    $accent = $isExpired ? '#b45309' : '#047857';
+    $dark   = $isExpired ? '#78350f' : '#065f46';
+    $soft   = $isExpired ? '#fffbeb' : '#ecfdf5';
+    $edge   = $isExpired ? '#fcd34d' : '#a7f3d0';
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,273 +40,286 @@
 
         @page {
             size: A4 portrait;
-            margin: 10mm;
-        }
-
-        * {
-            box-sizing: border-box;
+            margin: 12mm;
         }
 
         body {
             font-family: 'NotoMyanmar', DejaVu Sans, sans-serif;
             color: #1f2937;
-            font-size: 9px;
-            line-height: 1.45;
+            font-size: 12px;
+            line-height: 1.5;
             margin: 0;
             padding: 0;
         }
 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
         .report {
             width: 100%;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #d9dce3;
             background: #ffffff;
         }
 
         .accent {
-            height: 5px;
-            background: {{ $isExpired ? '#dc2626' : '#059669' }};
+            height: 6px;
+            background: {{ $accent }};
         }
 
-        /* HEADER */
+        /* ---------- Header ---------- */
 
         .header {
-            width: 100%;
-            padding: 12px 18px;
+            padding: 14px 22px;
             border-bottom: 1px solid #e5e7eb;
         }
 
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .logo {
-            width: 65px;
+        .logo-cell {
+            width: 70px;
             vertical-align: middle;
         }
 
-        .logo img {
-            max-width: 58px;
-            max-height: 42px;
+        .logo-cell img {
+            max-width: 60px;
+            max-height: 46px;
         }
 
-        .brand {
+        .brand-cell {
             vertical-align: middle;
         }
 
-        .brand h1 {
+        .brand-name {
             margin: 0;
-            font-size: 20px;
             color: #312e81;
+            font-size: 20px;
+            font-weight: bold;
             letter-spacing: 2px;
         }
 
-        .brand p {
-            margin: 1px 0 0;
-            color: #9ca3af;
-            font-size: 8px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+        .brand-tagline {
+            margin: 2px 0 0;
+            color: #6b7280;
+            font-size: 10px;
         }
 
-        .report-type {
-            text-align: right;
+        .meta-cell {
             vertical-align: middle;
-            color: #6b7280;
-            font-size: 9px;
+            text-align: right;
+        }
+
+        .meta-title {
+            color: #312e81;
+            font-size: 13px;
             font-weight: bold;
         }
 
-        /* STATUS */
-
-        .status-area {
-            padding: 10px 18px;
-            background: {{ $isExpired ? '#fef2f2' : '#ecfdf5' }};
-            border-bottom: 1px solid #e5e7eb;
+        .meta-date {
+            margin-top: 3px;
+            color: #6b7280;
+            font-size: 10px;
         }
 
-        .status-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* ---------- Status ---------- */
+
+        .status {
+            padding: 14px 22px;
+            background: {{ $soft }};
+            border-bottom: 1px solid {{ $edge }};
         }
 
         .status-title {
-            font-size: 14px;
+            color: {{ $accent }};
+            font-size: 18px;
             font-weight: bold;
-            color: {{ $isExpired ? '#b91c1c' : '#047857' }};
         }
 
         .status-description {
-            font-size: 8px;
-            color: {{ $isExpired ? '#991b1b' : '#065f46' }};
-            margin-top: 2px;
+            margin-top: 3px;
+            color: {{ $dark }};
+            font-size: 11px;
         }
 
-        .status-badge {
+        .badge-cell {
+            width: 120px;
             text-align: right;
             vertical-align: middle;
         }
 
         .badge {
             display: inline-block;
-            padding: 6px 17px;
-            background: {{ $isExpired ? '#dc2626' : '#059669' }};
+            padding: 8px 20px;
+            background: {{ $accent }};
             color: #ffffff;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
 
-        /* TICKET CODE */
+        /* ---------- Attendee + ticket number ---------- */
 
-        .ticket-code-area {
-            text-align: center;
-            padding: 10px;
-            border-bottom: 1px dashed #d1d5db;
+        .identity {
+            padding: 20px 22px;
+            border-bottom: 1px dashed #c4c9d4;
         }
 
-        .ticket-label {
-            color: #9ca3af;
-            font-size: 8px;
+        .small-label {
+            color: #6b7280;
+            font-size: 10.5px;
+            font-weight: bold;
+        }
+
+        .attendee-name {
+            margin-top: 4px;
+            color: #111827;
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        .code-cell {
+            width: 215px;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        .code-box {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 7px 14px;
+            border: 2px solid {{ $accent }};
+            color: {{ $accent }};
+            font-size: 18px;
             font-weight: bold;
             letter-spacing: 2px;
         }
 
-        .ticket-code {
-            font-size: 21px;
-            font-weight: bold;
-            letter-spacing: 3px;
-            color: {{ $isExpired ? '#dc2626' : '#059669' }};
-            margin-top: 2px;
+        /* ---------- Event block ---------- */
+
+        .block {
+            padding: 16px 22px 6px;
         }
 
-        /* EVENT INFORMATION */
-
-        .section {
-            padding: 10px 15px 5px;
-        }
-
-        .section-heading {
-            color: #312e81;
-            font-size: 10px;
-            font-weight: bold;
+        .heading {
+            margin-bottom: 8px;
             padding-bottom: 5px;
-            margin-bottom: 5px;
-            border-bottom: 2px solid #ede9fe;
-            letter-spacing: .5px;
+            border-bottom: 2px solid #e0e7ff;
+            color: #312e81;
+            font-size: 13px;
+            font-weight: bold;
         }
 
-        .event-table {
-            width: 100%;
-            border-collapse: collapse;
+        .event-box {
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
         }
 
-        .event-table td {
-            width: 33.33%;
-            padding: 4px 7px;
+        .event-box td {
+            width: 33%;
+            padding: 10px 12px;
             vertical-align: top;
-            border-right: 1px solid #f3f4f6;
         }
 
-        .event-table td:last-child {
-            border-right: none;
+        .event-box td.sep {
+            border-right: 1px solid #e5e7eb;
         }
 
         .event-label {
             display: block;
-            color: #9ca3af;
-            font-size: 7.5px;
+            color: #6b7280;
+            font-size: 10px;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
         .event-value {
             display: block;
+            margin-top: 3px;
             color: #312e81;
-            font-size: 9px;
+            font-size: 12.5px;
             font-weight: bold;
-            margin-top: 2px;
         }
 
-        /* ATTENDEE INFORMATION */
+        /* ---------- Attendee details ---------- */
 
-        .attendee-section {
-            padding: 8px 15px 10px;
+        .details {
+            padding: 12px 22px 10px;
         }
 
-        .columns {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .columns > tbody > tr > td {
+        .columns td.col {
             width: 50%;
             vertical-align: top;
         }
 
-        .columns .left-column {
-            padding-right: 9px;
+        .columns td.col-left {
+            padding-right: 12px;
         }
 
-        .columns .right-column {
-            padding-left: 9px;
-            border-left: 1px solid #e5e7eb;
+        .columns td.col-right {
+            padding-left: 12px;
         }
 
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
+        .group {
+            margin-bottom: 14px;
         }
 
-        .info-table td {
-            padding: 5px 4px;
-            border-bottom: 1px solid #f3f4f6;
-            vertical-align: top;
-            line-height: 1.5;
-        }
-
-        .info-table .label {
-            width: 39%;
-            color: #6b7280;
-            font-size: 8px;
+        .group-title {
+            margin-bottom: 4px;
+            color: #4338ca;
+            font-size: 12px;
             font-weight: bold;
         }
 
-        .info-table .value {
-            width: 61%;
+        .info td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #eef0f4;
+            vertical-align: top;
+        }
+
+        .info td.label {
+            width: 38%;
+            color: #6b7280;
+            font-size: 10.5px;
+            font-weight: bold;
+        }
+
+        .info td.value {
+            width: 62%;
             color: #111827;
-            font-size: 8.5px;
-            text-align: right;
+            font-size: 11.5px;
             word-wrap: break-word;
         }
 
-        /* FINAL VERIFICATION */
+        .value-warning {
+            color: #b42318;
+            font-weight: bold;
+        }
+
+        /* ---------- Final statement ---------- */
 
         .verification {
-            margin: 5px 15px 10px;
-            padding: 9px 12px;
+            margin: 4px 22px 18px;
+            padding: 12px 16px;
             text-align: center;
-            background: {{ $isExpired ? '#fef2f2' : '#ecfdf5' }};
-            border: 1px solid {{ $isExpired ? '#fecaca' : '#a7f3d0' }};
+            background: {{ $soft }};
+            border: 1px solid {{ $edge }};
         }
 
         .verification-title {
-            color: {{ $isExpired ? '#dc2626' : '#047857' }};
-            font-size: 11px;
+            color: {{ $accent }};
+            font-size: 14px;
             font-weight: bold;
             letter-spacing: 1px;
         }
 
         .verification-text {
-            color: #6b7280;
-            font-size: 8px;
-            margin-top: 2px;
+            margin-top: 3px;
+            color: {{ $dark }};
+            font-size: 11px;
         }
 
-        /* FOOTER */
+        /* ---------- Footer ---------- */
 
         .footer {
-            padding: 8px 15px;
+            padding: 10px 22px;
             background: #f8fafc;
             border-top: 1px solid #e5e7eb;
             text-align: center;
@@ -293,17 +327,16 @@
 
         .footer-brand {
             color: #312e81;
-            font-size: 9px;
+            font-size: 11px;
             font-weight: bold;
             letter-spacing: 1.5px;
         }
 
         .footer-text {
-            color: #9ca3af;
-            font-size: 7px;
             margin-top: 2px;
+            color: #6b7280;
+            font-size: 9.5px;
         }
-
     </style>
 </head>
 
@@ -315,35 +348,32 @@
 
     <!-- HEADER -->
     <div class="header">
-
-        <table class="header-table">
+        <table>
             <tr>
-                <td class="logo">
-                    <img src="{{ public_path('assets/img/logo/Eventplus.png') }}">
+                <td class="logo-cell">
+                    <img src="{{ public_path('assets/img/logo/Eventplus.png') }}" alt="Event Plus">
                 </td>
 
-                <td class="brand">
-                    <h1>EVENT PLUS</h1>
-                    <p>Events • Experiences • Memories</p>
+                <td class="brand-cell">
+                    <p class="brand-name">EVENT PLUS</p>
+                    <p class="brand-tagline">Events, experiences and memories</p>
                 </td>
 
-                <td class="report-type">
-                    TICKET<br>
-                    VERIFICATION REPORT
+                <td class="meta-cell">
+                    <div class="meta-title">Ticket verification report</div>
+                    <div class="meta-date">Generated {{ now()->format('M d, Y - h:i A') }}</div>
                 </td>
             </tr>
         </table>
-
     </div>
 
     <!-- STATUS -->
-    <div class="status-area">
-
-        <table class="status-table">
+    <div class="status">
+        <table>
             <tr>
                 <td>
                     <div class="status-title">
-                        {{ $isExpired ? 'Ticket Expired' : 'Ticket Verified Successfully' }}
+                        {{ $isExpired ? 'Ticket expired' : 'Ticket verified successfully' }}
                     </div>
 
                     <div class="status-description">
@@ -354,58 +384,50 @@
                     </div>
                 </td>
 
-                <td class="status-badge">
-                    <span class="badge">
-                        {{ $isExpired ? 'EXPIRED' : 'ACTIVE' }}
-                    </span>
+                <td class="badge-cell">
+                    <span class="badge">{{ $isExpired ? 'EXPIRED' : 'ACTIVE' }}</span>
                 </td>
             </tr>
         </table>
-
     </div>
 
-    <!-- TICKET CODE -->
-    <div class="ticket-code-area">
+    <!-- ATTENDEE AND TICKET NUMBER -->
+    <div class="identity">
+        <table>
+            <tr>
+                <td>
+                    <div class="small-label">Attendee</div>
+                    <div class="attendee-name">{{ $attendee->full_name }}</div>
+                </td>
 
-        <div class="ticket-label">TICKET IDENTIFICATION NUMBER</div>
-
-        <div class="ticket-code">
-            {{ $attendee->ticket_code }}
-        </div>
-
+                <td class="code-cell">
+                    <div class="small-label">Ticket number</div>
+                    <div class="code-box">{{ $attendee->ticket_code }}</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     <!-- EVENT INFORMATION -->
-    <div class="section">
+    <div class="block">
 
-        <div class="section-heading">
-            EVENT INFORMATION
-        </div>
+        <div class="heading">Event information</div>
 
-        <table class="event-table">
+        <table class="event-box">
             <tr>
-                <td>
-                    <span class="event-label">Event Name</span>
-                    <span class="event-value">
-                        {{ $attendee->ticketCategory->event->title ?? 'N/A' }}
-                    </span>
+                <td class="sep">
+                    <span class="event-label">Event name</span>
+                    <span class="event-value">{{ $event->title ?? 'N/A' }}</span>
                 </td>
 
-                <td>
+                <td class="sep">
                     <span class="event-label">Category</span>
-                    <span class="event-value">
-                        {{ $attendee->ticketCategory->name ?? 'N/A' }}
-                    </span>
+                    <span class="event-value">{{ $attendee->ticketCategory->name ?? 'N/A' }}</span>
                 </td>
 
                 <td>
-                    <span class="event-label">Event Date</span>
-                    <span class="event-value">
-                        {{ isset($attendee->ticketCategory->event->event_date)
-                            ? \Carbon\Carbon::parse($attendee->ticketCategory->event->event_date)->format('M d, Y - h:i A')
-                            : 'N/A'
-                        }}
-                    </span>
+                    <span class="event-label">Event date</span>
+                    <span class="event-value">{{ $eventDate ?? 'N/A' }}</span>
                 </td>
             </tr>
         </table>
@@ -413,95 +435,109 @@
     </div>
 
     <!-- ATTENDEE INFORMATION -->
-    <div class="attendee-section">
+    <div class="details">
 
-        <div class="section-heading">
-            ATTENDEE INFORMATION
-        </div>
+        <div class="heading">Attendee information</div>
 
         <table class="columns">
+
             <tr>
-
-                <!-- LEFT COLUMN -->
-                <td class="left-column">
-
-                    <table class="info-table">
-
-                        <tr>
-                            <td class="label">Full Name</td>
-                            <td class="value">{{ $attendee->full_name }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Father's Name</td>
-                            <td class="value">{{ $attendee->father_name ?? '-' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Phone</td>
-                            <td class="value">{{ $attendee->phone ?? '-' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Email</td>
-                            <td class="value">{{ $attendee->email ?? '-' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Emergency Contact</td>
-                            <td class="value">{{ $attendee->emergency_contact ?? '-' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">NRC / Passport</td>
-                            <td class="value">{{ $attendee->nrc_passport ?? '-' }}</td>
-                        </tr>
-
-                    </table>
-
+                <!-- Identity -->
+                <td class="col col-left">
+                    <div class="group">
+                        <div class="group-title">Identity</div>
+                        <table class="info">
+                            <tr>
+                                <td class="label">Father's name</td>
+                                <td class="value">{{ $attendee->father_name ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Gender</td>
+                                <td class="value">{{ ucfirst($attendee->gender ?? '-') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">NRC / Passport</td>
+                                <td class="value">{{ $attendee->nrc_passport ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Country</td>
+                                <td class="value">{{ $attendee->country ?? 'Myanmar' }}</td>
+                            </tr>
+                        </table>
+                    </div>
                 </td>
 
-                <!-- RIGHT COLUMN -->
-                <td class="right-column">
-
-                    <table class="info-table">
-
-                        <tr>
-                            <td class="label">Country</td>
-                            <td class="value">{{ $attendee->country ?? 'Myanmar' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Gender</td>
-                            <td class="value">{{ ucfirst($attendee->gender ?? '-') }}</td>
-                        </tr>
-
-                        {{-- T-SHIRT SIZE --}}
-                        <tr>
-                            <td class="label">T-Shirt Size</td>
-                            <td class="value">{{ $attendee->tshirt_size ?? '-' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Medical</td>
-                            <td class="value">{{ $attendee->medical_conditions ?? 'None' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Address</td>
-                            <td class="value">{{ $attendee->address ?? '-' }}</td>
-                        </tr>
-
-                        <tr>
-                            <td class="label">Promo Code</td>
-                            <td class="value">{{ $attendee->promo_code ?? 'None' }}</td>
-                        </tr>
-
-                    </table>
-
+                <!-- Contact -->
+                <td class="col col-right">
+                    <div class="group">
+                        <div class="group-title">Contact</div>
+                        <table class="info">
+                            <tr>
+                                <td class="label">Phone</td>
+                                <td class="value">{{ $attendee->phone ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Email</td>
+                                <td class="value">{{ $attendee->email ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Emergency contact</td>
+                                <td class="value">
+                                    {{ $attendee->emergency_contact ?? '-' }}
+                                    @if(!empty($attendee->emergency_phone))
+                                        ({{ $attendee->emergency_phone }})
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </td>
-
             </tr>
+
+            <tr>
+                <!-- Registration -->
+                <td class="col col-left">
+                    <div class="group">
+                        <div class="group-title">Registration</div>
+                        <table class="info">
+                            @if(!empty($attendee->bib_number))
+                                <tr>
+                                    <td class="label">BIB number</td>
+                                    <td class="value">{{ $attendee->bib_number }}</td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td class="label">T-shirt size</td>
+                                <td class="value">{{ $attendee->tshirt_size ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Promo code</td>
+                                <td class="value">{{ $attendee->promo_code ?? 'None' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+
+                <!-- Health and address -->
+                <td class="col col-right">
+                    <div class="group">
+                        <div class="group-title">Health and address</div>
+                        <table class="info">
+                            <tr>
+                                <td class="label">Medical</td>
+                                <td class="value {{ $hasMedical ? 'value-warning' : '' }}">
+                                    {{ $attendee->medical_conditions ?? 'None' }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label">Address</td>
+                                <td class="value">{{ $attendee->address ?? '-' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+
         </table>
 
     </div>
@@ -525,12 +561,10 @@
     <!-- FOOTER -->
     <div class="footer">
 
-        <div class="footer-brand">
-            EVENT PLUS
-        </div>
+        <div class="footer-brand">EVENT PLUS</div>
 
         <div class="footer-text">
-            Official Ticket Verification Report | Generated by Event Plus
+            Official ticket verification report | Generated by Event Plus
         </div>
 
     </div>

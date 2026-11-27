@@ -11,14 +11,18 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'event_id',
-        'reference',
-        'order_number',
-        'total_amount',
-        'payment_method',
-        'payment_status',
-        'payment_proof',
-    ];
+    'event_id',
+    'reference',
+    'order_number',
+    'total_amount',
+    'group_buy_id',
+    'group_buy_name',
+    'group_buy_quantity',
+    'group_buy_discount',
+    'payment_method',
+    'payment_status',
+    'payment_proof',
+];
 
     /**
      * Boot the model to generate references and attendee ticket details
@@ -255,4 +259,15 @@ class Order extends Model
     {
         return $this->hasMany(Attendee::class);
     }
+
+    public function groupBuy()
+{
+    return $this->belongsTo(EventGroupBuy::class, 'group_buy_id');
 }
+
+public function isGroupBuy(): bool
+{
+    return ! is_null($this->group_buy_quantity);
+}
+}
+
